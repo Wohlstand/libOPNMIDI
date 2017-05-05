@@ -291,11 +291,12 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
                 //volume = (int)(volume * std::sqrt( (double) ch[c].users.size() ));
 
                 if(opn.LogarithmicVolumes)
-                    volume = volume * 127 / (127 * 127 * 127) / 2;
+                    volume = volume * 127 / (127 * 127 * 127);
                 else
                 {
                     // The formula below: SOLVE(V=127^3 * 2^( (A-63.49999) / 8), A)
                     volume = volume > 8725 ? static_cast<unsigned int>(std::log(volume) * 11.541561 + (0.5 - 104.22845)) : 0;
+                    volume *= 2;
                     // The incorrect formula below: SOLVE(V=127^3 * (2^(A/63)-1), A)
                     //opl.Touch_Real(c, volume>11210 ? 91.61112 * std::log(4.8819E-7*volume + 1.0)+0.5 : 0);
                 }
@@ -821,9 +822,9 @@ void OPNMIDIplay::HandleEvent(size_t tk)
         case 10: // Change panning
             Ch[MidCh].panning = 0x00;
 
-            if(value  < 64 + 32) Ch[MidCh].panning |= 0x10;
+            if(value  < 64 + 32) Ch[MidCh].panning |= 0x40;
 
-            if(value >= 64 - 32) Ch[MidCh].panning |= 0x20;
+            if(value >= 64 - 32) Ch[MidCh].panning |= 0x80;
 
             NoteUpdate_All(MidCh, Upd_Pan);
             break;
@@ -837,7 +838,7 @@ void OPNMIDIplay::HandleEvent(size_t tk)
             Ch[MidCh].vibspeed   = 2 * 3.141592653 * 5.0;
             Ch[MidCh].vibdepth   = 0.5 / 127;
             Ch[MidCh].vibdelay   = 0;
-            Ch[MidCh].panning    = 0x30;
+            Ch[MidCh].panning    = 0xC0;
             Ch[MidCh].portamento = 0;
             //UpdatePortamento(MidCh);
             NoteUpdate_All(MidCh, Upd_Pan + Upd_Volume + Upd_Pitch);

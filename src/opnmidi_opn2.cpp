@@ -54,6 +54,8 @@ static const unsigned short Channels[23] =
     0x006, 0x007, 0x008, 0xFFF, 0xFFF
 }; // <- hw percussions, 0xFFF = no support for pitch/pan
 
+static const uint8_t NoteChannels[6] = { 0, 1, 2, 4, 5, 6 };
+
 /*
     In OPL3 mode:
          0    1    2    6    7    8     9   10   11    16   17   18
@@ -137,10 +139,10 @@ OPN2::OPN2() :
 
 void OPN2::PokeO(size_t card, uint8_t port, uint8_t index, uint8_t value)
 {
-    if(port)
-        cardsOP2[card].write1(index, value);
+    if(port == 1)
+        cardsOP2[card]->write1(index, value);
     else
-        cardsOP2[card].write0(index, value);
+        cardsOP2[card]->write0(index, value);
 }
 
 //void OPN2::PokeN(size_t card, uint16_t index, uint8_t value)
@@ -159,7 +161,7 @@ void OPN2::NoteOff(size_t c)
     uint8_t     port, cc;
     uint8_t     ch4 = c % 6;
     getOpnChannel(uint16_t(c), card, port, cc);
-    PokeO(card, 0, 0x28, (ch4 <= 2) ? ch4 : ch4 + 1);
+    PokeO(card, 0, 0x28, NoteChannels[ch4]);
 //    //size_t card = c / 23, cc = c % 23;
 
 //    if(ch4 >= 6)
@@ -195,7 +197,7 @@ void OPN2::NoteOn(unsigned c, double hertz) // Hertz range: 0..131071
     x2 += static_cast<uint32_t>(hertz + 0.5);
     PokeO(card, port, 0xA0 + cc,  x2 & 0xFF);
     PokeO(card, port, 0xA4 + cc, (x2>>8) & 0xFF);//Set frequency and octave
-    PokeO(card, 0, 0x28, 0xF0 + uint8_t((ch4 <= 2) ? ch4 : ch4 + 1));
+    PokeO(card, 0, 0x28, 0xF0 + NoteChannels[ch4]);
     pit[c] = static_cast<uint8_t>(x2 >> 8);
 //    unsigned card = c / 23, cc = c % 23;
 //    unsigned x = 0x2000;
@@ -252,27 +254,28 @@ void OPN2::Touch_Real(unsigned c, unsigned volume)
 
     bool alg_do[8][4] =
     {
-        //OP1   OP2   OP3   OP4
-        {false,false,false,true},
-        {false,false,false,true},
-        {false,false,false,true},
-        {false,true, false,true},
-        {false,true, true, true},
-        {false,true, true, true},
-        {false,true, true, true},
-        {true, true, true, true},
+        /*
+         * Yeah, Operator 2 and 3 are seems swapped
+         * which we can see in the algorithm 4
+         */
+        //OP1   OP3   OP2    OP4
+        //30    34    38     3C
+        {false,false,false,true},//Algorithm #0:  W = 1 * 2 * 3 * 4
+        {false,false,false,true},//Algorithm #1:  W = (1 + 2) * 3 * 4
+        {false,false,false,true},//Algorithm #2:  W = (1 + (2 * 3)) * 4
+        {false,false,false,true},//Algorithm #3:  W = ((1 * 2) + 3) * 4
+        {false,false,true, true},//Algorithm #4:  W = (1 * 2) + (3 * 4)
+        {false,true ,true ,true},//Algorithm #5:  W = (1 * (2 + 3 + 4)
+        {false,true ,true ,true},//Algorithm #6:  W = (1 * 2) + 3 + 4
+        {true ,true ,true ,true},//Algorithm #7:  W = 1 + 2 + 3 + 4
     };
 
     uint8_t alg = adli.fbalg & 0x07;
-
     for(uint8_t op = 0; op < 4; op++)
     {
         uint8_t x = op_vol[op];
-        PokeO(card,
-              port,
-              0x40 + cc + (4 * op),
-              (alg_do[alg][op]) ? uint8_t((x|127) - volume + volume * (x&127)/127) : x
-            );
+        uint8_t vol_res = (alg_do[alg][op]) ? uint8_t(127 - volume + volume * ((x&127)/127)) : x;
+        PokeO(card, port, 0x40 + cc + (4 * op), vol_res);
     }
     //if(four_op_category[c] == 0 || four_op_category[c] == 3)
     //{
@@ -385,8 +388,9 @@ void OPN2::Pan(unsigned c, unsigned value)
     const opnInstData &adli = GetAdlIns(ins[c]);
     //if(Channels[cc] != 0xFFF)
     //    Poke(card, 0xC0 + Channels[cc], GetAdlIns(ins[c]).feedconn | value);
-    regBD[c] = (value & 0xC0) | (adli.lfosens & 0x3F);
-    PokeO(card, port, 0xB4 + cc, regBD[c]);
+    uint8_t val = (/*value*/ 0xC0) | (adli.lfosens & 0x3F);
+    regBD[c] = val;
+    PokeO(card, port, 0xB4 + cc, val);
 }
 
 void OPN2::Silence() // Silence all OPL channels.
@@ -482,6 +486,13 @@ void OPN2::ChangeVolumeRangesModel(OPNMIDI_VolumeModels volumeModel)
     }
 }
 
+void OPN2::ClearChips()
+{
+    for(size_t i = 0; i < cardsOP2.size(); i++)
+        delete cardsOP2[i];
+    cardsOP2.clear();
+}
+
 void OPN2::Reset()
 {
     #ifdef ADLMIDI_USE_DOSBOX_OPL
@@ -491,12 +502,14 @@ void OPN2::Reset()
     memset(&emptyChip, 0, sizeof(_opl3_chip));
     #endif
     //cards.clear();
-    cardsOP2.clear();
+    ClearChips();
     ins.clear();
     pit.clear();
     regBD.clear();
     //cards.resize(NumCards, emptyChip);
-    cardsOP2.resize(NumCards, Ym2612_Emu());
+    cardsOP2.resize(NumCards, NULL);
+    for(size_t i = 0; i < cardsOP2.size(); i++)
+        cardsOP2[i] = new Ym2612_Emu();
     NumChannels = NumCards * 6;
     ins.resize(NumChannels,   189);
     pit.resize(NumChannels,   0);
@@ -527,7 +540,7 @@ void OPN2::Reset()
         //#else
         //OPL3_Reset(&cards[card], static_cast<Bit32u>(_parent->PCM_RATE));
         //#endif
-        cardsOP2[card].set_rate(_parent->PCM_RATE, 7153353.0 * 2.0);
+        cardsOP2[card]->set_rate(_parent->PCM_RATE, 7153353.0 * 2.0);
         PokeO(card, 0, 0x22, regLFO);//push current LFO state
         PokeO(card, 0, 0x27, 0x00);  //set Channel 3 normal mode
         PokeO(card, 0, 0x2B, 0x00);  //Disable DAC
@@ -627,5 +640,6 @@ void OPN2::Reset()
           Channel 8:  14  12     17  15
          Same goes principally for channels 9-17 respectively.
         */
+
     Silence();
 }

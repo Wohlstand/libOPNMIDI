@@ -109,7 +109,7 @@ struct OPN2
     #else
     std::vector<_opl3_chip> cards;
     #endif
-    std::vector<Ym2612_Emu> cardsOP2;
+    std::vector<Ym2612_Emu*>cardsOP2;
 private:
     std::vector<uint16_t>   ins; // index to adl[], cached, needed by Touch()
     std::vector<uint8_t>    pit;  // value poked to B0, cached, needed by NoteOff)(
@@ -173,6 +173,7 @@ public:
     void Silence();
     void updateFlags();
     void ChangeVolumeRangesModel(OPNMIDI_VolumeModels volumeModel);
+    void ClearChips();
     void Reset();
 };
 

@@ -434,18 +434,18 @@ OPNMIDI_EXPORT int opn2_play(OPN2_MIDIPlayer *device, int sampleCount, short *ou
                     //#else
                     //OPL3_GenerateStream(&(reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer))->opn.cards[0], out_buf.data(), static_cast<Bit32u>(in_generatedStereo));
                     //#endif
-                    (reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer))->opn.cardsOP2[0].run(int(in_generatedStereo), out_buf.data());
+                    (reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer))->opn.cardsOP2[0]->run(int(in_generatedStereo), out_buf.data());
                     /* Process it */
                     SendStereoAudio(device, sampleCount, in_generatedStereo, out_buf.data(), gotten_len, out);
                 }
                 else if(n_periodCountStereo > 0)
                 {
-                    #ifdef ADLMIDI_USE_DOSBOX_OPL
-                    std::vector<int32_t> in_mixBuffer;
-                    in_mixBuffer.resize(1024); //n_samples * 2
-                    ssize_t in_generatedStereo = n_periodCountStereo;
-                    #endif
-                    //memset(out_buf.data(), 0, in_countStereoU * sizeof(short));
+                    //#ifndef ADLMIDI_USE_DOSBOX_OPL
+                    //std::vector<int16_t> in_mixBuffer;
+                    //in_mixBuffer.resize(1024); //n_samples * 2
+                    //ssize_t in_generatedStereo = n_periodCountStereo;
+                    //#endif
+                    memset(out_buf.data(), 0, in_countStereoU * sizeof(short));
                     /* Generate data from every chip and mix result */
                     for(unsigned card = 0; card < device->NumCards; ++card)
                     {
@@ -458,7 +458,7 @@ OPNMIDI_EXPORT int opn2_play(OPN2_MIDIPlayer *device, int sampleCount, short *ou
                         //#else
                         //OPL3_GenerateStreamMix(&(reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer))->opn.cards[card], out_buf.data(), static_cast<Bit32u>(in_generatedStereo));
                         //#endif
-                        (reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer))->opn.cardsOP2[card].run(int(in_generatedStereo), out_buf.data());
+                        (reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer))->opn.cardsOP2[card]->run(int(in_generatedStereo), out_buf.data());
                     }
 
                     /* Process it */

@@ -102,8 +102,9 @@ int main(int argc, char** argv)
     if(SDL_OpenAudio(&spec, &obtained) < 0)
     {
         std::fprintf(stderr, "Couldn't open audio: %s\n", SDL_GetError());
-        //return 1;
+        return 1;
     }
+
     if(spec.samples != obtained.samples)
         std::fprintf(stderr, "Wanted (samples=%u,rate=%u,channels=%u); obtained (samples=%u,rate=%u,channels=%u)\n",
             spec.samples,    spec.freq,    spec.channels,
@@ -118,6 +119,7 @@ int main(int argc, char** argv)
     }
 
     opn2_setNumCards(myDevice, 4);
+    opn2_setLogarithmicVolumes(myDevice, 0);
     opn2_setVolumeRangeModel(myDevice, OPNMIDI_VolumeModel_Generic);
 
     while(argc > 3)
@@ -149,7 +151,8 @@ int main(int argc, char** argv)
 
     SDL_PauseAudio(0);
 
-    printf("Start playing of %s...\n", argv[2]);
+    printf("Playing of %s...\n\nPress Ctrl+C to abort", argv[2]);
+    fflush(stdout);
 
     while(1)
     {
@@ -157,6 +160,8 @@ int main(int argc, char** argv)
         unsigned long gotten = opn2_play(myDevice, 4096, buff);
         if(gotten<=0)
             break;
+
+
 
         AudioBuffer_lock.Lock();
             size_t pos = AudioBuffer.size();
