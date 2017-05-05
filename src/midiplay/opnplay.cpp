@@ -106,7 +106,8 @@ int main(int argc, char** argv)
     }
 
     if(spec.samples != obtained.samples)
-        std::fprintf(stderr, "Wanted (samples=%u,rate=%u,channels=%u); obtained (samples=%u,rate=%u,channels=%u)\n",
+        std::fprintf(stderr, "Wanted (samples=%u,rate=%u,channels=%u);"
+                             "\nobtained (samples=%u,rate=%u,channels=%u)\n",
             spec.samples,    spec.freq,    spec.channels,
             obtained.samples,obtained.freq,obtained.channels);
 
