@@ -1,5 +1,5 @@
 # libOPNMIDI
-libOPNMIDI is a free MIDI to WAV conversion library with OPL3 emulation
+libOPNMIDI is a free MIDI to WAV conversion library with OPN2 emulation
 
 OPNMIDI Library:   Copyright (c) 2017 Vitaly Novichkov <admin@wohlnet.ru>
 
