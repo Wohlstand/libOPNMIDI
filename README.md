@@ -28,4 +28,4 @@ Library is based on the libADLMIDI, a MIDI playing libtary with OPL3 emulation:
 
 # Working demos
 
-* <Coming soon>
+* {Coming soon}
