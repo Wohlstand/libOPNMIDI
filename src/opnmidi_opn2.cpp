@@ -274,7 +274,7 @@ void OPN2::Touch_Real(unsigned c, unsigned volume)
     for(uint8_t op = 0; op < 4; op++)
     {
         uint8_t x = op_vol[op];
-        uint8_t vol_res = (alg_do[alg][op]) ? uint8_t(127 - volume + volume * ((x&127)/127)) : x;
+        uint8_t vol_res = (alg_do[alg][op]) ? uint8_t(127 - (volume * (127 - (x&127)))/127) : x;
         PokeO(card, port, 0x40 + cc + (4 * op), vol_res);
     }
     //if(four_op_category[c] == 0 || four_op_category[c] == 3)

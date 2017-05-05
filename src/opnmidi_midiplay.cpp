@@ -295,8 +295,7 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
                 else
                 {
                     // The formula below: SOLVE(V=127^3 * 2^( (A-63.49999) / 8), A)
-                    volume = volume > 8725 ? static_cast<unsigned int>(std::log(volume) * 11.541561 + (0.5 - 104.22845)) : 0;
-                    volume *= 2;
+                    volume = volume > 8725 ? static_cast<unsigned int>((std::log(double(volume)) * (11.541561) + (0.5 - 104.22845)) * 2.0) : 0;
                     // The incorrect formula below: SOLVE(V=127^3 * (2^(A/63)-1), A)
                     //opl.Touch_Real(c, volume>11210 ? 91.61112 * std::log(4.8819E-7*volume + 1.0)+0.5 : 0);
                 }
@@ -320,6 +319,7 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
                 volume = ((Ch[MidCh].volume * Ch[MidCh].expression) * 127 / 16129);
                 volume = ((64 * (vol + 0x80)) * volume) >> 15;
                 //volume = ((63 * (vol + 0x80)) * Ch[MidCh].volume) >> 15;
+                volume *= 2;//OPN has 0~127 range
                 opn.Touch_Real(c, volume);
             }
             break;
@@ -329,6 +329,7 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
                 //volume = 63 - W9X_volume_mapping_table[(((vol * Ch[MidCh].volume /** Ch[MidCh].expression*/) * 127 / 16129 /*2048383*/) >> 2)];
                 volume = 63 - W9X_volume_mapping_table[(((vol * Ch[MidCh].volume * Ch[MidCh].expression) * 127 / 2048383) >> 2)];
                 //volume = W9X_volume_mapping_table[vol >> 2] + volume;
+                volume *= 2;//OPN has 0~127 range
                 opn.Touch_Real(c, volume);
             }
             break;
