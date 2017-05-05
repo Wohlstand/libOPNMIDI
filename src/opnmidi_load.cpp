@@ -260,32 +260,7 @@ bool OPNMIDIplay::LoadMIDI(OPNMIDIplay::fileReader &fr)
     opn.ChangeVolumeRangesModel(static_cast<OPNMIDI_VolumeModels>(config->VolumeModel));
 
     if(config->VolumeModel == OPNMIDI_VolumeModel_AUTO)
-    {
-        switch(config->OpnBank)
-        {
-        default:
-            opn.m_volumeScale = OPN2::VOLUME_Generic;
-            break;
-        case 14://Doom 2
-        case 15://Heretic
-        case 16://Doom 1
-        case 64://Raptor
-            opn.m_volumeScale = OPN2::VOLUME_DMX;
-            break;
-        case 58://FatMan bank hardcoded in the Windows 9x drivers
-        case 65://Modded Wohlstand's Fatman bank
-        case 66://O'Connel's bank
-            opn.m_volumeScale = OPN2::VOLUME_9X;
-            break;
-        case 62://Duke Nukem 3D
-        case 63://Shadow Warrior
-        case 69://Blood
-        case 70://Lee
-        case 71://Nam
-            opn.m_volumeScale = OPN2::VOLUME_APOGEE;
-            break;
-        }
-    }
+        opn.m_volumeScale = OPN2::VOLUME_Generic;
 
     opn.NumCards    = config->NumCards;
     //opn.NumFourOps  = config->NumFourOps;

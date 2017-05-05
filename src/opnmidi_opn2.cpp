@@ -388,7 +388,7 @@ void OPN2::Pan(unsigned c, unsigned value)
     const opnInstData &adli = GetAdlIns(ins[c]);
     //if(Channels[cc] != 0xFFF)
     //    Poke(card, 0xC0 + Channels[cc], GetAdlIns(ins[c]).feedconn | value);
-    uint8_t val = (/*value*/ 0xC0) | (adli.lfosens & 0x3F);
+    uint8_t val = (value & 0xC0) | (adli.lfosens & 0x3F);
     regBD[c] = val;
     PokeO(card, port, 0xB4 + cc, val);
 }

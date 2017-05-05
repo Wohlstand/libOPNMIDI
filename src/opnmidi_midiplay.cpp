@@ -770,7 +770,7 @@ void OPNMIDIplay::HandleEvent(size_t tk)
     case 0xB: // Controller change
     {
         uint8_t ctrlno = TrackData[tk][CurrentPosition.track[tk].ptr++];
-        uint8_t value = TrackData[tk][CurrentPosition.track[tk].ptr++];
+        uint8_t value  = TrackData[tk][CurrentPosition.track[tk].ptr++];
 
         switch(ctrlno)
         {
@@ -809,9 +809,7 @@ void OPNMIDIplay::HandleEvent(size_t tk)
 
         case 64: // Enable/disable sustain
             Ch[MidCh].sustain = value;
-
             if(!value) KillSustainingNotes(MidCh);
-
             break;
 
         case 11: // Change expression (another volume factor)
@@ -821,11 +819,8 @@ void OPNMIDIplay::HandleEvent(size_t tk)
 
         case 10: // Change panning
             Ch[MidCh].panning = 0x00;
-
-            if(value  < 64 + 32) Ch[MidCh].panning |= 0x40;
-
-            if(value >= 64 - 32) Ch[MidCh].panning |= 0x80;
-
+            if(value  < 64 + 32) Ch[MidCh].panning |= 0x80;
+            if(value >= 64 - 32) Ch[MidCh].panning |= 0x40;
             NoteUpdate_All(MidCh, Upd_Pan);
             break;
 

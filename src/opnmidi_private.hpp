@@ -241,7 +241,7 @@ class OPNMIDIplay
             : portamento(0),
               bank_lsb(0), bank_msb(0), patch(0),
               volume(100), expression(127),
-              panning(0x30), vibrato(0), sustain(0),
+              panning(0xC0), vibrato(0), sustain(0),
               bend(0.0), bendsense(2 / 8192.0),
               vibpos(0), vibspeed(2 * 3.141592653 * 5.0),
               vibdepth(0.5 / 127), vibdelay(0),
