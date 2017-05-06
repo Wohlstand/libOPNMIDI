@@ -141,28 +141,32 @@ int main(int argc, char **argv)
     opn2_setLogarithmicVolumes(myDevice, 0);
     opn2_setVolumeRangeModel(myDevice, OPNMIDI_VolumeModel_Generic);
 
-    while(argc > 3)
+    int arg = 1;
+    for(arg = 1; arg < argc; arg++)
     {
-        bool had_option = false;
-
-        if(!std::strcmp("-nl", argv[2]))
+        if(!std::strcmp("-nl", argv[arg]))
             opn2_setLoopEnabled(myDevice, 0);
-        else if(!std::strcmp("-s", argv[2]))
+        else if(!std::strcmp("-s", argv[arg]))
             opn2_setScaleModulators(myDevice, 1);
-        else break;
-
-        std::copy(argv + (had_option ? 4 : 3), argv + argc,
-                  argv + 2);
-        argc -= (had_option ? 2 : 1);
+        else if(!std::strcmp("--", argv[arg]))
+            break;
+        else
+            break;
     }
 
-    if(opn2_openBankFile(myDevice, argv[1]) != 0)
+    if(arg > argc - 2)
+    {
+        std::fprintf(stderr, "Missing paths!\n");
+        return 2;
+    }
+
+    if(opn2_openBankFile(myDevice, argv[arg]) != 0)
     {
         std::fprintf(stderr, "%s\n", opn2_errorString());
         return 2;
     }
 
-    if(opn2_openFile(myDevice, argv[2]) != 0)
+    if(opn2_openFile(myDevice, argv[arg + 1]) != 0)
     {
         std::fprintf(stderr, "%s\n", opn2_errorString());
         return 2;
