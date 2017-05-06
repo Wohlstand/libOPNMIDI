@@ -61,17 +61,11 @@ struct OPN_Operator
 
 struct opnInstData
 {
-    /* Junk, delete later */
-    unsigned int  modulator_E862, carrier_E862;  // See below
-    unsigned char modulator_40, carrier_40; // KSL/attenuation settings
-    unsigned char feedconn; // Feedback/connection bits for the channel
-    /* Junk, delete later */
-
     //! Operators prepared for sending to OPL chip emulator
     OPN_Operator    OPS[4];
     uint8_t         fbalg;
     uint8_t         lfosens;
-    //! Fine tuning
+    //! Note offset
     int16_t         finetune;
 };
 

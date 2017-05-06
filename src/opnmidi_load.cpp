@@ -173,12 +173,6 @@ bool OPNMIDIplay::LoadBank(OPNMIDIplay::fileReader &fr)
         meta.ms_sound_kon   = 1000;
         meta.ms_sound_koff  = 500;
         meta.fine_tune      = 0.0;
-
-        data.modulator_40 = 0;
-        data.carrier_40 = 0;
-        data.modulator_E862 = 0;
-        data.carrier_E862 = 0;
-        data.feedconn = 0;
         /* Junk, delete later */
 
         if(fr.read(idata, 1, 65) != 65)
@@ -274,9 +268,6 @@ bool OPNMIDIplay::LoadMIDI(OPNMIDIplay::fileReader &fr)
     loopStart_hit    = false;
 
     bool is_GMF = false; // GMD/MUS files (ScummVM)
-    //bool is_MUS = false; // MUS/DMX files (Doom)
-    bool is_IMF = false; // IMF
-    bool is_CMF = false; // Creative Music format (CMF/CTMF)
 
     const size_t HeaderSize = 4 + 4 + 2 + 2 + 2; // 14
     char HeaderBuf[HeaderSize] = "";
@@ -300,8 +291,6 @@ riffskip:
     else if(std::memcmp(HeaderBuf, "MUS\x1A", 4) == 0)
     {
         // MUS/DMX files (Doom)
-        //uint64_t start = ReadLEint(HeaderBuf + 6, 2);
-        //is_MUS = true;
         fr.seek(0, SEEK_END);
         size_t mus_len = fr.tell();
         fr.seek(0, SEEK_SET);
@@ -369,120 +358,19 @@ riffskip:
         //Re-Read header again!
         goto riffskip;
     }
-    else if(std::memcmp(HeaderBuf, "CTMF", 4) == 0)
-    {
-        opn.dynamic_instruments.clear();
-        opn.dynamic_metainstruments.clear();
-        // Creative Music Format (CMF).
-        // When playing CTMF files, use the following commandline:
-        // adlmidi song8.ctmf -p -v 1 1 0
-        // i.e. enable percussion mode, deeper vibrato, and use only 1 card.
-        is_CMF = true;
-        //unsigned version   = ReadLEint(HeaderBuf+4, 2);
-        uint64_t ins_start = ReadLEint(HeaderBuf + 6, 2);
-        uint64_t mus_start = ReadLEint(HeaderBuf + 8, 2);
-        //unsigned deltas    = ReadLEint(HeaderBuf+10, 2);
-        uint64_t ticks     = ReadLEint(HeaderBuf + 12, 2);
-        // Read title, author, remarks start offsets in file
-        fr.read(HeaderBuf, 1, 6);
-        //unsigned long notes_starts[3] = {ReadLEint(HeaderBuf+0,2),ReadLEint(HeaderBuf+0,4),ReadLEint(HeaderBuf+0,6)};
-        fr.seek(16, SEEK_CUR); // Skip the channels-in-use table
-        fr.read(HeaderBuf, 1, 4);
-        uint64_t ins_count =  ReadLEint(HeaderBuf + 0, 2); //, basictempo = ReadLEint(HeaderBuf+2, 2);
-        fr.seek(static_cast<long>(ins_start), SEEK_SET);
-
-        //std::printf("%u instruments\n", ins_count);
-        for(unsigned i = 0; i < ins_count; ++i)
-        {
-            unsigned char InsData[16];
-            fr.read(InsData, 1, 16);
-            /*std::printf("Ins %3u: %02X %02X %02X %02X  %02X %02X %02X %02X  %02X %02X %02X %02X  %02X %02X %02X %02X\n",
-                        i, InsData[0],InsData[1],InsData[2],InsData[3], InsData[4],InsData[5],InsData[6],InsData[7],
-                           InsData[8],InsData[9],InsData[10],InsData[11], InsData[12],InsData[13],InsData[14],InsData[15]);*/
-            struct opnInstData    adl;
-            struct opnInstMeta adlins;
-            adl.modulator_E862 =
-                ((static_cast<uint32_t>(InsData[8] & 0x07) << 24) & 0xFF000000) //WaveForm
-                | ((static_cast<uint32_t>(InsData[6]) << 16) & 0x00FF0000) //Sustain/Release
-                | ((static_cast<uint32_t>(InsData[4]) << 8) & 0x0000FF00) //Attack/Decay
-                | ((static_cast<uint32_t>(InsData[0]) << 0) & 0x000000FF); //MultKEVA
-            adl.carrier_E862 =
-                ((static_cast<uint32_t>(InsData[9] & 0x07) << 24) & 0xFF000000) //WaveForm
-                | ((static_cast<uint32_t>(InsData[7]) << 16) & 0x00FF0000) //Sustain/Release
-                | ((static_cast<uint32_t>(InsData[5]) << 8) & 0x0000FF00) //Attack/Decay
-                | ((static_cast<uint32_t>(InsData[1]) << 0) & 0x000000FF); //MultKEVA
-            adl.modulator_40 = InsData[2];
-            adl.carrier_40   = InsData[3];
-            adl.feedconn     = InsData[10] & 0x0F;
-            adl.finetune = 0;
-            adlins.opnno1 = static_cast<uint16_t>(opn.dynamic_instruments.size() | opn.DynamicInstrumentTag);
-            adlins.opnno2 = adlins.opnno1;
-            adlins.ms_sound_kon  = 1000;
-            adlins.ms_sound_koff = 500;
-            adlins.tone  = 0;
-            adlins.flags = 0;
-            adlins.fine_tune = 0.0;
-            opn.dynamic_metainstruments.push_back(adlins);
-            opn.dynamic_instruments.push_back(adl);
-        }
-
-        fr.seeku(mus_start, SEEK_SET);
-        TrackCount = 1;
-        DeltaTicks = ticks;
-        opn.OpnBank    = ~0u; // Ignore AdlBank number, use dynamic banks instead
-        //std::printf("CMF deltas %u ticks %u, basictempo = %u\n", deltas, ticks, basictempo);
-        opn.LogarithmicVolumes = true;
-        opn.AdlPercussionMode = true;
-        opn.m_volumeScale = OPN2::VOLUME_CMF;
-    }
     else
     {
-        // Try parsing as an IMF file
+        if(std::memcmp(HeaderBuf, "MThd\0\0\0\6", 8) != 0)
         {
-            size_t end = static_cast<uint8_t>(HeaderBuf[0]) + 256 * static_cast<uint8_t>(HeaderBuf[1]);
-
-            if(!end || (end & 3))
-                goto not_imf;
-
-            size_t backup_pos = fr.tell();
-            int64_t sum1 = 0, sum2 = 0;
-            fr.seek(2, SEEK_SET);
-
-            for(unsigned n = 0; n < 42; ++n)
-            {
-                int64_t value1 = fr.getc();
-                value1 += fr.getc() << 8;
-                sum1 += value1;
-                int64_t value2 = fr.getc();
-                value2 += fr.getc() << 8;
-                sum2 += value2;
-            }
-
-            fr.seek(static_cast<long>(backup_pos), SEEK_SET);
-
-            if(sum1 > sum2)
-            {
-                is_IMF = true;
-                DeltaTicks = 1;
-            }
-        }
-
-        if(!is_IMF)
-        {
-not_imf:
-
-            if(std::memcmp(HeaderBuf, "MThd\0\0\0\6", 8) != 0)
-            {
 InvFmt:
-                fr.close();
-                OPN2MIDI_ErrorString = fr._fileName + ": Invalid format\n";
-                return false;
-            }
-
-            /*size_t  Fmt =*/ ReadBEint(HeaderBuf + 8,  2);
-            TrackCount = ReadBEint(HeaderBuf + 10, 2);
-            DeltaTicks = ReadBEint(HeaderBuf + 12, 2);
+            fr.close();
+            OPN2MIDI_ErrorString = fr._fileName + ": Invalid format\n";
+            return false;
         }
+
+        /*size_t  Fmt =*/ ReadBEint(HeaderBuf + 8,  2);
+        TrackCount = ReadBEint(HeaderBuf + 10, 2);
+        DeltaTicks = ReadBEint(HeaderBuf + 12, 2);
     }
 
     TrackData.clear();
@@ -499,77 +387,19 @@ InvFmt:
     {
         // Read track header
         size_t TrackLength;
-
-        if(is_IMF)
         {
-            //std::fprintf(stderr, "Reading IMF file...\n");
-            size_t end = static_cast<uint8_t>(HeaderBuf[0]) + 256 * static_cast<uint8_t>(HeaderBuf[1]);
-            unsigned IMF_tempo = 1428;
-            static const unsigned char imf_tempo[] = {0xFF, 0x51, 0x4,
-                                                      static_cast<uint8_t>(IMF_tempo >> 24),
-                                                      static_cast<uint8_t>(IMF_tempo >> 16),
-                                                      static_cast<uint8_t>(IMF_tempo >> 8),
-                                                      static_cast<uint8_t>(IMF_tempo)
-                                                     };
-            TrackData[tk].insert(TrackData[tk].end(), imf_tempo, imf_tempo + sizeof(imf_tempo));
-            TrackData[tk].push_back(0x00);
-            fr.seek(2, SEEK_SET);
-
-            while(fr.tell() < end && !fr.eof())
-            {
-                uint8_t special_event_buf[5];
-                special_event_buf[0] = 0xFF;
-                special_event_buf[1] = 0xE3;
-                special_event_buf[2] = 0x02;
-                special_event_buf[3] = static_cast<uint8_t>(fr.getc()); // port index
-                special_event_buf[4] = static_cast<uint8_t>(fr.getc()); // port value
-                uint32_t delay = static_cast<uint16_t>(fr.getc());
-                delay += 256 * static_cast<uint16_t>(fr.getc());
-                totalGotten += 4;
-                //if(special_event_buf[3] <= 8) continue;
-                //fprintf(stderr, "Put %02X <- %02X, plus %04X delay\n", special_event_buf[3],special_event_buf[4], delay);
-                TrackData[tk].insert(TrackData[tk].end(), special_event_buf, special_event_buf + 5);
-
-                //if(delay>>21) TrackData[tk].push_back( 0x80 | ((delay>>21) & 0x7F ) );
-                if(delay >> 14)
-                    TrackData[tk].push_back(0x80 | ((delay >> 14) & 0x7F));
-
-                if(delay >> 7)
-                    TrackData[tk].push_back(0x80 | ((delay >> 7) & 0x7F));
-
-                TrackData[tk].push_back(((delay >> 0) & 0x7F));
-            }
-
-            TrackData[tk].insert(TrackData[tk].end(), EndTag + 0, EndTag + 4);
-            CurrentPosition.track[tk].delay = 0;
-            CurrentPosition.began = true;
-            //std::fprintf(stderr, "Done reading IMF file\n");
-            opn.NumFourOps = 0; //Don't use 4-operator channels for IMF playing!
-        }
-        else
-        {
-            if(is_GMF || is_CMF) // Take the rest of the file
+            if(is_GMF) // Take the rest of the file
             {
                 size_t pos = fr.tell();
                 fr.seek(0, SEEK_END);
                 TrackLength = fr.tell() - pos;
                 fr.seek(static_cast<long>(pos), SEEK_SET);
             }
-            //else if(is_MUS) // Read TrackLength from file position 4
-            //{
-            //    size_t pos = fr.tell();
-            //    fr.seek(4, SEEK_SET);
-            //    TrackLength = static_cast<size_t>(fr.getc());
-            //    TrackLength += static_cast<size_t>(fr.getc() << 8);
-            //    fr.seek(static_cast<long>(pos), SEEK_SET);
-            //}
             else
             {
                 fsize = fr.read(HeaderBuf, 1, 8);
-
                 if(std::memcmp(HeaderBuf, "MTrk", 4) != 0)
                     goto InvFmt;
-
                 TrackLength = ReadBEint(HeaderBuf + 4, 4);
             }
 
@@ -607,7 +437,6 @@ InvFmt:
     }
 
     opn.Reset(); // Reset AdLib
-    //opl.Reset(); // ...twice (just in case someone misprogrammed OPL3 previously)
     ch.clear();
     ch.resize(opn.NumChannels);
     return true;

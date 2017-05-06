@@ -624,9 +624,8 @@ void OPNMIDIplay::HandleEvent(size_t tk)
             }
         }
 
-        //int meta = banks[opl.AdlBank][midiins];
-        const uint32_t      meta   = opn.GetAdlMetaNumber(midiins);
-        const opnInstMeta  &ains  = opn.GetAdlMetaIns(meta);
+        const uint32_t      meta    = midiins;
+        const opnInstMeta  &ains    = opn.GetAdlMetaIns(meta);
         int16_t tone = note;
 
         if(ains.tone)

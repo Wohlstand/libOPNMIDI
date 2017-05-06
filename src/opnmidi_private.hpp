@@ -171,7 +171,6 @@ public:
     void Patch(uint16_t c, uint16_t i);
     void Pan(unsigned c, unsigned value);
     void Silence();
-    void updateFlags();
     void ChangeVolumeRangesModel(OPNMIDI_VolumeModels volumeModel);
     void ClearChips();
     void Reset();
