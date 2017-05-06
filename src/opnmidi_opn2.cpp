@@ -57,11 +57,6 @@ OPN2::OPN2() :
     DynamicInstrumentTag(0x8000u),
     DynamicMetaInstrumentTag(0x4000000u),
     NumCards(1),
-    OpnBank(0),
-    NumFourOps(0),
-    HighTremoloMode(false),
-    HighVibratoMode(false),
-    AdlPercussionMode(false),
     LogarithmicVolumes(false),
     m_volumeScale(VOLUME_Generic)
 {}

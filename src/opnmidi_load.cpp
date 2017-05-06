@@ -246,9 +246,6 @@ bool OPNMIDIplay::LoadMIDI(OPNMIDIplay::fileReader &fr)
 
     config->stored_samples = 0;
     config->backup_samples_size = 0;
-    opn.AdlPercussionMode = config->AdlPercussionMode;
-    opn.HighTremoloMode = config->HighTremoloMode;
-    opn.HighVibratoMode = config->HighVibratoMode;
     opn.ScaleModulators = config->ScaleModulators;
     opn.LogarithmicVolumes = config->LogarithmicVolumes;
     opn.ChangeVolumeRangesModel(static_cast<OPNMIDI_VolumeModels>(config->VolumeModel));

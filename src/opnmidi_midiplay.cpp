@@ -72,45 +72,6 @@ static const uint8_t W9X_volume_mapping_table[32] =
 };
 
 
-//static const char MIDIsymbols[256+1] =
-//"PPPPPPhcckmvmxbd"  // Ins  0-15
-//"oooooahoGGGGGGGG"  // Ins 16-31
-//"BBBBBBBBVVVVVHHM"  // Ins 32-47
-//"SSSSOOOcTTTTTTTT"  // Ins 48-63
-//"XXXXTTTFFFFFFFFF"  // Ins 64-79
-//"LLLLLLLLpppppppp"  // Ins 80-95
-//"XXXXXXXXGGGGGTSS"  // Ins 96-111
-//"bbbbMMMcGXXXXXXX"  // Ins 112-127
-//"????????????????"  // Prc 0-15
-//"????????????????"  // Prc 16-31
-//"???DDshMhhhCCCbM"  // Prc 32-47
-//"CBDMMDDDMMDDDDDD"  // Prc 48-63
-//"DDDDDDDDDDDDDDDD"  // Prc 64-79
-//"DD??????????????"  // Prc 80-95
-//"????????????????"  // Prc 96-111
-//"????????????????"; // Prc 112-127
-
-static const uint8_t PercussionMap[256] =
-    "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"//GM
-    "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0" // 3 = bass drum
-    "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0" // 4 = snare
-    "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0" // 5 = tom
-    "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0" // 6 = cymbal
-    "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0" // 7 = hihat
-    "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
-    "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
-    "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"//GP0
-    "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"//GP16
-    //2 3 4 5 6 7 8 940 1 2 3 4 5 6 7
-    "\0\0\0\3\3\7\4\7\4\5\7\5\7\5\7\5"//GP32
-    //8 950 1 2 3 4 5 6 7 8 960 1 2 3
-    "\5\6\5\6\6\0\5\6\0\6\0\6\5\5\5\5"//GP48
-    //4 5 6 7 8 970 1 2 3 4 5 6 7 8 9
-    "\5\0\0\0\0\0\7\0\0\0\0\0\0\0\0\0"//GP64
-    "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
-    "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
-    "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
-
 void OPNMIDIplay::OpnChannel::AddAge(int64_t ms)
 {
     if(users.empty())
@@ -165,12 +126,11 @@ double OPNMIDIplay::Tick(double s, double granularity)
 
     int AntiFreezeCounter = 10000;//Limit 10000 loops to avoid freezing
 
-    while((CurrentPosition.wait <= granularity * 0.5l) && (AntiFreezeCounter > 0))
+    while((CurrentPosition.wait <= granularity * 0.5) && (AntiFreezeCounter > 0))
     {
         //std::fprintf(stderr, "wait = %g...\n", CurrentPosition.wait);
         ProcessEvents();
-
-        if(CurrentPosition.wait <= 0.0l)
+        if(CurrentPosition.wait <= 0.0)
             AntiFreezeCounter--;
     }
 
@@ -671,35 +631,21 @@ void OPNMIDIplay::HandleEvent(size_t tk)
             {
                 if(ccount == 1 && static_cast<int32_t>(a) == adlchannel[0]) continue;
                 // ^ Don't use the same channel for primary&secondary
-//                if(i[0] == i[1] || pseudo_4op)
-//                {
-//                    // Only use regular channels
-////                    uint8_t expected_mode = 0;
-////                    if(opn.AdlPercussionMode == 1)
-////                    {
-////                        if(cmf_percussion_mode)
-////                            expected_mode = MidCh < 11 ? 0 : (3 + MidCh - 11); // CMF
-////                        else
-////                            expected_mode = PercussionMap[midiins & 0xFF];
-////                    }
-////                    if(opn.four_op_category[a] != expected_mode)
-////                        continue;
-//                }
-//                else
-//                {
-//                    if(ccount == 0)
-//                    {
-//                        // Only use four-op master channels
-//                        if(opn.four_op_category[a] != 1)
-//                            continue;
-//                    }
-//                    else
-//                    {
-//                        // The secondary must be played on a specific channel.
-//                        if(a != static_cast<uint32_t>(adlchannel[0]) + 3)
-//                            continue;
-//                    }
-//                }
+                // ===== Kept for future pseudo-8-op mode
+                //if(i[0] == i[1] || pseudo_4op)
+                //{
+                //    // Only use regular channels
+                //    uint8_t expected_mode = 0;
+                //    if(opn.AdlPercussionMode == 1)
+                //    {
+                //        if(cmf_percussion_mode)
+                //            expected_mode = MidCh < 11 ? 0 : (3 + MidCh - 11); // CMF
+                //        else
+                //            expected_mode = PercussionMap[midiins & 0xFF];
+                //    }
+                //    if(opn.four_op_category[a] != expected_mode)
+                //        continue;
+                //}
                 long s = CalculateAdlChannelGoodness(a, i[ccount], MidCh);
                 if(s > bs)
                 {

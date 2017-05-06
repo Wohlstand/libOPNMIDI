@@ -42,9 +42,6 @@ struct OPN2_MIDIPlayer
 {
     unsigned int OpnBank;
     unsigned int NumCards;
-    unsigned int HighTremoloMode;
-    unsigned int HighVibratoMode;
-    unsigned int AdlPercussionMode;
     unsigned int LogarithmicVolumes;
     int VolumeModel;
     unsigned int QuitFlag;
@@ -70,19 +67,7 @@ struct OPN2_MIDIPlayer
 };
 
 /* Sets number of emulated sound cards (from 1 to 100). Emulation of multiple sound cards exchanges polyphony limits*/
-extern int opn2_setNumCards(struct OPN2_MIDIPlayer *device, int numCards);
-
-/* Sets a number of the patches bank from 0 to N banks */
-extern int opn2_setBank(struct OPN2_MIDIPlayer *device, int bank);
-
-/*Enable or disable AdLib percussion mode*/
-extern void opn2_setPercMode(struct OPN2_MIDIPlayer *device, int percmod);
-
-/*Enable or disable deep vibrato*/
-extern void opn2_setHVibrato(struct OPN2_MIDIPlayer *device, int hvibro);
-
-/*Enable or disable deep tremolo*/
-extern void opn2_setHTremolo(struct OPN2_MIDIPlayer *device, int htremo);
+extern int  opn2_setNumCards(struct OPN2_MIDIPlayer *device, int numCards);
 
 /*Enable or disable Enables scaling of modulator volumes*/
 extern void opn2_setScaleModulators(struct OPN2_MIDIPlayer *device, int smod);

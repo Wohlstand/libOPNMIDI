@@ -128,13 +128,8 @@ private:
     const opnInstData       &GetAdlIns(unsigned short insno);
 
 public:
-    unsigned int NumCards;
-    unsigned int OpnBank;
-    unsigned int NumFourOps;
-    bool HighTremoloMode;
-    bool HighVibratoMode;
-    bool AdlPercussionMode;
-    bool ScaleModulators;
+    unsigned int    NumCards;
+    bool            ScaleModulators;
 
     bool LogarithmicVolumes;
     char ___padding2[3];
@@ -159,14 +154,9 @@ public:
 
     void PokeO(size_t card, uint8_t port, uint8_t index, uint8_t value);
 
-    //void Poke(size_t card, uint32_t index, uint32_t value);
-    //void PokeN(size_t card, uint16_t index, uint8_t value);
-
-
     void NoteOff(size_t c);
     void NoteOn(unsigned c, double hertz);
     void Touch_Real(unsigned c, unsigned volume);
-    //void Touch(unsigned c, unsigned volume)
 
     void Patch(uint16_t c, uint16_t i);
     void Pan(unsigned c, unsigned value);
@@ -512,23 +502,6 @@ private:
 public:
     uint64_t ChooseDevice(const std::string &name);
 };
-
-struct FourChars
-{
-    char ret[4];
-
-    FourChars(const char *s)
-    {
-        for(unsigned c = 0; c < 4; ++c)
-            ret[c] = s[c];
-    }
-    FourChars(unsigned w) // Little-endian
-    {
-        for(unsigned c = 0; c < 4; ++c)
-            ret[c] = static_cast<int8_t>((w >>(c * 8)) & 0xFF);
-    }
-};
-
 
 extern int opn2RefreshNumCards(OPN2_MIDIPlayer *device);
 
