@@ -10,7 +10,6 @@ LIBS += -L/home/vitaly/_git_repos/PGE-Project/_Libs/_builds/linux/lib
 LIBS += -Wl,-Bstatic -lSDL2 -Wl,-Bdynamic -lpthread -ldl
 
 HEADERS += \
-    src/dbopl.h \
     src/fraction.h \
     src/Ym2612_Emu.h \
     src/opnmidi.h \

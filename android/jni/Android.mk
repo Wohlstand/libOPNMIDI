@@ -1,7 +1,7 @@
 LOCAL_PATH := $(call my-dir)/../..
 include $(CLEAR_VARS)
 
-LOCAL_MODULE     := ADLMIDI
+LOCAL_MODULE     := OPNMIDI
 
 LOCAL_C_INCLUDES := \
 	$(LOCAL_PATH)/src
@@ -9,9 +9,10 @@ LOCAL_C_INCLUDES := \
 LOCAL_ARM_MODE   := arm
 LOCAL_CPP_FEATURES := exceptions
 LOCAL_LDLIBS     := -llog
-LOCAL_SRC_FILES := src/adldata.cpp src/adlmidi.cpp src/dbopl.cpp src/nukedopl3.c \
-                   src/adlmidi_load.cpp src/adlmidi_midiplay.cpp \
-                   src/adlmidi_opl3.cpp src/adlmidi_private.cpp \
-                   src/adlmidi_xmi2mid.c src/adlmidi_mus2mid.c
+LOCAL_SRC_FILES := src/opnmidi.cpp src/Ym2612_Emu.cpp \
+                   src/opnmidi_load.cpp src/opnmidi_midiplay.cpp \
+                   src/opnmidi_opn2.cpp src/opnmidi_private.cpp \
+                   src/opnmidi_xmi2mid.c src/opnmidi_mus2mid.c
 
 include $(BUILD_SHARED_LIBRARY)
+

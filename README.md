@@ -5,7 +5,7 @@ OPNMIDI Library:   Copyright (c) 2017 Vitaly Novichkov <admin@wohlnet.ru>
 
 Library is based on the libADLMIDI, a MIDI playing libtary with OPL3 emulation:
 
-**This library in WIP**
+**This library in BETA. Please report me any bugs and imperfections you have found**
 
 # Tested on platforms
 * Linux GCC 4.8, 4.9, 5.4 / CLang
