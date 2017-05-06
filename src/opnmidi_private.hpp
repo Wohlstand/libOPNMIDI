@@ -57,12 +57,6 @@
 #include <algorithm>
 
 #include "fraction.h"
-#ifdef ADLMIDI_USE_DOSBOX_OPL
-#include "dbopl.h"
-#else
-#include "nukedopl3.h"
-#endif
-
 #include "Ym2612_Emu.h"
 
 #include "opnbank.h"
@@ -104,11 +98,6 @@ struct OPN2
     uint32_t NumChannels;
     char ____padding[4];
     OPN2_MIDIPlayer *_parent;
-    #ifdef ADLMIDI_USE_DOSBOX_OPL
-    std::vector<DBOPL::Handler> cards;
-    #else
-    std::vector<_opl3_chip> cards;
-    #endif
     std::vector<Ym2612_Emu*>cardsOP2;
 private:
     std::vector<uint16_t>   ins; // index to adl[], cached, needed by Touch()
@@ -143,6 +132,7 @@ public:
     } m_volumeScale;
 
     OPN2();
+    ~OPN2();
     char ____padding3[8];
     std::vector<char> four_op_category; // 1 = quad-master, 2 = quad-slave, 0 = regular
     // 3 = percussion BassDrum

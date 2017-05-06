@@ -61,6 +61,11 @@ OPN2::OPN2() :
     m_volumeScale(VOLUME_Generic)
 {}
 
+OPN2::~OPN2()
+{
+    ClearChips();
+}
+
 void OPN2::PokeO(size_t card, uint8_t port, uint8_t index, uint8_t value)
 {
     if(port == 1)
@@ -238,12 +243,6 @@ void OPN2::ClearChips()
 
 void OPN2::Reset()
 {
-    #ifdef ADLMIDI_USE_DOSBOX_OPL
-    DBOPL::Handler emptyChip; //Constructors inside are will initialize necessary fields
-    #else
-    _opl3_chip emptyChip;
-    memset(&emptyChip, 0, sizeof(_opl3_chip));
-    #endif
     ClearChips();
     ins.clear();
     pit.clear();
