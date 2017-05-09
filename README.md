@@ -1,9 +1,9 @@
 # libOPNMIDI
 libOPNMIDI is a free MIDI to WAV conversion library with OPN2 (YM2612) emulation
 
-OPNMIDI Library:   Copyright (c) 2017 Vitaly Novichkov <admin@wohlnet.ru>
+OPNMIDI Library: Copyright (c) 2017 Vitaly Novichkov <admin@wohlnet.ru>
 
-Library is based on the libADLMIDI, a MIDI playing libtary with OPL3 emulation:
+Library is based on core of the [libADLMIDI](https://github.com/Wohlstand/libADLMIDI), a MIDI playing library with OPL3 emulation.
 
 **This library in BETA. Please report me any bugs and imperfections you have found**
 
@@ -15,6 +15,7 @@ Library is based on the libADLMIDI, a MIDI playing libtary with OPL3 emulation:
 
 # Key features
 * OPN2 emulation
+* Customizable bank of FM patches (You have to use the [bank editor](https://github.com/Wohlstand/OPN2BankEditor) to create own sound bank)
 * Stereo sound
 * Number of simulated chips can be specified as 1-100 (maximum channels 600!)
 * Pan (binary panning, i.e. left/right side on/off)
