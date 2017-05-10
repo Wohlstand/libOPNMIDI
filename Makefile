@@ -7,18 +7,17 @@ RM=rm
 RM_F=rm -Rf
 
 #DEBUG=-O0 -fno-inline -D_GLIBCXX_DEBUG -g -fstack-protector-all -fdata-sections
-
-DEBUG=-Ofast -g
-
+#DEBUG=-Ofast -g
 #DEBUG += -fno-tree-vectorize
 
 # -march=pentium -mno-sse -mno-sse2 -mno-sse3 -mmmx
 
-CFLAGS += -DLIBADLMIDI_VISIBILITY
-
+CFLAGS   += -DLIBADLMIDI_VISIBILITY
 CPPFLAGS += -DLIBADLMIDI_VISIBILITY
-
 CPPFLAGS += -std=c++11 -pedantic -Wall -Wextra
+
+CFLAGS   += -O2
+CPPFLAGS += -O2
 
 include make.rules
 
