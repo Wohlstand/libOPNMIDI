@@ -36,14 +36,14 @@ You need to make in the any IDE a library project and put into it next files
 
 * opnmidi.h    - Library API, use it to control library
 
-* Ym2612_Emu.h  - Yamaha OPN2 Emulation header
+* Ym2612_ChipEmu.h  - Yamaha OPN2 Emulation header
 * fraction.h    - Fraction number handling
 * opnbank.h    - bank structures definition
 * opnmidi_private.hpp - header of internal private APIs
 * opnmidi_mus2mid.h - MUS2MID converter header
 * opnmidi_xmi2mid.h - XMI2MID converter header
 
-* Ym2612_Emu.cpp   - code of Yamaha OPN2 emulator by Stéphane Dallongeville, improved by Shay Green
+* Ym2612_ChipEmu.cpp   - code of Yamaha OPN2 emulator by Stéphane Dallongeville, improved by Shay Green
 * opnmidi.cpp   - code of library
 
 * opnmidi_load.cpp	- Source of file loading and parsing processing

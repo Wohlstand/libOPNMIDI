@@ -4,13 +4,13 @@
 #ifndef YM2612_EMU_H
 #define YM2612_EMU_H
 
-struct Ym2612_Impl;
+struct OPNMIDI_Ym2612_Impl;
 
-class Ym2612_Emu  {
-	Ym2612_Impl* impl;
+class OPNMIDI_Ym2612_Emu  {
+    OPNMIDI_Ym2612_Impl* impl;
 public:
-	Ym2612_Emu() { impl = 0; }
-	~Ym2612_Emu();
+    OPNMIDI_Ym2612_Emu() { impl = 0; }
+    ~OPNMIDI_Ym2612_Emu();
 	
 	// Set output sample rate and chip clock rates, in Hz. Returns non-zero
 	// if error.

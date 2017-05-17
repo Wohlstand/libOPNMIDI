@@ -459,7 +459,7 @@ static const char mt32asgs[256] = {
     121, 0  /* 127 Jungle Tune set to Breath Noise */
 };
 
-int AdlMidi_xmi2midi(uint8_t *in, uint32_t insize,
+int OpnMidi_xmi2midi(uint8_t *in, uint32_t insize,
                  uint8_t **out, uint32_t *outsize,
                  uint32_t convert_type) {
     struct xmi_ctx ctx;

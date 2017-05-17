@@ -57,7 +57,7 @@
 #include <algorithm>
 
 #include "fraction.h"
-#include "Ym2612_Emu.h"
+#include "Ym2612_ChipEmu.h"
 
 #include "opnbank.h"
 #include "opnmidi.h"
@@ -98,7 +98,7 @@ struct OPN2
     uint32_t NumChannels;
     char ____padding[4];
     OPN2_MIDIPlayer *_parent;
-    std::vector<Ym2612_Emu*>cardsOP2;
+    std::vector<OPNMIDI_Ym2612_Emu*>cardsOP2;
 private:
     std::vector<uint16_t>   ins; // index to adl[], cached, needed by Touch()
     std::vector<uint8_t>    pit;  // value poked to B0, cached, needed by NoteOff)(

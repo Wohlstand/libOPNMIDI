@@ -303,7 +303,7 @@ riffskip:
 
         uint8_t *mid = NULL;
         uint32_t mid_len = 0;
-        int m2mret = AdlMidi_mus2midi(mus, static_cast<uint32_t>(mus_len),
+        int m2mret = OpnMidi_mus2midi(mus, static_cast<uint32_t>(mus_len),
                                       &mid, &mid_len, 0);
         if(mus) free(mus);
         if(m2mret < 0)
@@ -341,7 +341,7 @@ riffskip:
 
         uint8_t *mid = NULL;
         uint32_t mid_len = 0;
-        int m2mret = AdlMidi_xmi2midi(mus, static_cast<uint32_t>(mus_len),
+        int m2mret = OpnMidi_xmi2midi(mus, static_cast<uint32_t>(mus_len),
                                       &mid, &mid_len, XMIDI_CONVERT_NOCONVERSION);
         if(mus) free(mus);
         if(m2mret < 0)

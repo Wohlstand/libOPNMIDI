@@ -249,7 +249,7 @@ void OPN2::Reset()
     regBD.clear();
     cardsOP2.resize(NumCards, NULL);
     for(size_t i = 0; i < cardsOP2.size(); i++)
-        cardsOP2[i] = new Ym2612_Emu();
+        cardsOP2[i] = new OPNMIDI_Ym2612_Emu();
     NumChannels = NumCards * 6;
     ins.resize(NumChannels,   189);
     pit.resize(NumChannels,   0);
