@@ -7,18 +7,24 @@
 Author:             Vitaliy Novichkov "Wohlstand"
 Contacts emails:    admin@wohlnet.ru, nvd339@yandex.ru
 ===============================================================================
+
 ===============================================================================
 Contents:
     1. Single-instrument entry
     2. Instrument file (OPNI)
     3. MIDI playing bank file (WOPN)
 ===============================================================================
+
+
 ===============================================================================
                         1. Single-instrument entry
 ===============================================================================
+
     Each instrument file contains a set of data for single
 channel of YM2612 chip to setup the timbre
+
 Lenght of each instrument entry is 65 bytes
+
 Bytes-Lenght  | Description
 -------------------------------------------
     32        | Name of instrument null-terminated string
@@ -35,12 +41,17 @@ Bytes-Lenght  | Description
     1         | Systain and Release register data
     1         | SSG-EG register data
 -------------------------------------------
+
+
 ===============================================================================
                          2. Instrument file (OPNI)
 ===============================================================================
+
     Each instrument file contains a set of data for single
 channel of YM2612 chip to setup the timbre on it.
+
 Total data lenght: 77 bytes
+
 Bytes-Lenght |  Description
 ---------------Header--------------------
     11       |  Magic number "WOPN2-INST\0". Where '\0' is a zero byte which
@@ -48,22 +59,25 @@ Bytes-Lenght |  Description
     1        |  Is this instrument a percussion. 0 - melodic, or 1 - percussion
 ----------------Data---------------------
     65       |  [Single-instrument entry], look at top of this text file
+
+
 ===============================================================================
                       3. MIDI playing bank file (WOPN)
 ===============================================================================
+
     Bank format designed to store instrument bank for playing MIDI
 in multiple standards like GM, GS and XG. Format allows to save
 multiple sets with 128-instruments which is needed to store
 GS and XG instrument sets which are have more than standard 128
 instruments with a single bank.
+
 Total data lenght is sum of: 17 + (65*128*MBanks) + (65*128*PBanks) bytes
+
 Bytes-Lenght |      Description
 ---------------Header--------------------
 --Header--
     11            | Magic number "WOPN2-BANK\0". Where '\0' is a zero byte
                   |     which termiates the string
-    1             | Is this instrument a percussion.
-                  | 0 - melodic, or 1 - percussion
     2             | [MBanks] Unsigned 16-bit integer, count of melodic
                   |     MIDI banks (every bank contains 128 instruments)
     2             | [PBanks] Unsigned 16-bit integer, count of percussion
@@ -76,4 +90,6 @@ Bytes-Lenght |      Description
     65*128*PBanks | 128 [Single-instrument entries] per each bank,
                   |     look at top of this text file
 -----------------------------------------
+
+
 
