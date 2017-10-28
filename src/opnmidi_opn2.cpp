@@ -68,10 +68,15 @@ OPN2::~OPN2()
 
 void OPN2::PokeO(size_t card, uint8_t port, uint8_t index, uint8_t value)
 {
+    #ifdef USE_LEGACY_EMULATOR
     if(port == 1)
         cardsOP2[card]->write1(index, value);
     else
         cardsOP2[card]->write0(index, value);
+    #else
+    OPN2_WriteBuffered(cardsOP2[card], 0 + (port) * 2, index);
+    OPN2_WriteBuffered(cardsOP2[card], 1 + (port) * 2, value);
+    #endif
 }
 
 void OPN2::NoteOff(size_t c)
@@ -102,8 +107,8 @@ void OPN2::NoteOn(unsigned c, double hertz) // Hertz range: 0..131071
     }
 
     x2 += static_cast<uint32_t>(hertz + 0.5);
-    PokeO(card, port, 0xA0 + cc,  x2 & 0xFF);
     PokeO(card, port, 0xA4 + cc, (x2>>8) & 0xFF);//Set frequency and octave
+    PokeO(card, port, 0xA0 + cc,  x2 & 0xFF);
     PokeO(card, 0, 0x28, 0xF0 + NoteChannels[ch4]);
     pit[c] = static_cast<uint8_t>(x2 >> 8);
 }
@@ -248,8 +253,21 @@ void OPN2::Reset()
     pit.clear();
     regBD.clear();
     cardsOP2.resize(NumCards, NULL);
+
+    #ifndef USE_LEGACY_EMULATOR
+    OPN2_SetOptions(ym3438_type_discrete);
+    #endif
     for(size_t i = 0; i < cardsOP2.size(); i++)
+    {
+    #ifdef USE_LEGACY_EMULATOR
         cardsOP2[i] = new OPNMIDI_Ym2612_Emu();
+        cardsOP2[i]->set_rate(_parent->PCM_RATE, 7153353.0 * 2.0);
+    #else
+        cardsOP2[i] = new ym3438_t;
+        std::memset(cardsOP2[i], 0, sizeof(ym3438_t));
+        OPN2_Reset(cardsOP2[i], (Bit32u)_parent->PCM_RATE, (Bit32u)(7153353.0 * 2.0));
+    #endif
+    }
     NumChannels = NumCards * 6;
     ins.resize(NumChannels,   189);
     pit.resize(NumChannels,   0);
@@ -257,7 +275,6 @@ void OPN2::Reset()
 
     for(unsigned card = 0; card < NumCards; ++card)
     {
-        cardsOP2[card]->set_rate(_parent->PCM_RATE, 7153353.0 * 2.0);
         PokeO(card, 0, 0x22, regLFO);//push current LFO state
         PokeO(card, 0, 0x27, 0x00);  //set Channel 3 normal mode
         PokeO(card, 0, 0x2B, 0x00);  //Disable DAC
