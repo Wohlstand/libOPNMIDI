@@ -137,7 +137,11 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    #ifdef USE_LEGACY_EMULATOR
+    opn2_setNumCards(myDevice, 8);
+    #else
     opn2_setNumCards(myDevice, 3);
+    #endif
     opn2_setLogarithmicVolumes(myDevice, 0);
     opn2_setVolumeRangeModel(myDevice, OPNMIDI_VolumeModel_Generic);
 
