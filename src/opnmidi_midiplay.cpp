@@ -327,11 +327,7 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
                 if(Ch[MidCh].vibrato && d.vibdelay >= Ch[MidCh].vibdelay)
                     bend += Ch[MidCh].vibrato * Ch[MidCh].vibdepth * std::sin(Ch[MidCh].vibpos);
 
-                #ifdef ADLMIDI_USE_DOSBOX_OPL
-#define BEND_COEFFICIENT 172.00093
-                #else
-#define BEND_COEFFICIENT 172.4387
-                #endif
+#define BEND_COEFFICIENT 321.88557
                 opn.NoteOn(c, BEND_COEFFICIENT * std::exp(0.057762265 * (tone + bend + phase)));
 #undef BEND_COEFFICIENT
             }
