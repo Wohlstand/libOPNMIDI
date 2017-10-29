@@ -97,10 +97,10 @@ void OPN2::NoteOn(unsigned c, double hertz) // Hertz range: 0..131071
 
     uint16_t x2 = 0x0000;
 
-    if(hertz < 0 || hertz > 131071) // Avoid infinite loop
+    if(hertz < 0 || hertz > 262143) // Avoid infinite loop
         return;
 
-    while(hertz >= 1023.5)
+    while(hertz >= 2047.5)
     {
         hertz /= 2.0;    // Calculate octave
         x2 += 0x800;
@@ -261,11 +261,11 @@ void OPN2::Reset()
     {
     #ifdef USE_LEGACY_EMULATOR
         cardsOP2[i] = new OPNMIDI_Ym2612_Emu();
-        cardsOP2[i]->set_rate(_parent->PCM_RATE, 7153353.0 * 2.0);
+        cardsOP2[i]->set_rate(_parent->PCM_RATE, 7670454.0);
     #else
         cardsOP2[i] = new ym3438_t;
         std::memset(cardsOP2[i], 0, sizeof(ym3438_t));
-        OPN2_Reset(cardsOP2[i], (Bit32u)_parent->PCM_RATE, (Bit32u)(7153353.0 * 2.0));
+        OPN2_Reset(cardsOP2[i], (Bit32u)_parent->PCM_RATE, 7670454);
     #endif
     }
     NumChannels = NumCards * 6;
