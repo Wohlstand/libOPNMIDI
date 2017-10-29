@@ -255,7 +255,7 @@ void OPN2::Reset()
     cardsOP2.resize(NumCards, NULL);
 
     #ifndef USE_LEGACY_EMULATOR
-    OPN2_SetOptions(ym3438_type_discrete);
+    OPN2_SetChipType(ym3438_type_asic);
     #endif
     for(size_t i = 0; i < cardsOP2.size(); i++)
     {
