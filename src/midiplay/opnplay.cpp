@@ -137,7 +137,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    opn2_setNumCards(myDevice, 4);
+    opn2_setNumCards(myDevice, 3);
     opn2_setLogarithmicVolumes(myDevice, 0);
     opn2_setVolumeRangeModel(myDevice, OPNMIDI_VolumeModel_Generic);
 

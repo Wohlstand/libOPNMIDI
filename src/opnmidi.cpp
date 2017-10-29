@@ -329,14 +329,14 @@ OPNMIDI_EXPORT int opn2_play(OPN2_MIDIPlayer *device, int sampleCount, short *ou
 
                 //fill buffer with zeros
                 size_t in_countStereoU = static_cast<size_t>(in_generatedStereo * 2);
-                memset(out_buf.data(), 0, in_countStereoU * sizeof(short));
+                std::memset(out_buf.data(), 0, in_countStereoU * sizeof(short));
                 OPNMIDIplay * play = (reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer));
                 if(device->NumCards == 1)
                 {
                     #ifdef USE_LEGACY_EMULATOR
                     play->opn.cardsOP2[0]->run(int(in_generatedStereo), out_buf.data());
                     #else
-                    OPN2_GenerateStreamMix(play->opn.cardsOP2[0], out_buf.data(), in_generatedStereo);
+                    OPN2_GenerateStream(play->opn.cardsOP2[0], out_buf.data(), (Bit32u)in_generatedStereo);
                     #endif
                     /* Process it */
                     SendStereoAudio(device, sampleCount, in_generatedStereo, out_buf.data(), gotten_len, out);
@@ -350,7 +350,7 @@ OPNMIDI_EXPORT int opn2_play(OPN2_MIDIPlayer *device, int sampleCount, short *ou
                         #ifdef USE_LEGACY_EMULATOR
                         play->opn.cardsOP2[card]->run(int(in_generatedStereo), out_buf.data());
                         #else
-                        OPN2_GenerateStreamMix(play->opn.cardsOP2[card], out_buf.data(), in_generatedStereo);
+                        OPN2_GenerateStreamMix(play->opn.cardsOP2[card], out_buf.data(), (Bit32u)in_generatedStereo);
                         #endif
                     }
                     /* Process it */

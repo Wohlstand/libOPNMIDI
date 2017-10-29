@@ -3,7 +3,7 @@ CONFIG-=qt
 CONFIG+=console
 
 TARGET=opnplay
-DESTDIR=$$PWD/bin/
+# DESTDIR=$$PWD/bin/
 
 INCLUDEPATH += /home/vitaly/_git_repos/PGE-Project/_Libs/_builds/linux/include
 LIBS += -L/home/vitaly/_git_repos/PGE-Project/_Libs/_builds/linux/lib
@@ -15,7 +15,7 @@ LIBS += -Wl,-Bstatic -lSDL2 -Wl,-Bdynamic -lpthread -ldl
 HEADERS += \
     src/fraction.h \
     src/ym3438.h \
-    # src/Ym2612_ChipEmu.h \
+    src/Ym2612_ChipEmu.h \
     src/opnmidi.h \
     src/opnmidi_xmi2mid.h \
     src/opnmidi_private.hpp \
@@ -23,7 +23,7 @@ HEADERS += \
     src/opnbank.h
 
 SOURCES += \
-    # src/Ym2612_ChipEmu.cpp \
+    src/Ym2612_ChipEmu.cpp \
     src/ym3438.c \
     src/midiplay/opnplay.cpp \
     src/opnmidi.cpp \
