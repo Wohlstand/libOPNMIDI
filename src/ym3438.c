@@ -1,30 +1,30 @@
-//
-// Copyright (C) 2017 Alexey Khokholov (Nuke.YKT)
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-//
-//  Nuked OPN2(Yamaha YM3438) emulator.
-//  Thanks:
-//      Silicon Pr0n:
-//          Yamaha YM3438 decap and die shot(digshadow).
-//      OPLx decapsulated(Matthew Gambrell, Olli Niemitalo):
-//          OPL2 ROMs.
-//
-// version: 1.0.7
-//
+/*
+ * Copyright (C) 2017 Alexey Khokholov (Nuke.YKT)
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *
+ *
+ *  Nuked OPN2(Yamaha YM3438) emulator.
+ *  Thanks:
+ *      Silicon Pr0n:
+ *          Yamaha YM3438 decap and die shot(digshadow).
+ *      OPLx decapsulated(Matthew Gambrell, Olli Niemitalo):
+ *          OPL2 ROMs.
+ *
+ * version: 1.0.7
+ */
 
 #include <string.h>
 #include "ym3438.h"
@@ -1476,22 +1476,22 @@ void OPN2_GenerateResampled(ym3438_t *chip, Bit16s *buf)
         {
             switch (chip->cycles >> 2)
             {
-            case 0: // Ch 2
+            case 0: /* Ch 2 */
                 mute = chip->mute[1];
                 break;
-            case 1: // Ch 6, DAC
+            case 1: /* Ch 6, DAC */
                 mute = chip->mute[5 + chip->dacen];
                 break;
-            case 2: // Ch 4
+            case 2: /* Ch 4 */
                 mute = chip->mute[3];
                 break;
-            case 3: // Ch 1
+            case 3: /* Ch 1 */
                 mute = chip->mute[0];
                 break;
-            case 4: // Ch 5
+            case 4: /* Ch 5 */
                 mute = chip->mute[4];
                 break;
-            case 5: // Ch 3
+            case 5: /* Ch 3 */
                 mute = chip->mute[2];
                 break;
             default:
@@ -1522,10 +1522,10 @@ void OPN2_GenerateResampled(ym3438_t *chip, Bit16s *buf)
         chip->samples[1] *= 11;
         chip->samplecnt -= chip->rateratio;
     }
-    buf[0] = (Bit16s)((chip->oldsamples[0] * (chip->rateratio - chip->samplecnt)
-                     + chip->samples[0] * chip->samplecnt) / chip->rateratio);
-    buf[1] = (Bit16s)((chip->oldsamples[1] * (chip->rateratio - chip->samplecnt)
-                     + chip->samples[1] * chip->samplecnt) / chip->rateratio);
+    buf[0] = (Bit16s)(((chip->oldsamples[0] * (chip->rateratio - chip->samplecnt)
+                     + chip->samples[0] * chip->samplecnt) / chip->rateratio)>>1);
+    buf[1] = (Bit16s)(((chip->oldsamples[1] * (chip->rateratio - chip->samplecnt)
+                     + chip->samples[1] * chip->samplecnt) / chip->rateratio)>>1);
     chip->samplecnt += 1 << RSM_FRAC;
 }
 
@@ -1560,14 +1560,14 @@ void OPN2_SetOptions(Bit8u flags)
 {
     switch ((flags >> 3) & 0x03)
     {
-    case 0x00: // YM2612
+    case 0x00: /* YM2612 */
     default:
         OPN2_SetChipType(ym3438_type_ym2612);
         break;
-    case 0x01: // ASIC YM3438
+    case 0x01: /* ASIC YM3438 */
         OPN2_SetChipType(ym3438_type_asic);
         break;
-    case 0x02: // Discrete YM3438
+    case 0x02: /* Discrete YM3438 */
         OPN2_SetChipType(ym3438_type_discrete);
         break;
     }

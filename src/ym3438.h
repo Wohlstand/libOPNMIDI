@@ -1,30 +1,30 @@
-//
-// Copyright (C) 2017 Alexey Khokholov (Nuke.YKT)
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-//
-//
-//  Nuked OPN2(Yamaha YM3438) emulator.
-//  Thanks:
-//      Silicon Pr0n:
-//          Yamaha YM3438 decap and die shot(digshadow).
-//      OPLx decapsulated(Matthew Gambrell, Olli Niemitalo):
-//          OPL2 ROMs.
-//
-// version: 1.0.7
-//
+/*
+ * Copyright (C) 2017 Alexey Khokholov (Nuke.YKT)
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *
+ *
+ *  Nuked OPN2(Yamaha YM3438) emulator.
+ *  Thanks:
+ *      Silicon Pr0n:
+ *          Yamaha YM3438 decap and die shot(digshadow).
+ *      OPLx decapsulated(Matthew Gambrell, Olli Niemitalo):
+ *          OPL2 ROMs.
+ *
+ * version: 1.0.7
+ */
 
 #ifndef YM3438_H
 #define YM3438_H
@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-//EXTRA
+/*EXTRA*/
 #define RSM_FRAC 10
 #define OPN_WRITEBUF_SIZE 2048
 #define OPN_WRITEBUF_DELAY 15
@@ -57,7 +57,7 @@ typedef int16_t         Bit16s;
 typedef uint8_t         Bit8u;
 typedef int8_t          Bit8s;
 
-//EXTRA
+/*EXTRA*/
 typedef struct _opn2_writebuf {
     Bit64u time;
     Bit8u port;
@@ -206,7 +206,7 @@ typedef struct
     Bit8u ams[6];
     Bit8u pms[6];
 
-    // EXTRA
+    /*EXTRA*/
     Bit32u mute[7];
     Bit32s rateratio;
     Bit32s samplecnt;
@@ -220,7 +220,7 @@ typedef struct
     opn2_writebuf writebuf[OPN_WRITEBUF_SIZE];
 } ym3438_t;
 
-//EXTRA, original was "void OPN2_Reset(ym3438_t *chip)"
+/* EXTRA, original was "void OPN2_Reset(ym3438_t *chip)" */
 void OPN2_Reset(ym3438_t *chip, Bit32u rate, Bit32u clock);
 void OPN2_SetChipType(Bit32u type);
 void OPN2_Clock(ym3438_t *chip, Bit16s *buffer);
@@ -230,7 +230,7 @@ Bit32u OPN2_ReadTestPin(ym3438_t *chip);
 Bit32u OPN2_ReadIRQPin(ym3438_t *chip);
 Bit8u OPN2_Read(ym3438_t *chip, Bit32u port);
 
-// EXTRA
+/*EXTRA*/
 void OPN2_WriteBuffered(ym3438_t *chip, Bit32u port, Bit8u data);
 void OPN2_GenerateStream(ym3438_t *chip, Bit16s *output, Bit32u numsamples);
 void OPN2_GenerateStreamMix(ym3438_t *chip, Bit16s *output, Bit32u numsamples);
