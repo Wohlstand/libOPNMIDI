@@ -205,6 +205,14 @@ OPNMIDI_EXPORT int opn2_openData(OPN2_MIDIPlayer *device, void *mem, long size)
     return -1;
 }
 
+OPNMIDI_EXPORT const char *opn2_emulatorName()
+{
+    #ifdef USE_LEGACY_EMULATOR
+    return "GENS 2.10 YM2612";
+    #else
+    return "Nuked OPN2 YM3438";
+    #endif
+}
 
 OPNMIDI_EXPORT const char *opn2_errorString()
 {

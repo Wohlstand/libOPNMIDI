@@ -142,6 +142,9 @@ int main(int argc, char **argv)
     #else
     opn2_setNumCards(myDevice, 3);
     #endif
+
+    std::printf("[%s emulator in use]\n", opn2_emulatorName());
+
     opn2_setLogarithmicVolumes(myDevice, 0);
     opn2_setVolumeRangeModel(myDevice, OPNMIDI_VolumeModel_Generic);
 
