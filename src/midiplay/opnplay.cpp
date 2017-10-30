@@ -9,6 +9,12 @@
 #include <SDL2/SDL.h>
 #include <signal.h>
 
+#ifdef DEBUG_DUMP_RAW_STREAM
+#include <pwd.h>
+#include <unistd.h>
+#include <sys/types.h>
+#endif
+
 #include "../opnmidi.h"
 
 class MutexType
@@ -186,7 +192,10 @@ int main(int argc, char **argv)
     fflush(stdout);
 
     #ifdef DEBUG_DUMP_RAW_STREAM
-    FILE *rawOutput = fopen("/home/vitaly/opnOutput.raw", "wb");
+    passwd* pw = getpwuid(getuid());
+    std::string path(pw->pw_dir);
+    path += "/opnOutput.raw";
+    FILE *rawOutput = fopen(path.c_str(), "wb");
     #endif
 
     //int16_t buff[204800];
