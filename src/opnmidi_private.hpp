@@ -145,7 +145,7 @@ public:
         VOLUME_CMF,
         VOLUME_DMX,
         VOLUME_APOGEE,
-        VOLUME_9X,
+        VOLUME_9X
     } m_volumeScale;
 
     OPN2();
@@ -467,6 +467,9 @@ public:
      *   Output: desired number of seconds until next call
      */
     double Tick(double s, double granularity);
+
+    //! Audio output buffer
+    int16_t outBuf[1024];
 
 private:
     enum
