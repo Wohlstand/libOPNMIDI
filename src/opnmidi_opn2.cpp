@@ -174,6 +174,13 @@ void OPN2::Patch(uint16_t c, uint16_t i)
     ins[c] = i;
     const opnInstData &adli = GetAdlIns(i);
 
+    #if 1 //Reg1-Op1, Reg1-Op2, Reg1-Op3, Reg1-Op4,....
+    for(uint8_t d = 0; d < 7; d++)
+    {
+        for(uint8_t op = 0; op < 4; op++)
+            PokeO(card, port, 0x30 + (0x10 * d) + (op * 4) + cc, adli.OPS[op].data[d]);
+    }
+    #else //Reg1-Op1, Reg2-Op1, Reg3-Op1, Reg4-Op1,....
     for(uint8_t op = 0; op < 4; op++)
     {
         PokeO(card, port, 0x30 + (op * 4) + cc, adli.OPS[op].data[0]);
@@ -184,9 +191,11 @@ void OPN2::Patch(uint16_t c, uint16_t i)
         PokeO(card, port, 0x80 + (op * 4) + cc, adli.OPS[op].data[5]);
         PokeO(card, port, 0x90 + (op * 4) + cc, adli.OPS[op].data[6]);
     }
+    #endif
+
+    PokeO(card, port, 0xB0 + cc, adli.fbalg);//Feedback/Algorithm
     regBD[c] = (regBD[c] & 0xC0) | (adli.lfosens & 0x3F);
-    PokeO(card, port, 0xB0 + cc, adli.fbalg);
-    PokeO(card, port, 0xB4 + cc, regBD[c]);
+    PokeO(card, port, 0xB4 + cc, regBD[c]);//Panorame and LFO bits
 }
 
 void OPN2::Pan(unsigned c, unsigned value)
