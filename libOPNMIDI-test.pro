@@ -13,6 +13,9 @@ LIBS += -lSDL2 -lpthread -ldl
 # DEFINES += USE_LEGACY_EMULATOR
 # DEFINES += DEBUG_DUMP_RAW_STREAM
 
+QMAKE_CFLAGS    += -std=c90 -pedantic
+QMAKE_CXXFLAGS  += -std=c++98 -pedantic
+
 HEADERS += \
     src/fraction.h \
     src/ym3438.h \
