@@ -5,9 +5,10 @@ CONFIG+=console
 TARGET=opnplay
 # DESTDIR=$$PWD/bin/
 
-INCLUDEPATH += /home/vitaly/_git_repos/PGE-Project/_Libs/_builds/linux/include
-LIBS += -L/home/vitaly/_git_repos/PGE-Project/_Libs/_builds/linux/lib
-LIBS += -Wl,-Bstatic -lSDL2 -Wl,-Bdynamic -lpthread -ldl
+#INCLUDEPATH += /home/vitaly/_git_repos/PGE-Project/_Libs/_builds/linux/include
+#LIBS += -L/home/vitaly/_git_repos/PGE-Project/_Libs/_builds/linux/lib
+# LIBS += -Wl,-Bstatic -lSDL2 -Wl,-Bdynamic -lpthread -ldl
+LIBS += -lSDL2 -lpthread -ldl
 
 # DEFINES += USE_LEGACY_EMULATOR
 # DEFINES += DEBUG_DUMP_RAW_STREAM
