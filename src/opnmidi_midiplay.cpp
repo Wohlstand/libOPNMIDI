@@ -533,10 +533,10 @@ void OPNMIDIplay::HandleEvent(size_t tk)
         // vol=0 and event 8x are both Keyoff-only.
         if(vol == 0 || EvType == 0x8) break;
 
-        uint8_t midiins = Ch[MidCh].patch;
+        uint32_t midiins = Ch[MidCh].patch;
 
         if(MidCh % 16 == 9)
-            midiins = 128 + note; // Percussion instrument
+            midiins = opn.dynamic_percussion_offset + note; // Percussion instrument
 
         /*
             if(MidCh%16 == 9 || (midiins != 32 && midiins != 46 && midiins != 48 && midiins != 50))
