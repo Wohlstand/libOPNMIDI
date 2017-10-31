@@ -68,10 +68,15 @@ OPN2::~OPN2()
 
 void OPN2::PokeO(size_t card, uint8_t port, uint8_t index, uint8_t value)
 {
+    #ifdef USE_LEGACY_EMULATOR
     if(port == 1)
         cardsOP2[card]->write1(index, value);
     else
         cardsOP2[card]->write0(index, value);
+    #else
+    OPN2_WriteBuffered(cardsOP2[card], 0 + (port) * 2, index);
+    OPN2_WriteBuffered(cardsOP2[card], 1 + (port) * 2, value);
+    #endif
 }
 
 void OPN2::NoteOff(size_t c)
@@ -92,18 +97,18 @@ void OPN2::NoteOn(unsigned c, double hertz) // Hertz range: 0..131071
 
     uint16_t x2 = 0x0000;
 
-    if(hertz < 0 || hertz > 131071) // Avoid infinite loop
+    if(hertz < 0 || hertz > 262143) // Avoid infinite loop
         return;
 
-    while(hertz >= 1023.5)
+    while(hertz >= 2047.5)
     {
         hertz /= 2.0;    // Calculate octave
         x2 += 0x800;
     }
 
     x2 += static_cast<uint32_t>(hertz + 0.5);
-    PokeO(card, port, 0xA0 + cc,  x2 & 0xFF);
     PokeO(card, port, 0xA4 + cc, (x2>>8) & 0xFF);//Set frequency and octave
+    PokeO(card, port, 0xA0 + cc,  x2 & 0xFF);
     PokeO(card, 0, 0x28, 0xF0 + NoteChannels[ch4]);
     pit[c] = static_cast<uint8_t>(x2 >> 8);
 }
@@ -169,6 +174,13 @@ void OPN2::Patch(uint16_t c, uint16_t i)
     ins[c] = i;
     const opnInstData &adli = GetAdlIns(i);
 
+    #if 1 //Reg1-Op1, Reg1-Op2, Reg1-Op3, Reg1-Op4,....
+    for(uint8_t d = 0; d < 7; d++)
+    {
+        for(uint8_t op = 0; op < 4; op++)
+            PokeO(card, port, 0x30 + (0x10 * d) + (op * 4) + cc, adli.OPS[op].data[d]);
+    }
+    #else //Reg1-Op1, Reg2-Op1, Reg3-Op1, Reg4-Op1,....
     for(uint8_t op = 0; op < 4; op++)
     {
         PokeO(card, port, 0x30 + (op * 4) + cc, adli.OPS[op].data[0]);
@@ -179,9 +191,11 @@ void OPN2::Patch(uint16_t c, uint16_t i)
         PokeO(card, port, 0x80 + (op * 4) + cc, adli.OPS[op].data[5]);
         PokeO(card, port, 0x90 + (op * 4) + cc, adli.OPS[op].data[6]);
     }
+    #endif
+
+    PokeO(card, port, 0xB0 + cc, adli.fbalg);//Feedback/Algorithm
     regBD[c] = (regBD[c] & 0xC0) | (adli.lfosens & 0x3F);
-    PokeO(card, port, 0xB0 + cc, adli.fbalg);
-    PokeO(card, port, 0xB4 + cc, regBD[c]);
+    PokeO(card, port, 0xB4 + cc, regBD[c]);//Panorame and LFO bits
 }
 
 void OPN2::Pan(unsigned c, unsigned value)
@@ -248,8 +262,21 @@ void OPN2::Reset()
     pit.clear();
     regBD.clear();
     cardsOP2.resize(NumCards, NULL);
+
+    #ifndef USE_LEGACY_EMULATOR
+    OPN2_SetChipType(ym3438_type_asic);
+    #endif
     for(size_t i = 0; i < cardsOP2.size(); i++)
+    {
+    #ifdef USE_LEGACY_EMULATOR
         cardsOP2[i] = new OPNMIDI_Ym2612_Emu();
+        cardsOP2[i]->set_rate(_parent->PCM_RATE, 7670454.0);
+    #else
+        cardsOP2[i] = new ym3438_t;
+        std::memset(cardsOP2[i], 0, sizeof(ym3438_t));
+        OPN2_Reset(cardsOP2[i], (Bit32u)_parent->PCM_RATE, 7670454);
+    #endif
+    }
     NumChannels = NumCards * 6;
     ins.resize(NumChannels,   189);
     pit.resize(NumChannels,   0);
@@ -257,7 +284,6 @@ void OPN2::Reset()
 
     for(unsigned card = 0; card < NumCards; ++card)
     {
-        cardsOP2[card]->set_rate(_parent->PCM_RATE, 7153353.0 * 2.0);
         PokeO(card, 0, 0x22, regLFO);//push current LFO state
         PokeO(card, 0, 0x27, 0x00);  //set Channel 3 normal mode
         PokeO(card, 0, 0x2B, 0x00);  //Disable DAC

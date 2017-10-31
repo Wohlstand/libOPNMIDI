@@ -9,6 +9,12 @@
 #include <SDL2/SDL.h>
 #include <signal.h>
 
+#ifdef DEBUG_DUMP_RAW_STREAM
+#include <pwd.h>
+#include <unistd.h>
+#include <sys/types.h>
+#endif
+
 #include "../opnmidi.h"
 
 class MutexType
@@ -137,7 +143,14 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    #ifdef USE_LEGACY_EMULATOR
     opn2_setNumCards(myDevice, 8);
+    #else
+    opn2_setNumCards(myDevice, 3);
+    #endif
+
+    std::printf("[%s emulator in use]\n", opn2_emulatorName());
+
     opn2_setLogarithmicVolumes(myDevice, 0);
     opn2_setVolumeRangeModel(myDevice, OPNMIDI_VolumeModel_Generic);
 
@@ -178,12 +191,24 @@ int main(int argc, char **argv)
     printf("Playing of %s...\n\nPress Ctrl+C to abort", argv[2]);
     fflush(stdout);
 
+    #ifdef DEBUG_DUMP_RAW_STREAM
+    passwd* pw = getpwuid(getuid());
+    std::string path(pw->pw_dir);
+    path += "/opnOutput.raw";
+    FILE *rawOutput = fopen(path.c_str(), "wb");
+    #endif
+
+    //int16_t buff[204800];
+    std::vector<int16_t> buff;
+    buff.resize(obtained.samples);
     while(g_playing)
     {
-        int16_t buff[4096];
-        size_t got = (size_t)opn2_play(myDevice, 4096, buff);
+        size_t got = (size_t)opn2_play(myDevice, obtained.samples, buff.data());
         if(got <= 0)
             break;
+        #ifdef DEBUG_DUMP_RAW_STREAM
+        fwrite(buff.data(), 1, sizeof(int16_t) * buff.size(), rawOutput);
+        #endif
 
         AudioBuffer_lock.Lock();
         size_t pos = g_audioBuffer.size();
@@ -196,6 +221,10 @@ int main(int argc, char **argv)
         while(g_audioBuffer.size() > spec_.samples + (spec_.freq * 2) * OurHeadRoomLength)
             SDL_Delay(1);
     }
+
+    #ifdef DEBUG_DUMP_RAW_STREAM
+    fclose(rawOutput);
+    #endif
 
     opn2_close(myDevice);
     SDL_CloseAudio();

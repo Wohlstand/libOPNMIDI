@@ -82,6 +82,9 @@ extern void opn2_setLogarithmicVolumes(struct OPN2_MIDIPlayer *device, int logvo
 extern void opn2_setVolumeRangeModel(struct OPN2_MIDIPlayer *device, int volumeModel);
 
 
+/*Returns chip emulator name string*/
+extern const char *opn2_emulatorName();
+
 /*Returns string which contains last error message*/
 extern const char *opn2_errorString();
 

@@ -66,7 +66,11 @@
 #include <algorithm>
 
 #include "fraction.h"
+#ifdef USE_LEGACY_EMULATOR
 #include "Ym2612_ChipEmu.h"
+#else
+#include "ym3438.h"
+#endif
 
 #include "opnbank.h"
 #include "opnmidi.h"
@@ -107,7 +111,11 @@ struct OPN2
     uint32_t NumChannels;
     char ____padding[4];
     OPN2_MIDIPlayer *_parent;
-    std::vector<OPNMIDI_Ym2612_Emu*>cardsOP2;
+#ifdef USE_LEGACY_EMULATOR
+    std::vector<OPNMIDI_Ym2612_Emu*> cardsOP2;
+#else
+    std::vector<ym3438_t*> cardsOP2;
+#endif
 private:
     std::vector<uint16_t>   ins; // index to adl[], cached, needed by Touch()
     std::vector<uint8_t>    pit;  // value poked to B0, cached, needed by NoteOff)(
@@ -137,7 +145,7 @@ public:
         VOLUME_CMF,
         VOLUME_DMX,
         VOLUME_APOGEE,
-        VOLUME_9X,
+        VOLUME_9X
     } m_volumeScale;
 
     OPN2();
@@ -459,6 +467,9 @@ public:
      *   Output: desired number of seconds until next call
      */
     double Tick(double s, double granularity);
+
+    //! Audio output buffer
+    int16_t outBuf[1024];
 
 private:
     enum

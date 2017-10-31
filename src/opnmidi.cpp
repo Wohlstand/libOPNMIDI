@@ -205,6 +205,14 @@ OPNMIDI_EXPORT int opn2_openData(OPN2_MIDIPlayer *device, void *mem, long size)
     return -1;
 }
 
+OPNMIDI_EXPORT const char *opn2_emulatorName()
+{
+    #ifdef USE_LEGACY_EMULATOR
+    return "GENS 2.10 YM2612";
+    #else
+    return "Nuked OPN2 YM3438";
+    #endif
+}
 
 OPNMIDI_EXPORT const char *opn2_errorString()
 {
@@ -285,6 +293,8 @@ OPNMIDI_EXPORT int opn2_play(OPN2_MIDIPlayer *device, int sampleCount, short *ou
     //ssize_t n_periodCountPhys = n_periodCountStereo * 2;
     int left = sampleCount;
 
+    OPNMIDIplay * play = (reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer));
+
     while(left > 0)
     {
         if(device->backup_samples_size > 0)
@@ -322,31 +332,35 @@ OPNMIDI_EXPORT int opn2_play(OPN2_MIDIPlayer *device, int sampleCount, short *ou
                 device->SkipForward -= 1;
             else
             {
-                std::vector<int16_t> out_buf;
-                out_buf.resize(1024 /*n_samples * 2*/);
-
+                int16_t *out_buf = play->outBuf;
                 ssize_t in_generatedStereo = (n_periodCountStereo > 512) ? 512 : n_periodCountStereo;
                 ssize_t in_generatedPhys = in_generatedStereo * 2;
-
                 //fill buffer with zeros
                 size_t in_countStereoU = static_cast<size_t>(in_generatedStereo * 2);
-                memset(out_buf.data(), 0, in_countStereoU * sizeof(short));
+                std::memset(out_buf, 0, in_countStereoU * sizeof(short));
                 if(device->NumCards == 1)
                 {
-                    (reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer))->opn.cardsOP2[0]->run(int(in_generatedStereo), out_buf.data());
+                    #ifdef USE_LEGACY_EMULATOR
+                    play->opn.cardsOP2[0]->run(int(in_generatedStereo), out_buf);
+                    #else
+                    OPN2_GenerateStream(play->opn.cardsOP2[0], out_buf, (Bit32u)in_generatedStereo);
+                    #endif
                     /* Process it */
-                    SendStereoAudio(device, sampleCount, in_generatedStereo, out_buf.data(), gotten_len, out);
+                    SendStereoAudio(device, sampleCount, in_generatedStereo, out_buf, gotten_len, out);
                 }
                 else if(n_periodCountStereo > 0)
                 {
-                    memset(out_buf.data(), 0, in_countStereoU * sizeof(short));
                     /* Generate data from every chip and mix result */
                     for(unsigned card = 0; card < device->NumCards; ++card)
                     {
-                        (reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer))->opn.cardsOP2[card]->run(int(in_generatedStereo), out_buf.data());
+                        #ifdef USE_LEGACY_EMULATOR
+                        play->opn.cardsOP2[card]->run(int(in_generatedStereo), out_buf);
+                        #else
+                        OPN2_GenerateStreamMix(play->opn.cardsOP2[card], out_buf, (Bit32u)in_generatedStereo);
+                        #endif
                     }
                     /* Process it */
-                    SendStereoAudio(device, sampleCount, in_generatedStereo, out_buf.data(), gotten_len, out);
+                    SendStereoAudio(device, sampleCount, in_generatedStereo, out_buf, gotten_len, out);
                 }
 
                 left -= in_generatedPhys;

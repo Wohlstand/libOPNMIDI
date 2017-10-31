@@ -3,14 +3,22 @@ CONFIG-=qt
 CONFIG+=console
 
 TARGET=opnplay
-DESTDIR=$$PWD/bin/
+# DESTDIR=$$PWD/bin/
 
-INCLUDEPATH += /home/vitaly/_git_repos/PGE-Project/_Libs/_builds/linux/include
-LIBS += -L/home/vitaly/_git_repos/PGE-Project/_Libs/_builds/linux/lib
-LIBS += -Wl,-Bstatic -lSDL2 -Wl,-Bdynamic -lpthread -ldl
+#INCLUDEPATH += /home/vitaly/_git_repos/PGE-Project/_Libs/_builds/linux/include
+#LIBS += -L/home/vitaly/_git_repos/PGE-Project/_Libs/_builds/linux/lib
+# LIBS += -Wl,-Bstatic -lSDL2 -Wl,-Bdynamic -lpthread -ldl
+LIBS += -lSDL2 -lpthread -ldl
+
+# DEFINES += USE_LEGACY_EMULATOR
+# DEFINES += DEBUG_DUMP_RAW_STREAM
+
+QMAKE_CFLAGS    += -std=c90 -pedantic
+QMAKE_CXXFLAGS  += -std=c++98 -pedantic
 
 HEADERS += \
     src/fraction.h \
+    src/ym3438.h \
     src/Ym2612_ChipEmu.h \
     src/opnmidi.h \
     src/opnmidi_xmi2mid.h \
@@ -20,11 +28,12 @@ HEADERS += \
 
 SOURCES += \
     src/Ym2612_ChipEmu.cpp \
-    src/midiplay/opnplay.cpp \
+    src/ym3438.c \
     src/opnmidi.cpp \
     src/opnmidi_xmi2mid.c \
     src/opnmidi_private.cpp \
     src/opnmidi_load.cpp \
     src/opnmidi_midiplay.cpp \
     src/opnmidi_mus2mid.c \
-    src/opnmidi_opn2.cpp
+    src/opnmidi_opn2.cpp \
+    src/midiplay/opnplay.cpp
