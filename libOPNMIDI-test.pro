@@ -11,7 +11,7 @@ LIBS += -Wl,-Bstatic -lSDL2 -Wl,-Bdynamic -lpthread -ldl
 
 HEADERS += \
     src/fraction.h \
-    src/Ym2612_Emu.h \
+    src/Ym2612_ChipEmu.h \
     src/opnmidi.h \
     src/opnmidi_xmi2mid.h \
     src/opnmidi_private.hpp \
@@ -19,7 +19,7 @@ HEADERS += \
     src/opnbank.h
 
 SOURCES += \
-    src/Ym2612_Emu.cpp \
+    src/Ym2612_ChipEmu.cpp \
     src/midiplay/opnplay.cpp \
     src/opnmidi.cpp \
     src/opnmidi_xmi2mid.c \
