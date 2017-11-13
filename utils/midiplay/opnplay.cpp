@@ -15,7 +15,7 @@
 #include <sys/types.h>
 #endif
 
-#include "../opnmidi.h"
+#include <opnmidi.h>
 
 class MutexType
 {

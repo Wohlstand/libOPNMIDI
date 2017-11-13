@@ -35,3 +35,8 @@ obj/*
 build-*
 debug/*
 release/*
+
+
+# Cmake caches
+build/*
+

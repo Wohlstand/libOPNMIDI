@@ -65,7 +65,7 @@
 #include <deque>
 #include <algorithm>
 
-#include "fraction.h"
+#include "fraction.hpp"
 #ifdef USE_LEGACY_EMULATOR
 #include "Ym2612_ChipEmu.h"
 #else

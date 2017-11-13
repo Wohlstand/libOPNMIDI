@@ -16,15 +16,17 @@ LIBS += -lSDL2 -lpthread -ldl
 QMAKE_CFLAGS    += -std=c90 -pedantic
 QMAKE_CXXFLAGS  += -std=c++98 -pedantic
 
+INCLUDEPATH += $$PWD/include $$PWD/src
+
 HEADERS += \
-    src/fraction.h \
+    include/opnmidi.h \
     src/ym3438.h \
     src/Ym2612_ChipEmu.h \
-    src/opnmidi.h \
     src/opnmidi_xmi2mid.h \
     src/opnmidi_private.hpp \
     src/opnmidi_mus2mid.h \
-    src/opnbank.h
+    src/opnbank.h \
+    src/fraction.hpp
 
 SOURCES += \
     src/Ym2612_ChipEmu.cpp \
@@ -36,4 +38,4 @@ SOURCES += \
     src/opnmidi_midiplay.cpp \
     src/opnmidi_mus2mid.c \
     src/opnmidi_opn2.cpp \
-    src/midiplay/opnplay.cpp
+    utils/midiplay/opnplay.cpp
