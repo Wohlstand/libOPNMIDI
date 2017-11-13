@@ -223,40 +223,46 @@ bool OPNMIDIplay::LoadMIDI(void *data, unsigned long size)
 
 bool OPNMIDIplay::LoadMIDI(OPNMIDIplay::fileReader &fr)
 {
-    #define qqq(x) (void)x
     size_t  fsize;
-    qqq(fsize);
+    ADL_UNUSED(fsize);
     //! Temp buffer for conversion
     AdlMIDI_CPtr<uint8_t> cvt_buf;
-
-    //std::FILE* fr = std::fopen(filename.c_str(), "rb");
-    if(!fr.isValid())
-    {
-        OPN2MIDI_ErrorString = "Invalid data stream!";
-        return false;
-    }
+    errorString.clear();
 
     if(opn.dynamic_instruments.empty())
     {
-        OPN2MIDI_ErrorString = "Can't play music without a sound bank!";
+        errorStringOut = "Bank is not set! Please load any instruments bank by using of adl_openBankFile() or adl_openBankData() functions!";
+        return false;
+    }
+
+    if(!fr.isValid())
+    {
+        errorStringOut = "Invalid data stream!\n";
+        #ifndef _WIN32
+        errorStringOut += std::strerror(errno);
+        #endif
         return false;
     }
 
     /**** Set all properties BEFORE starting of actial file reading! ****/
 
-    config->stored_samples = 0;
-    config->backup_samples_size = 0;
-    opn.ScaleModulators = config->ScaleModulators;
-    opn.LogarithmicVolumes = config->LogarithmicVolumes;
-    opn.ChangeVolumeRangesModel(static_cast<OPNMIDI_VolumeModels>(config->VolumeModel));
-
-    if(config->VolumeModel == OPNMIDI_VolumeModel_AUTO)
+    m_setup.stored_samples      = 0;
+    m_setup.backup_samples_size = 0;
+    opn.ScaleModulators         = m_setup.ScaleModulators;
+    opn.LogarithmicVolumes      = m_setup.LogarithmicVolumes;
+    opn.m_musicMode             = OPN2::MODE_MIDI;
+    opn.ChangeVolumeRangesModel(static_cast<OPNMIDI_VolumeModels>(m_setup.VolumeModel));
+    if(m_setup.VolumeModel == OPNMIDI_VolumeModel_AUTO)
         opn.m_volumeScale = OPN2::VOLUME_Generic;
 
-    opn.NumCards    = config->NumCards;
-    //opn.NumFourOps  = config->NumFourOps;
-    cmf_percussion_mode = false;
+    opn.NumCards        = m_setup.NumCards;
+    //opn.NumFourOps  = m_setup.NumFourOps;
+    //cmf_percussion_mode = false;
     opn.Reset();
+
+    atEnd            = false;
+    loopStart        = true;
+    invalidLoop      = false;
 
     trackStart       = true;
     loopStart        = true;
@@ -264,7 +270,8 @@ bool OPNMIDIplay::LoadMIDI(OPNMIDIplay::fileReader &fr)
     invalidLoop      = false;
     loopStart_hit    = false;
 
-    bool is_GMF = false; // GMD/MUS files (ScummVM)
+    bool is_GMF     = false; // GMD/MUS files (ScummVM)
+    bool is_RSXX    = false; // RSXX, such as Cartooners
 
     const size_t HeaderSize = 4 + 4 + 2 + 2 + 2; // 14
     char HeaderBuf[HeaderSize] = "";
@@ -357,23 +364,43 @@ riffskip:
     }
     else
     {
-        if(std::memcmp(HeaderBuf, "MThd\0\0\0\6", 8) != 0)
+        // Try to identify RSXX format
+        if(HeaderBuf[0] == 0x7D)
         {
-InvFmt:
-            fr.close();
-            OPN2MIDI_ErrorString = fr._fileName + ": Invalid format\n";
-            return false;
+            fr.seek(0x6D, SEEK_SET);
+            fr.read(HeaderBuf, 6, 1);
+            if(std::memcmp(HeaderBuf, "rsxx}u", 6) == 0)
+            {
+                is_RSXX = true;
+                fr.seek(0x7D, SEEK_SET);
+                TrackCount = 1;
+                DeltaTicks = 60;
+                opn.LogarithmicVolumes = true;
+                //opl.CartoonersVolumes = true;
+                opn.m_musicMode = OPN2::MODE_RSXX;
+                opn.m_volumeScale = OPN2::VOLUME_CMF;
+            }
         }
 
-        /*size_t  Fmt =*/ ReadBEint(HeaderBuf + 8,  2);
-        TrackCount = ReadBEint(HeaderBuf + 10, 2);
-        DeltaTicks = ReadBEint(HeaderBuf + 12, 2);
+        if(!is_RSXX)
+        {
+            if(std::memcmp(HeaderBuf, "MThd\0\0\0\6", 8) != 0)
+            {
+                fr.close();
+                errorStringOut = fr._fileName + ": Invalid format\n";
+                return false;
+            }
+
+            /*size_t  Fmt =*/ ReadBEint(HeaderBuf + 8,  2);
+            TrackCount = ReadBEint(HeaderBuf + 10, 2);
+            DeltaTicks = ReadBEint(HeaderBuf + 12, 2);
+        }
     }
 
     TrackData.clear();
     TrackData.resize(TrackCount, std::vector<uint8_t>());
-    CurrentPosition.track.clear();
-    CurrentPosition.track.resize(TrackCount);
+    //CurrentPosition.track.clear();
+    //CurrentPosition.track.resize(TrackCount);
     InvDeltaTicks = fraction<uint64_t>(1, 1000000l * static_cast<uint64_t>(DeltaTicks));
     //Tempo       = 1000000l * InvDeltaTicks;
     Tempo         = fraction<uint64_t>(1,            static_cast<uint64_t>(DeltaTicks));
@@ -385,7 +412,7 @@ InvFmt:
         // Read track header
         size_t TrackLength;
         {
-            if(is_GMF) // Take the rest of the file
+            if(is_GMF || is_RSXX) // Take the rest of the file
             {
                 size_t pos = fr.tell();
                 fr.seek(0, SEEK_END);
@@ -396,7 +423,11 @@ InvFmt:
             {
                 fsize = fr.read(HeaderBuf, 1, 8);
                 if(std::memcmp(HeaderBuf, "MTrk", 4) != 0)
-                    goto InvFmt;
+                {
+                    fr.close();
+                    errorStringOut = fr._fileName + ": Invalid format, MTrk signature is not found!\n";
+                    return false;
+                }
                 TrackLength = ReadBEint(HeaderBuf + 4, 4);
             }
 
@@ -407,20 +438,22 @@ InvFmt:
 
             if(is_GMF /*|| is_MUS*/) // Note: CMF does include the track end tag.
                 TrackData[tk].insert(TrackData[tk].end(), EndTag + 0, EndTag + 4);
+            if(is_RSXX)//Finalize raw track data with a zero
+                TrackData[tk].push_back(0);
 
-            bool ok = false;
-            // Read next event time
-            uint64_t tkDelay = ReadVarLenEx(tk, ok);
+            //bool ok = false;
+            //// Read next event time
+            //uint64_t tkDelay = ReadVarLenEx(tk, ok);
 
-            if(ok)
-                CurrentPosition.track[tk].delay = tkDelay;
-            else
-            {
-                std::stringstream msg;
-                msg << fr._fileName << ": invalid variable length in the track " << tk << "! (error code " << tkDelay << ")";
-                OPN2MIDI_ErrorString = msg.str();
-                return false;
-            }
+            //if(ok)
+            //    CurrentPosition.track[tk].delay = tkDelay;
+            //else
+            //{
+            //    std::stringstream msg;
+            //    msg << fr._fileName << ": invalid variable length in the track " << tk << "! (error code " << tkDelay << ")";
+            //    OPN2MIDI_ErrorString = msg.str();
+            //    return false;
+            //}
         }
     }
 
@@ -429,7 +462,14 @@ InvFmt:
 
     if(totalGotten == 0)
     {
-        OPN2MIDI_ErrorString = fr._fileName + ": Empty track data";
+        errorStringOut = fr._fileName + ": Empty track data";
+        return false;
+    }
+
+    //Build new MIDI events table (ALPHA!!!)
+    if(!buildTrackData())
+    {
+        errorStringOut = fr._fileName + ": MIDI data parsing error has occouped!\n" + errorString;
         return false;
     }
 
@@ -437,5 +477,4 @@ InvFmt:
     ch.clear();
     ch.resize(opn.NumChannels);
     return true;
-    #undef qqq
 }

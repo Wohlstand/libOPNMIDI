@@ -36,17 +36,17 @@ static inline void getOpnChannel(uint32_t   in_channel,
     out_ch = ch4 % 3;
 }
 
-const opnInstMeta &OPN2::GetAdlMetaIns(unsigned n)
+const opnInstMeta &OPN2::GetAdlMetaIns(size_t n)
 {
     return dynamic_metainstruments[n];
 }
 
-unsigned OPN2::GetAdlMetaNumber(unsigned midiins)
+size_t OPN2::GetAdlMetaNumber(size_t midiins)
 {
     return midiins;
 }
 
-const opnInstData &OPN2::GetAdlIns(unsigned short insno)
+const opnInstData &OPN2::GetAdlIns(size_t insno)
 {
     return dynamic_instruments[insno];
 }

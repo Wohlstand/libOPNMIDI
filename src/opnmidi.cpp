@@ -53,7 +53,6 @@ OPNMIDI_EXPORT struct OPN2_MIDIPlayer *opn2_init(long sample_rate)
     _device->backup_samples_size = 0;
     OPNMIDIplay *player = new OPNMIDIplay;
     _device->opn2_midiPlayer = player;
-    player->config = _device;
     player->opn._parent = _device;
     player->opn.NumCards = _device->NumCards;
     player->opn.LogarithmicVolumes = (bool)_device->LogarithmicVolumes;
