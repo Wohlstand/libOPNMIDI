@@ -26,6 +26,20 @@
 
 // Mapping from MIDI volume level to OPL level value.
 
+#if defined(ANDROID) && (cplusplus < 201103L)
+namespace std
+{
+    int snprintf(char *out, size_t len, const char *fmt, ...)
+    {
+        va_list args;
+        va_start(args, fmt);
+        int rc = ::vsnprintf(out, len, fmt, args);
+        va_end(args);
+        return rc;
+    }
+}
+#endif
+
 static const uint32_t DMX_volume_mapping_table[] =
 {
     0,  1,  3,  5,  6,  8,  10, 11,
@@ -89,7 +103,6 @@ void OPNMIDIplay::OpnChannel::AddAge(int64_t ms)
         }
     }
 }
-
 
 OPNMIDIplay::MidiEvent::MidiEvent() :
     type(T_UNKNOWN),
@@ -708,30 +721,6 @@ double OPNMIDIplay::Tick(double s, double granularity)
         return 0.0;
 
     return CurrentPositionNew.wait;
-//    if(CurrentPosition.began)
-//        CurrentPosition.wait -= s;
-
-//    int AntiFreezeCounter = 10000;//Limit 10000 loops to avoid freezing
-
-//    while((CurrentPosition.wait <= granularity * 0.5) && (AntiFreezeCounter > 0))
-//    {
-//        //std::fprintf(stderr, "wait = %g...\n", CurrentPosition.wait);
-//        ProcessEvents();
-//        if(CurrentPosition.wait <= 0.0)
-//            AntiFreezeCounter--;
-//    }
-
-//    if(AntiFreezeCounter <= 0)
-//        CurrentPosition.wait += 1.0l;/* Add extra 1 second when over 10000 events
-
-//                                           with zero delay are been detected */
-
-//    for(uint16_t c = 0; c < opn.NumChannels; ++c)
-//        ch[c].AddAge(static_cast<int64_t>(s * 1000.0));
-
-//    UpdateVibrato(s);
-//    UpdateArpeggio(s);
-//    return CurrentPosition.wait;
 }
 
 void OPNMIDIplay::seek(double seconds)
@@ -966,7 +955,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     }
     */
 
-    const size_t        meta    = midiins;
+    const size_t        meta    = opn.GetAdlMetaNumber(midiins);
     const opnInstMeta  &ains    = opn.GetAdlMetaIns(meta);
     int16_t tone = note;
 
@@ -985,12 +974,12 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     //bool pseudo_4op = ains.flags & opnInstMeta::Flag_Pseudo8op;
     //if((opn.AdlPercussionMode == 1) && PercussionMap[midiins & 0xFF]) i[1] = i[0];
 
-    static std::set<uint8_t> missing_warnings;
-
-    if(!missing_warnings.count(static_cast<uint8_t>(midiins)) && (ains.flags & opnInstMeta::Flag_NoSound))
+    if(!caugh_missing_instruments.count(static_cast<uint8_t>(midiins)) && (ains.flags & opnInstMeta::Flag_NoSound))
     {
-        //UI.PrintLn("[%i]Playing missing instrument %i", MidCh, midiins);
-        missing_warnings.insert(static_cast<uint8_t>(midiins));
+        if(hooks.onDebugMessage)
+            hooks.onDebugMessage(hooks.onDebugMessage_userData,
+                                 "[%i] Playing missing instrument %i", channel, midiins);
+        caugh_missing_instruments.insert(static_cast<uint8_t>(midiins));
     }
 
     // Allocate AdLib channel (the physical sound channel for the note)
@@ -1007,9 +996,9 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
         }
 
         int32_t c = -1;
-        long bs = -0x7FFFFFFFl;
+        int32_t bs = -0x7FFFFFFFl;
 
-        for(uint32_t a = 0; a < opn.NumChannels; ++a)
+        for(size_t a = 0; a < (size_t)opn.NumChannels; ++a)
         {
             if(ccount == 1 && static_cast<int32_t>(a) == adlchannel[0]) continue;
             // ^ Don't use the same channel for primary&secondary
@@ -1031,14 +1020,17 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
             int64_t s = CalculateAdlChannelGoodness(a, i[ccount], channel);
             if(s > bs)
             {
-                bs = s;    // Best candidate wins
+                bs = (int32_t)s;    // Best candidate wins
                 c = static_cast<int32_t>(a);
             }
         }
 
         if(c < 0)
         {
-            //UI.PrintLn("ignored unplaceable note");
+            if(hooks.onDebugMessage)
+                hooks.onDebugMessage(hooks.onDebugMessage_userData,
+                                     "ignored unplaceable note [bank %i, inst %i, note %i, MIDI channel %i]",
+                                     bank, Ch[channel].patch, note, channel);
             continue; // Could not play this note. Ignore it.
         }
 
@@ -1052,11 +1044,12 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
         return false;
     }
 
-    //UI.PrintLn("i1=%d:%d, i2=%d:%d", i[0],adlchannel[0], i[1],adlchannel[1]);
+    //if(hooks.onDebugMessage)
+    //    hooks.onDebugMessage(hooks.onDebugMessage_userData, "i1=%d:%d, i2=%d:%d", i[0],adlchannel[0], i[1],adlchannel[1]);
+
     // Allocate active note for MIDI channel
     std::pair<MIDIchannel::activenoteiterator, bool>
-    ir = Ch[channel].activenotes.insert(
-             std::make_pair(note, MIDIchannel::NoteInfo()));
+    ir = Ch[channel].activenotes.insert(std::make_pair(note, MIDIchannel::NoteInfo()));
     ir.first->second.vol     = velocity;
     ir.first->second.tone    = tone;
     ir.first->second.midiins = midiins;
@@ -1067,7 +1060,8 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
         int32_t c = adlchannel[ccount];
         if(c < 0)
             continue;
-        ir.first->second.phys[ static_cast<uint16_t>(adlchannel[ccount]) ] = i[ccount];
+        uint16_t chipChan = static_cast<uint16_t>(adlchannel[ccount]);
+        ir.first->second.phys[chipChan] = i[ccount];
     }
     NoteUpdate(channel, ir.first, Upd_All | Upd_Patch);
     return true;
@@ -1297,7 +1291,7 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
     MIDIchannel::NoteInfo &info = i->second;
     const int16_t tone    = info.tone;
     const uint8_t vol     = info.vol;
-    const int midiins = info.midiins;
+    const size_t midiins = info.midiins;
     const size_t insmeta = info.insmeta;
     const opnInstMeta &ains = opn.GetAdlMetaIns(insmeta);
     OpnChannel::Location my_loc;
@@ -1309,9 +1303,9 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
         jnext != info.phys.end();
        )
     {
-        std::map<uint16_t, uint16_t>::iterator j(jnext++);
+        MIDIchannel::NoteInfo::PhysMap::iterator j(jnext++);
         uint16_t c   = j->first;
-        uint16_t ins = j->second;
+        const MIDIchannel::NoteInfo::Phys &ins = j->second;
 
         if(select_adlchn >= 0 && c != select_adlchn) continue;
 
@@ -1326,14 +1320,14 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
         }
     }
 
-    for(std::map<unsigned short, unsigned short>::iterator
+    for(MIDIchannel::NoteInfo::PhysMap::iterator
         jnext = info.phys.begin();
         jnext != info.phys.end();
        )
     {
-        std::map<unsigned short, unsigned short>::iterator j(jnext++);
+        MIDIchannel::NoteInfo::PhysMap::iterator j(jnext++);
         uint16_t c   = j->first;
-        uint16_t ins = j->second;
+        const MIDIchannel::NoteInfo::Phys &ins = j->second;
 
         if(select_adlchn >= 0 && c != select_adlchn) continue;
 
@@ -1347,7 +1341,7 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
                     ch[c].users.erase(k);
 
                 if(hooks.onNote)
-                    hooks.onNote(hooks.onNote_userData, c, tone, midiins, 0, 0.0);
+                    hooks.onNote(hooks.onNote_userData, c, tone, (int)midiins, 0, 0.0);
 
                 if(ch[c].users.empty())
                 {
@@ -1363,7 +1357,7 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
                 OpnChannel::LocationData &d = ch[c].users[my_loc];
                 d.sustained = true; // note: not erased!
                 if(hooks.onNote)
-                    hooks.onNote(hooks.onNote_userData, c, tone, midiins, -1, 0.0);
+                    hooks.onNote(hooks.onNote_userData, c, tone, (int)midiins, -1, 0.0);
             }
 
             info.phys.erase(j);
@@ -1474,7 +1468,7 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
                 opn.NoteOn(c, BEND_COEFFICIENT * std::exp(0.057762265 * (tone + bend + phase)));
 #undef BEND_COEFFICIENT
                 if(hooks.onNote)
-                    hooks.onNote(hooks.onNote_userData, c, tone, midiins, vol, Ch[MidCh].bend);
+                    hooks.onNote(hooks.onNote_userData, c, tone, (int)midiins, vol, Ch[MidCh].bend);
             }
         }
     }
@@ -1968,467 +1962,7 @@ void OPNMIDIplay::HandleEvent(size_t tk, const OPNMIDIplay::MidiEvent &evt, int 
     }
 }
 
-//void OPNMIDIplay::HandleEvent(size_t tk)
-//{
-//    unsigned char byte = TrackData[tk][CurrentPosition.track[tk].ptr++];
-
-//    if(byte == 0xF7 || byte == 0xF0) // Ignore SysEx
-//    {
-//        uint64_t length = ReadVarLen(tk);
-//        //std::string data( length?(const char*) &TrackData[tk][CurrentPosition.track[tk].ptr]:0, length );
-//        CurrentPosition.track[tk].ptr += length;
-//        //UI.PrintLn("SysEx %02X: %u bytes", byte, length/*, data.c_str()*/);
-//        return;
-//    }
-
-//    if(byte == 0xFF)
-//    {
-//        // Special event FF
-//        uint8_t  evtype = TrackData[tk][CurrentPosition.track[tk].ptr++];
-//        uint64_t length = ReadVarLen(tk);
-//        std::string data(length ? (const char *) &TrackData[tk][CurrentPosition.track[tk].ptr] : 0, length);
-//        CurrentPosition.track[tk].ptr += length;
-
-//        if(evtype == 0x2F)
-//        {
-//            CurrentPosition.track[tk].status = -1;
-//            return;
-//        }
-
-//        if(evtype == 0x51)
-//        {
-//            Tempo = InvDeltaTicks * fraction<uint64_t>(ReadBEint(data.data(), data.size()));
-//            return;
-//        }
-
-//        if(evtype == 6)
-//        {
-//            for(size_t i = 0; i < data.size(); i++)
-//            {
-//                if(data[i] <= 'Z' && data[i] >= 'A')
-//                    data[i] = data[i] - ('Z' - 'z');
-//            }
-
-//            if((data == "loopstart") && (!invalidLoop))
-//            {
-//                loopStart = true;
-//                loopStart_passed = true;
-//            }
-
-//            if((data == "loopend") && (!invalidLoop))
-//            {
-//                if((loopStart_passed) && (!loopStart))
-//                    loopEnd = true;
-//                else
-//                    invalidLoop = true;
-//            }
-//        }
-
-//        if(evtype == 9)
-//            current_device[tk] = ChooseDevice(data);
-//        //if(evtype >= 1 && evtype <= 6)
-//        //    UI.PrintLn("Meta %d: %s", evtype, data.c_str());
-//        return;
-//    }
-
-//    // Any normal event (80..EF)
-//    if(byte < 0x80)
-//    {
-//        byte = static_cast<uint8_t>(CurrentPosition.track[tk].status | 0x80);
-//        CurrentPosition.track[tk].ptr--;
-//    }
-
-//    if(byte == 0xF3)
-//    {
-//        CurrentPosition.track[tk].ptr += 1;
-//        return;
-//    }
-
-//    if(byte == 0xF2)
-//    {
-//        CurrentPosition.track[tk].ptr += 2;
-//        return;
-//    }
-
-//    /*UI.PrintLn("@%X Track %u: %02X %02X",
-//                CurrentPosition.track[tk].ptr-1, (unsigned)tk, byte,
-//                TrackData[tk][CurrentPosition.track[tk].ptr]);*/
-//    uint8_t  MidCh = byte & 0x0F, EvType = byte >> 4;
-//    MidCh += current_device[tk];
-//    CurrentPosition.track[tk].status = byte;
-
-//    switch(EvType)
-//    {
-//    case 0x8: // Note off
-//    case 0x9: // Note on
-//    {
-//        uint8_t note = TrackData[tk][CurrentPosition.track[tk].ptr++];
-//        uint8_t vol  = TrackData[tk][CurrentPosition.track[tk].ptr++];
-//        //if(MidCh != 9) note -= 12; // HACK
-//        NoteOff(MidCh, note);
-
-//        // On Note on, Keyoff the note first, just in case keyoff
-//        // was omitted; this fixes Dance of sugar-plum fairy
-//        // by Microsoft. Now that we've done a Keyoff,
-//        // check if we still need to do a Keyon.
-//        // vol=0 and event 8x are both Keyoff-only.
-//        if(vol == 0 || EvType == 0x8) break;
-
-//        uint32_t midiins = Ch[MidCh].patch;
-
-//        if(MidCh % 16 == 9)
-//            midiins = opn.dynamic_percussion_offset + note; // Percussion instrument
-
-//        /*
-//            if(MidCh%16 == 9 || (midiins != 32 && midiins != 46 && midiins != 48 && midiins != 50))
-//                break; // HACK
-//            if(midiins == 46) vol = (vol*7)/10;          // HACK
-//            if(midiins == 48 || midiins == 50) vol /= 4; // HACK
-//            */
-//        //if(midiins == 56) vol = vol*6/10; // HACK
-//        static std::set<uint32_t> bank_warnings;
-
-//        if(Ch[MidCh].bank_msb)
-//        {
-//            uint32_t bankid = midiins + 256 * Ch[MidCh].bank_msb;
-//            std::set<uint32_t>::iterator
-//            i = bank_warnings.lower_bound(bankid);
-
-//            if(i == bank_warnings.end() || *i != bankid)
-//            {
-//                OPN2MIDI_ErrorString.clear();
-//                std::stringstream s;
-//                s << "[" << MidCh << "]Bank " << Ch[MidCh].bank_msb <<
-//                  " undefined, patch=" << ((midiins & 128) ? 'P' : 'M') << (midiins & 127);
-//                OPN2MIDI_ErrorString = s.str();
-//                bank_warnings.insert(i, bankid);
-//            }
-//        }
-
-//        if(Ch[MidCh].bank_lsb)
-//        {
-//            unsigned bankid = Ch[MidCh].bank_lsb * 65536;
-//            std::set<unsigned>::iterator
-//            i = bank_warnings.lower_bound(bankid);
-
-//            if(i == bank_warnings.end() || *i != bankid)
-//            {
-//                OPN2MIDI_ErrorString.clear();
-//                std::stringstream s;
-//                s << "[" << MidCh << "]Bank lsb " << Ch[MidCh].bank_lsb << " undefined";
-//                OPN2MIDI_ErrorString = s.str();
-//                bank_warnings.insert(i, bankid);
-//            }
-//        }
-
-//        const uint32_t      meta    = midiins;
-//        const opnInstMeta  &ains    = opn.GetAdlMetaIns(meta);
-//        int16_t tone = note;
-
-//        if(ains.tone)
-//        {
-//            /*if(ains.tone < 20)
-//                tone += ains.tone;
-//            else*/
-//            if(ains.tone < 128)
-//                tone = ains.tone;
-//            else
-//                tone -= ains.tone - 128;
-//        }
-
-//        uint16_t i[2] = { ains.opnno1, ains.opnno2 };
-//        //bool pseudo_4op = ains.flags & opnInstMeta::Flag_Pseudo8op;
-//        //if((opn.AdlPercussionMode == 1) && PercussionMap[midiins & 0xFF]) i[1] = i[0];
-
-//        static std::set<uint8_t> missing_warnings;
-
-//        if(!missing_warnings.count(static_cast<uint8_t>(midiins)) && (ains.flags & opnInstMeta::Flag_NoSound))
-//        {
-//            //UI.PrintLn("[%i]Playing missing instrument %i", MidCh, midiins);
-//            missing_warnings.insert(static_cast<uint8_t>(midiins));
-//        }
-
-//        // Allocate AdLib channel (the physical sound channel for the note)
-//        int32_t adlchannel[2] = { -1, -1 };
-
-//        for(uint32_t ccount = 0; ccount < 2; ++ccount)
-//        {
-//            if(ccount == 1)
-//            {
-//                if(i[0] == i[1])
-//                    break; // No secondary channel
-//                if(adlchannel[0] == -1)
-//                    break; // No secondary if primary failed
-//            }
-
-//            int32_t c = -1;
-//            long bs = -0x7FFFFFFFl;
-
-//            for(uint32_t a = 0; a < opn.NumChannels; ++a)
-//            {
-//                if(ccount == 1 && static_cast<int32_t>(a) == adlchannel[0]) continue;
-//                // ^ Don't use the same channel for primary&secondary
-//                // ===== Kept for future pseudo-8-op mode
-//                //if(i[0] == i[1] || pseudo_4op)
-//                //{
-//                //    // Only use regular channels
-//                //    uint8_t expected_mode = 0;
-//                //    if(opn.AdlPercussionMode == 1)
-//                //    {
-//                //        if(cmf_percussion_mode)
-//                //            expected_mode = MidCh < 11 ? 0 : (3 + MidCh - 11); // CMF
-//                //        else
-//                //            expected_mode = PercussionMap[midiins & 0xFF];
-//                //    }
-//                //    if(opn.four_op_category[a] != expected_mode)
-//                //        continue;
-//                //}
-//                long s = CalculateAdlChannelGoodness(a, i[ccount], MidCh);
-//                if(s > bs)
-//                {
-//                    bs = s;    // Best candidate wins
-//                    c = static_cast<int32_t>(a);
-//                }
-//            }
-
-//            if(c < 0)
-//            {
-//                //UI.PrintLn("ignored unplaceable note");
-//                continue; // Could not play this note. Ignore it.
-//            }
-
-//            PrepareAdlChannelForNewNote(static_cast<size_t>(c), i[ccount]);
-//            adlchannel[ccount] = c;
-//        }
-
-//        if(adlchannel[0] < 0 && adlchannel[1] < 0)
-//        {
-//            // The note could not be played, at all.
-//            break;
-//        }
-
-//        //UI.PrintLn("i1=%d:%d, i2=%d:%d", i[0],adlchannel[0], i[1],adlchannel[1]);
-//        // Allocate active note for MIDI channel
-//        std::pair<MIDIchannel::activenoteiterator, bool>
-//        ir = Ch[MidCh].activenotes.insert(
-//                 std::make_pair(note, MIDIchannel::NoteInfo()));
-//        ir.first->second.vol     = vol;
-//        ir.first->second.tone    = tone;
-//        ir.first->second.midiins = midiins;
-//        ir.first->second.insmeta = meta;
-
-//        for(unsigned ccount = 0; ccount < 2; ++ccount)
-//        {
-//            int32_t c = adlchannel[ccount];
-
-//            if(c < 0)
-//                continue;
-
-//            ir.first->second.phys[ static_cast<uint16_t>(adlchannel[ccount]) ] = i[ccount];
-//        }
-
-//        CurrentPosition.began  = true;
-//        NoteUpdate(MidCh, ir.first, Upd_All | Upd_Patch);
-//        break;
-//    }
-
-//    case 0xA: // Note touch
-//    {
-//        uint8_t note = TrackData[tk][CurrentPosition.track[tk].ptr++];
-//        uint8_t vol = TrackData[tk][CurrentPosition.track[tk].ptr++];
-//        MIDIchannel::activenoteiterator
-//        i = Ch[MidCh].activenotes.find(note);
-
-//        if(i == Ch[MidCh].activenotes.end())
-//        {
-//            // Ignore touch if note is not active
-//            break;
-//        }
-
-//        i->second.vol = vol;
-//        NoteUpdate(MidCh, i, Upd_Volume);
-//        break;
-//    }
-
-//    case 0xB: // Controller change
-//    {
-//        uint8_t ctrlno = TrackData[tk][CurrentPosition.track[tk].ptr++];
-//        uint8_t value  = TrackData[tk][CurrentPosition.track[tk].ptr++];
-
-//        switch(ctrlno)
-//        {
-//        case 1: // Adjust vibrato
-//            //UI.PrintLn("%u:vibrato %d", MidCh,value);
-//            Ch[MidCh].vibrato = value;
-//            break;
-
-//        case 0: // Set bank msb (GM bank)
-//            Ch[MidCh].bank_msb = value;
-//            break;
-
-//        case 32: // Set bank lsb (XG bank)
-//            Ch[MidCh].bank_lsb = value;
-//            break;
-
-//        case 5: // Set portamento msb
-//            Ch[MidCh].portamento = static_cast<uint16_t>((Ch[MidCh].portamento & 0x7F) | (value << 7));
-//            //UpdatePortamento(MidCh);
-//            break;
-
-//        case 37: // Set portamento lsb
-//            Ch[MidCh].portamento = (Ch[MidCh].portamento & 0x3F80) | (value);
-//            //UpdatePortamento(MidCh);
-//            break;
-
-//        case 65: // Enable/disable portamento
-//            // value >= 64 ? enabled : disabled
-//            //UpdatePortamento(MidCh);
-//            break;
-
-//        case 7: // Change volume
-//            Ch[MidCh].volume = value;
-//            NoteUpdate_All(MidCh, Upd_Volume);
-//            break;
-
-//        case 64: // Enable/disable sustain
-//            Ch[MidCh].sustain = value;
-//            if(!value) KillSustainingNotes(MidCh);
-//            break;
-
-//        case 11: // Change expression (another volume factor)
-//            Ch[MidCh].expression = value;
-//            NoteUpdate_All(MidCh, Upd_Volume);
-//            break;
-
-//        case 10: // Change panning
-//            Ch[MidCh].panning = 0x00;
-//            if(value  < 64 + 32) Ch[MidCh].panning |= 0x80;
-//            if(value >= 64 - 32) Ch[MidCh].panning |= 0x40;
-//            NoteUpdate_All(MidCh, Upd_Pan);
-//            break;
-
-//        case 121: // Reset all controllers
-//            Ch[MidCh].bend       = 0;
-//            Ch[MidCh].volume     = 100;
-//            Ch[MidCh].expression = 100;
-//            Ch[MidCh].sustain    = 0;
-//            Ch[MidCh].vibrato    = 0;
-//            Ch[MidCh].vibspeed   = 2 * 3.141592653 * 5.0;
-//            Ch[MidCh].vibdepth   = 0.5 / 127;
-//            Ch[MidCh].vibdelay   = 0;
-//            Ch[MidCh].panning    = 0xC0;
-//            Ch[MidCh].portamento = 0;
-//            //UpdatePortamento(MidCh);
-//            NoteUpdate_All(MidCh, Upd_Pan + Upd_Volume + Upd_Pitch);
-//            // Kill all sustained notes
-//            KillSustainingNotes(MidCh);
-//            break;
-
-//        case 123: // All notes off
-//            NoteUpdate_All(MidCh, Upd_Off);
-//            break;
-
-//        case 91:
-//            break; // Reverb effect depth. We don't do per-channel reverb.
-
-//        case 92:
-//            break; // Tremolo effect depth. We don't do...
-
-//        case 93:
-//            break; // Chorus effect depth. We don't do.
-
-//        case 94:
-//            break; // Celeste effect depth. We don't do.
-
-//        case 95:
-//            break; // Phaser effect depth. We don't do.
-
-//        case 98:
-//            Ch[MidCh].lastlrpn = value;
-//            Ch[MidCh].nrpn = true;
-//            break;
-
-//        case 99:
-//            Ch[MidCh].lastmrpn = value;
-//            Ch[MidCh].nrpn = true;
-//            break;
-
-//        case 100:
-//            Ch[MidCh].lastlrpn = value;
-//            Ch[MidCh].nrpn = false;
-//            break;
-
-//        case 101:
-//            Ch[MidCh].lastmrpn = value;
-//            Ch[MidCh].nrpn = false;
-//            break;
-
-//        case 113:
-//            break; // Related to pitch-bender, used by missimp.mid in Duke3D
-
-//        case  6:
-//            SetRPN(MidCh, value, true);
-//            break;
-
-//        case 38:
-//            SetRPN(MidCh, value, false);
-//            break;
-
-//        case 103:
-//            //cmf_percussion_mode = value;
-//            break; // CMF (ctrl 0x67) rhythm mode
-
-//        case 111://LoopStart unofficial controller
-//            if(!invalidLoop)
-//            {
-//                loopStart = true;
-//                loopStart_passed = true;
-//            }
-
-//            break;
-
-//        default:
-//            break;
-//            //UI.PrintLn("Ctrl %d <- %d (ch %u)", ctrlno, value, MidCh);
-//        }
-
-//        break;
-//    }
-
-//    case 0xC: // Patch change
-//        Ch[MidCh].patch = TrackData[tk][CurrentPosition.track[tk].ptr++];
-//        break;
-
-//    case 0xD: // Channel after-touch
-//    {
-//        // TODO: Verify, is this correct action?
-//        uint8_t vol = TrackData[tk][CurrentPosition.track[tk].ptr++];
-
-//        for(MIDIchannel::activenoteiterator
-//            i = Ch[MidCh].activenotes.begin();
-//            i != Ch[MidCh].activenotes.end();
-//            ++i)
-//        {
-//            // Set this pressure to all active notes on the channel
-//            i->second.vol = vol;
-//        }
-
-//        NoteUpdate_All(MidCh, Upd_Volume);
-//        break;
-//    }
-
-//    case 0xE: // Wheel/pitch bend
-//    {
-//        int a = TrackData[tk][CurrentPosition.track[tk].ptr++];
-//        int b = TrackData[tk][CurrentPosition.track[tk].ptr++];
-//        Ch[MidCh].bend = (a + b * 128 - 8192) * Ch[MidCh].bendsense;
-//        NoteUpdate_All(MidCh, Upd_Pitch);
-//        break;
-//    }
-//    }
-//}
-
-long OPNMIDIplay::CalculateAdlChannelGoodness(unsigned c, uint16_t ins, uint16_t) const
+long OPNMIDIplay::CalculateAdlChannelGoodness(size_t c, uint16_t ins, uint16_t) const
 {
     long s = -ch[c].koff_time_until_neglible;
 
@@ -2504,7 +2038,7 @@ long OPNMIDIplay::CalculateAdlChannelGoodness(unsigned c, uint16_t ins, uint16_t
 }
 
 
-void OPNMIDIplay::PrepareAdlChannelForNewNote(size_t c, int ins)
+void OPNMIDIplay::PrepareAdlChannelForNewNote(size_t c, size_t ins)
 {
     if(ch[c].users.empty()) return; // Nothing to do
 
@@ -2562,13 +2096,10 @@ void OPNMIDIplay::KillOrEvacuate(size_t from_channel, OpnChannel::users_t::itera
 
         if(c > std::numeric_limits<uint32_t>::max())
             break;
-
         if(c == from_channel)
             continue;
-
-//        if(opn.four_op_category[c]
-//           != opn.four_op_category[from_channel]
-//          ) continue;
+        //if(opn.four_op_category[c] != opn.four_op_category[from_channel])
+        //    continue;
 
         for(OpnChannel::users_t::iterator
             m = ch[c].users.begin();
@@ -2577,20 +2108,21 @@ void OPNMIDIplay::KillOrEvacuate(size_t from_channel, OpnChannel::users_t::itera
         {
             if(m->second.vibdelay >= 200
                && m->second.kon_time_until_neglible < 10000) continue;
+            if(m->second.ins != j->second.ins)
+                continue;
+            if(hooks.onNote)
+            {
+                hooks.onNote(hooks.onNote_userData,
+                             (int)from_channel,
+                             i->second.tone,
+                             (int)i->second.midiins, 0, 0.0);
+                hooks.onNote(hooks.onNote_userData,
+                             (int)c,
+                             i->second.tone,
+                             (int)i->second.midiins,
+                             i->second.vol, 0.0);
+            }
 
-            if(m->second.ins != j->second.ins) continue;
-
-            // the note can be moved here!
-            //                UI.IllustrateNote(
-            //                    from_channel,
-            //                    i->second.tone,
-            //                    i->second.midiins, 0, 0.0);
-            //                UI.IllustrateNote(
-            //                    c,
-            //                    i->second.tone,
-            //                    i->second.midiins,
-            //                    i->second.vol,
-            //                    0.0);
             i->second.phys.erase(static_cast<uint16_t>(from_channel));
             i->second.phys[cs] = j->second.ins;
             ch[cs].users.insert(*j);

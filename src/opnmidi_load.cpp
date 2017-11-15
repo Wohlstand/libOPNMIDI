@@ -124,7 +124,7 @@ bool OPNMIDIplay::LoadBank(OPNMIDIplay::fileReader &fr)
     qqq(fsize);
     if(!fr.isValid())
     {
-        OPN2MIDI_ErrorString = "Invalid data stream!";
+        errorStringOut = "Invalid data stream!";
         return false;
     }
 
@@ -136,13 +136,13 @@ bool OPNMIDIplay::LoadBank(OPNMIDIplay::fileReader &fr)
 
     if(fr.read(magic, 1, 11) != 11)
     {
-        OPN2MIDI_ErrorString = "Can't read magic number!";
+        errorStringOut = "Can't read magic number!";
         return false;
     }
 
     if(strncmp(magic, "WOPN2-BANK\0", 11) != 0)
     {
-        OPN2MIDI_ErrorString = "Invalid magic number!";
+        errorStringOut = "Invalid magic number!";
         return false;
     }
 
@@ -150,13 +150,13 @@ bool OPNMIDIplay::LoadBank(OPNMIDIplay::fileReader &fr)
     opn.dynamic_metainstruments.clear();
     if((readU16BE(fr, count_melodic_banks) != 2) || (readU16BE(fr, count_percusive_banks) != 2))
     {
-        OPN2MIDI_ErrorString = "Can't read count of banks!";
+        errorStringOut = "Can't read count of banks!";
         return false;
     }
 
     if(fr.read(&opn.regLFO, 1, 1) != 1)
     {
-        OPN2MIDI_ErrorString = "Can't read LFO registry state!";
+        errorStringOut = "Can't read LFO registry state!";
         return false;
     }
 
@@ -177,7 +177,7 @@ bool OPNMIDIplay::LoadBank(OPNMIDIplay::fileReader &fr)
 
         if(fr.read(idata, 1, 65) != 65)
         {
-            OPN2MIDI_ErrorString = "Failed to read instrument data";
+            errorStringOut = "Failed to read instrument data";
             return false;
         }
         data.finetune = toSint16BE(idata + 32);
@@ -188,7 +188,7 @@ bool OPNMIDIplay::LoadBank(OPNMIDIplay::fileReader &fr)
         for(size_t op = 0; op < 4; op++)
         {
             size_t off = 37 + op * 7;
-            memcpy(data.OPS[op].data, idata + off, 7);
+            std::memcpy(data.OPS[op].data, idata + off, 7);
         }
         meta.opnno1 = uint16_t(opn.dynamic_instruments.size());
         meta.opnno2 = uint16_t(opn.dynamic_instruments.size());
@@ -204,20 +204,15 @@ bool OPNMIDIplay::LoadMIDI(const std::string &filename)
 {
     fileReader file;
     file.openFile(filename.c_str());
-
     if(!LoadMIDI(file))
-    {
-        std::perror(filename.c_str());
         return false;
-    }
-
     return true;
 }
 
 bool OPNMIDIplay::LoadMIDI(void *data, unsigned long size)
 {
     fileReader file;
-    file.openData(data, size);
+    file.openData(data, (size_t)size);
     return LoadMIDI(file);
 }
 
@@ -245,8 +240,7 @@ bool OPNMIDIplay::LoadMIDI(OPNMIDIplay::fileReader &fr)
     }
 
     /**** Set all properties BEFORE starting of actial file reading! ****/
-
-    m_setup.stored_samples      = 0;
+    m_setup.stored_samples = 0;
     m_setup.backup_samples_size = 0;
     opn.ScaleModulators         = m_setup.ScaleModulators;
     opn.LogarithmicVolumes      = m_setup.LogarithmicVolumes;
@@ -263,7 +257,6 @@ bool OPNMIDIplay::LoadMIDI(OPNMIDIplay::fileReader &fr)
     atEnd            = false;
     loopStart        = true;
     invalidLoop      = false;
-    loopEnd          = true;
 
     bool is_GMF     = false; // GMD/MUS files (ScummVM)
     bool is_RSXX    = false; // RSXX, such as Cartooners
@@ -293,10 +286,10 @@ riffskip:
         fr.seek(0, SEEK_END);
         size_t mus_len = fr.tell();
         fr.seek(0, SEEK_SET);
-        uint8_t *mus = (uint8_t*)malloc(mus_len);
+        uint8_t *mus = (uint8_t *)malloc(mus_len);
         if(!mus)
         {
-            OPN2MIDI_ErrorString = "Out of memory!";
+            errorStringOut = "Out of memory!";
             return false;
         }
         fr.read(mus, 1, mus_len);
@@ -310,7 +303,7 @@ riffskip:
         if(mus) free(mus);
         if(m2mret < 0)
         {
-            OPN2MIDI_ErrorString = "Invalid MUS/DMX data format!";
+            errorStringOut = "Invalid MUS/DMX data format!";
             return false;
         }
         cvt_buf.reset(mid);
@@ -324,7 +317,7 @@ riffskip:
         if(std::memcmp(HeaderBuf + 8, "XDIR", 4) != 0)
         {
             fr.close();
-            OPN2MIDI_ErrorString = fr._fileName + ": Invalid format\n";
+            errorStringOut = fr._fileName + ": Invalid format\n";
             return false;
         }
 
@@ -334,7 +327,7 @@ riffskip:
         uint8_t *mus = (uint8_t*)malloc(mus_len);
         if(!mus)
         {
-            OPN2MIDI_ErrorString = "Out of memory!";
+            errorStringOut = "Out of memory!";
             return false;
         }
         fr.read(mus, 1, mus_len);
@@ -348,7 +341,7 @@ riffskip:
         if(mus) free(mus);
         if(m2mret < 0)
         {
-            OPN2MIDI_ErrorString = "Invalid XMI data format!";
+            errorStringOut = "Invalid XMI data format!";
             return false;
         }
         cvt_buf.reset(mid);
@@ -382,13 +375,13 @@ riffskip:
             if(std::memcmp(HeaderBuf, "MThd\0\0\0\6", 8) != 0)
             {
                 fr.close();
-                errorStringOut = fr._fileName + ": Invalid format\n";
+                errorStringOut = fr._fileName + ": Invalid format, Header signature is unknown!\n";
                 return false;
             }
 
-            /*size_t  Fmt =*/ ReadBEint(HeaderBuf + 8,  2);
-            TrackCount = ReadBEint(HeaderBuf + 10, 2);
-            DeltaTicks = ReadBEint(HeaderBuf + 12, 2);
+            /*size_t  Fmt =      ReadBEint(HeaderBuf + 8,  2);*/
+            TrackCount = (size_t)ReadBEint(HeaderBuf + 10, 2);
+            DeltaTicks = (size_t)ReadBEint(HeaderBuf + 12, 2);
         }
     }
 
@@ -400,7 +393,7 @@ riffskip:
     //Tempo       = 1000000l * InvDeltaTicks;
     Tempo         = fraction<uint64_t>(1,            static_cast<uint64_t>(DeltaTicks));
     static const unsigned char EndTag[4] = {0xFF, 0x2F, 0x00, 0x00};
-    int totalGotten = 0;
+    size_t totalGotten = 0;
 
     for(size_t tk = 0; tk < TrackCount; ++tk)
     {
@@ -423,7 +416,7 @@ riffskip:
                     errorStringOut = fr._fileName + ": Invalid format, MTrk signature is not found!\n";
                     return false;
                 }
-                TrackLength = ReadBEint(HeaderBuf + 4, 4);
+                TrackLength = (size_t)ReadBEint(HeaderBuf + 4, 4);
             }
 
             // Read track data
@@ -431,7 +424,7 @@ riffskip:
             fsize = fr.read(&TrackData[tk][0], 1, TrackLength);
             totalGotten += fsize;
 
-            if(is_GMF /*|| is_MUS*/) // Note: CMF does include the track end tag.
+            if(is_GMF/*|| is_MUS*/) // Note: CMF does include the track end tag.
                 TrackData[tk].insert(TrackData[tk].end(), EndTag + 0, EndTag + 4);
             if(is_RSXX)//Finalize raw track data with a zero
                 TrackData[tk].push_back(0);
@@ -439,7 +432,6 @@ riffskip:
             //bool ok = false;
             //// Read next event time
             //uint64_t tkDelay = ReadVarLenEx(tk, ok);
-
             //if(ok)
             //    CurrentPosition.track[tk].delay = tkDelay;
             //else

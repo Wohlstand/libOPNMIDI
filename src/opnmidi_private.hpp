@@ -66,7 +66,12 @@ typedef __int32 ssize_t;
 #include <deque>  // deque
 #include <cmath>  // exp, log, ceil
 #include <stdio.h>
+#include <stdlib.h>
 #include <limits> // numeric_limit
+
+#ifndef _WIN32
+#include <errno.h>
+#endif
 
 #include <deque>
 #include <algorithm>
@@ -421,8 +426,10 @@ public:
             size_t  midiins;
             // Index to physical adlib data structure, adlins[]
             size_t  insmeta;
+            typedef std::map<uint16_t, uint16_t> PhysMap;
+            typedef uint16_t Phys;
             // List of adlib channels it is currently occupying.
-            std::map<uint16_t /*adlchn*/, uint16_t /*ins, inde to adl[]*/ > phys;
+            std::map<uint16_t /*adlchn*/, Phys> phys;
         };
         typedef std::map<uint8_t, NoteInfo> activenotemap_t;
         typedef activenotemap_t::iterator activenoteiterator;
@@ -463,7 +470,7 @@ public:
         {
             bool sustained;
             char ____padding[1];
-            uint16_t ins;  // a copy of that in phys[]
+            MIDIchannel::NoteInfo::Phys ins;  // a copy of that in phys[]
             char ____padding2[4];
             int64_t kon_time_until_neglible;
             int64_t vibdelay;
@@ -827,11 +834,11 @@ private:
 
     // Determine how good a candidate this adlchannel
     // would be for playing a note from this instrument.
-    long CalculateAdlChannelGoodness(unsigned c, uint16_t ins, uint16_t /*MidCh*/) const;
+    long CalculateAdlChannelGoodness(size_t c, uint16_t ins, uint16_t /*MidCh*/) const;
 
     // A new note will be played on this channel using this instrument.
     // Kill existing notes on this channel (or don't, if we do arpeggio)
-    void PrepareAdlChannelForNewNote(size_t c, int ins);
+    void PrepareAdlChannelForNewNote(size_t c, size_t ins);
 
     void KillOrEvacuate(
         size_t  from_channel,

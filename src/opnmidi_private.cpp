@@ -25,8 +25,9 @@
 
 std::string OPN2MIDI_ErrorString;
 
-int opn2RefreshNumCards(OPN2_MIDIPlayer *)
+int opn2RefreshNumCards(OPN2_MIDIPlayer * /*device*/)
 {
+//    OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
     //OPN uses 4-op instruments only
 //    unsigned n_fourop[2] = {0, 0}, n_total[2] = {0, 0};
 //    for(unsigned a = 0; a < 256; ++a)

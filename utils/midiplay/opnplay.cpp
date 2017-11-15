@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cstdarg>
 #include <deque>
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
@@ -67,6 +68,19 @@ void handle_signal(int signal)
     }
 }
 
+static void debugPrint(void * /*userdata*/, const char *fmt, ...)
+{
+    char buffer[4096];
+    std::va_list args;
+    va_start(args, fmt);
+    int rc = std::vsnprintf(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
+    if(rc > 0)
+    {
+        std::fprintf(stdout, " - Debug: %s\n", buffer);
+        std::fflush(stdout);
+    }
+}
 
 int main(int argc, char **argv)
 {
@@ -143,8 +157,11 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    //Set internal debug messages hook to print all libADLMIDI's internal debug messages
+    opn2_setDebugMessageHook(myDevice, debugPrint, NULL);
+
     #ifdef USE_LEGACY_EMULATOR
-    opn2_setNumChips(myDevice, 8);
+    opn2_setNumChips(myDevice, 1);
     #else
     opn2_setNumCards(myDevice, 3);
     #endif

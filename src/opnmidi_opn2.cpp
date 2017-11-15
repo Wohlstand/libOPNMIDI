@@ -122,7 +122,7 @@ void OPN2::Touch_Real(unsigned c, unsigned volume)
     uint8_t     port, cc;
     getOpnChannel(c, card, port, cc);
 
-    uint16_t    i = ins[c];
+    size_t i = ins[c];
     const opnInstData &adli = GetAdlIns(i);
 
     uint8_t op_vol[4] =
@@ -171,10 +171,8 @@ void OPN2::Patch(uint16_t c, uint16_t i)
     unsigned    card;
     uint8_t     port, cc;
     getOpnChannel(uint16_t(c), card, port, cc);
-
     ins[c] = i;
     const opnInstData &adli = GetAdlIns(i);
-
     #if 1 //Reg1-Op1, Reg1-Op2, Reg1-Op3, Reg1-Op4,....
     for(uint8_t d = 0; d < 7; d++)
     {

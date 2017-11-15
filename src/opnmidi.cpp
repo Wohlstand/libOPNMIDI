@@ -434,13 +434,13 @@ OPNMIDI_EXPORT int opn2_play(OPN2_MIDIPlayer *device, int sampleCount, short *ou
     if(!device)
         return 0;
 
+    OPNMIDIplay * player = (reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer));
+    OPNMIDIplay::Setup &setup = player->m_setup;
+
     ssize_t gotten_len = 0;
     ssize_t n_periodCountStereo = 512;
     //ssize_t n_periodCountPhys = n_periodCountStereo * 2;
     int left = sampleCount;
-
-    OPNMIDIplay * player = (reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer));
-    OPNMIDIplay::Setup &setup = player->m_setup;
 
     while(left > 0)
     {
@@ -489,7 +489,8 @@ OPNMIDI_EXPORT int opn2_play(OPN2_MIDIPlayer *device, int sampleCount, short *ou
                 //fill buffer with zeros
                 int16_t *out_buf = player->outBuf;
                 std::memset(out_buf, 0, static_cast<size_t>(in_generatedPhys) * sizeof(int16_t));
-                if(setup.NumCards == 1)
+                unsigned int chips = player->opn.NumCards;
+                if(chips == 1)
                 {
                     #ifdef USE_LEGACY_EMULATOR
                     player->opn.cardsOP2[0]->run(int(in_generatedStereo), out_buf);
@@ -497,10 +498,10 @@ OPNMIDI_EXPORT int opn2_play(OPN2_MIDIPlayer *device, int sampleCount, short *ou
                     OPN2_GenerateStream(player->opn.cardsOP2[0], out_buf, (Bit32u)in_generatedStereo);
                     #endif
                 }
-                else if(n_periodCountStereo > 0)
+                else/* if(n_periodCountStereo > 0)*/
                 {
                     /* Generate data from every chip and mix result */
-                    for(unsigned card = 0; card < setup.NumCards; ++card)
+                    for(unsigned card = 0; card < chips; ++card)
                     {
                         #ifdef USE_LEGACY_EMULATOR
                         player->opn.cardsOP2[card]->run(int(in_generatedStereo), out_buf);
@@ -524,7 +525,6 @@ OPNMIDI_EXPORT int opn2_play(OPN2_MIDIPlayer *device, int sampleCount, short *ou
 }
 
 
-
 OPNMIDI_EXPORT int opn2_generate(struct OPN2_MIDIPlayer *device, int sampleCount, short *out)
 {
     sampleCount -= sampleCount % 2; //Avoid even sample requests
@@ -545,7 +545,8 @@ OPNMIDI_EXPORT int opn2_generate(struct OPN2_MIDIPlayer *device, int sampleCount
     //fill buffer with zeros
     size_t in_countStereoU = static_cast<size_t>(in_generatedStereo * 2);
     std::memset(out_buf, 0, in_countStereoU * sizeof(short));
-    if(player->m_setup.NumCards == 1)
+    unsigned int chips = player->opn.NumCards;
+    if(chips == 1)
     {
         #ifdef USE_LEGACY_EMULATOR
         player->opn.cardsOP2[0]->run(int(in_generatedStereo), out_buf);
@@ -558,7 +559,7 @@ OPNMIDI_EXPORT int opn2_generate(struct OPN2_MIDIPlayer *device, int sampleCount
     else if(n_periodCountStereo > 0)
     {
         /* Generate data from every chip and mix result */
-        for(unsigned card = 0; card < player->m_setup.NumCards; ++card)
+        for(unsigned card = 0; card < chips; ++card)
         {
             #ifdef USE_LEGACY_EMULATOR
             player->opn.cardsOP2[card]->run(int(in_generatedStereo), out_buf);
