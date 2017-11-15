@@ -48,33 +48,33 @@ uint64_t OPNMIDIplay::ReadLEint(const void *buffer, size_t nbytes)
     return result;
 }
 
-uint64_t OPNMIDIplay::ReadVarLenEx(size_t tk, bool &ok)
-{
-    uint64_t result = 0;
-    ok = false;
+//uint64_t OPNMIDIplay::ReadVarLenEx(size_t tk, bool &ok)
+//{
+//    uint64_t result = 0;
+//    ok = false;
 
-    for(;;)
-    {
-        if(tk >= TrackData.size())
-            return 1;
+//    for(;;)
+//    {
+//        if(tk >= TrackData.size())
+//            return 1;
 
-        if(tk >= CurrentPosition.track.size())
-            return 2;
+//        if(tk >= CurrentPosition.track.size())
+//            return 2;
 
-        size_t ptr = CurrentPosition.track[tk].ptr;
+//        size_t ptr = CurrentPosition.track[tk].ptr;
 
-        if(ptr >= TrackData[tk].size())
-            return 3;
+//        if(ptr >= TrackData[tk].size())
+//            return 3;
 
-        unsigned char byte = TrackData[tk][CurrentPosition.track[tk].ptr++];
-        result = (result << 7) + (byte & 0x7F);
+//        unsigned char byte = TrackData[tk][CurrentPosition.track[tk].ptr++];
+//        result = (result << 7) + (byte & 0x7F);
 
-        if(!(byte & 0x80)) break;
-    }
+//        if(!(byte & 0x80)) break;
+//    }
 
-    ok = true;
-    return result;
-}
+//    ok = true;
+//    return result;
+//}
 
 bool OPNMIDIplay::LoadBank(const std::string &filename)
 {
@@ -86,7 +86,7 @@ bool OPNMIDIplay::LoadBank(const std::string &filename)
 bool OPNMIDIplay::LoadBank(void *data, unsigned long size)
 {
     fileReader file;
-    file.openData(data, size);
+    file.openData(data, (size_t)size);
     return LoadBank(file);
 }
 
@@ -111,7 +111,7 @@ size_t readS16BE(OPNMIDIplay::fileReader &fr, int16_t &out)
 
 int16_t toSint16BE(uint8_t *arr)
 {
-    int16_t num = *reinterpret_cast<signed char *>(&arr[0]);
+    int16_t num = *reinterpret_cast<const int8_t *>(&arr[0]);
     num *= 1 << 8;
     num |= arr[1];
     return num;
@@ -258,17 +258,12 @@ bool OPNMIDIplay::LoadMIDI(OPNMIDIplay::fileReader &fr)
     opn.NumCards        = m_setup.NumCards;
     //opn.NumFourOps  = m_setup.NumFourOps;
     //cmf_percussion_mode = false;
-    opn.Reset();
+    opn.Reset(m_setup.PCM_RATE);
 
     atEnd            = false;
     loopStart        = true;
     invalidLoop      = false;
-
-    trackStart       = true;
-    loopStart        = true;
-    loopStart_passed = false;
-    invalidLoop      = false;
-    loopStart_hit    = false;
+    loopEnd          = true;
 
     bool is_GMF     = false; // GMD/MUS files (ScummVM)
     bool is_RSXX    = false; // RSXX, such as Cartooners
@@ -473,7 +468,7 @@ riffskip:
         return false;
     }
 
-    opn.Reset(); // Reset AdLib
+    opn.Reset(m_setup.PCM_RATE); // Reset AdLib
     ch.clear();
     ch.resize(opn.NumChannels);
     return true;

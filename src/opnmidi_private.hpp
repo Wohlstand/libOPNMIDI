@@ -60,6 +60,7 @@ typedef __int32 ssize_t;
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
+#include <cstdarg>
 #include <cstdio>
 #include <vector> // vector
 #include <deque>  // deque
@@ -91,7 +92,7 @@ extern std::string OPN2MIDI_ErrorString;
 template<class PTR>
 class AdlMIDI_CPtr
 {
-    PTR* m_p;
+    PTR *m_p;
 public:
     AdlMIDI_CPtr() : m_p(NULL) {}
     ~AdlMIDI_CPtr()
@@ -106,9 +107,18 @@ public:
         m_p = p;
     }
 
-    PTR* get() { return m_p;}
-    PTR& operator*() { return *m_p; }
-    PTR* operator->() { return m_p; }
+    PTR *get()
+    {
+        return m_p;
+    }
+    PTR &operator*()
+    {
+        return *m_p;
+    }
+    PTR *operator->()
+    {
+        return m_p;
+    }
 };
 
 class OPNMIDIplay;
@@ -124,7 +134,7 @@ struct OPN2
     std::vector<ym3438_t*> cardsOP2;
 #endif
 private:
-    std::vector<uint16_t>   ins; // index to adl[], cached, needed by Touch()
+    std::vector<size_t>     ins; // index to adl[], cached, needed by Touch()
     std::vector<uint8_t>    pit;  // value poked to B0, cached, needed by NoteOff)(
     std::vector<uint8_t>    regBD;
     uint8_t                 regLFO;
@@ -191,7 +201,7 @@ public:
     void Silence();
     void ChangeVolumeRangesModel(OPNMIDI_VolumeModels volumeModel);
     void ClearChips();
-    void Reset();
+    void Reset(unsigned long PCM_RATE);
 };
 
 
@@ -223,6 +233,7 @@ struct MIDIEventHooks
     DebugMessageHook onDebugMessage;
     void *onDebugMessage_userData;
 };
+
 
 class OPNMIDIplay
 {
@@ -309,7 +320,7 @@ public:
             }
         }
 
-        inline void seeku(unsigned long pos, int rel_to)
+        inline void seeku(uint64_t pos, int rel_to)
         {
             seek(static_cast<long>(pos), rel_to);
         }
@@ -406,11 +417,10 @@ public:
             char ____padding[1];
             int16_t tone;
             // Patch selected on noteon; index to banks[AdlBank][]
-            uint8_t midiins;
+            char ____padding2[4];
+            size_t  midiins;
             // Index to physical adlib data structure, adlins[]
-            char ____padding2[3];
-            uint32_t insmeta;
-            char ____padding3[4];
+            size_t  insmeta;
             // List of adlib channels it is currently occupying.
             std::map<uint16_t /*adlchn*/, uint16_t /*ins, inde to adl[]*/ > phys;
         };
@@ -462,7 +472,7 @@ public:
         users_t users;
 
         // If the channel is keyoff'd
-        long koff_time_until_neglible;
+        int64_t koff_time_until_neglible;
         // For channel allocation:
         OpnChannel(): users(), koff_time_until_neglible(0) { }
         void AddAge(int64_t ms);
@@ -600,8 +610,9 @@ public:
         unsigned int LogarithmicVolumes;
         int     VolumeModel;
         //unsigned int SkipForward;
-        bool         loopingIsEnabled;
-        int          ScaleModulators;
+        bool    loopingIsEnabled;
+        int     ScaleModulators;
+
         double delay;
         double carry;
 
@@ -675,7 +686,6 @@ private:
      */
     MidiEvent parseEvent(uint8_t **ptr, uint8_t *end, int &status);
 
-
 public:
 
     const std::string &getErrorString();
@@ -692,12 +702,8 @@ public:
     bool    atEnd,
             loopStart,
             loopEnd,
-            trackStart,
-            invalidLoop, /*Loop points are invalid (loopStart after loopEnd or loopStart and loopEnd are on same place)*/
-
-            loopStart_passed,/*Tells that "loopStart" already passed*/
-            loopStart_hit; /*loopStart entry was hited in previous tick*/
-    char    ____padding2[2];
+            invalidLoop; /*Loop points are invalid (loopStart after loopEnd or loopStart and loopEnd are on same place)*/
+    char ____padding2[2];
     OPN2 opn;
 
     int16_t outBuf[1024];
@@ -713,7 +719,6 @@ public:
      * @return Unsigned integer that conains parsed variable-length value
      */
     uint64_t ReadVarLen(uint8_t **ptr);
-
     /**
      * @brief Secure Standard MIDI Variable-Length numeric value parser with anti-out-of-range protection
      * @param [_inout] ptr Pointer to memory block that contains begin of variable-length value, will be iterated forward
@@ -739,6 +744,69 @@ public:
      */
     double Tick(double s, double granularity);
 
+    /**
+     * @brief Change current position to specified time position in seconds
+     * @param seconds Absolute time position in seconds
+     */
+    void    seek(double seconds);
+
+    /**
+     * @brief Gives current time position in seconds
+     * @return Current time position in seconds
+     */
+    double  tell();
+
+    /**
+     * @brief Gives time length of current song in seconds
+     * @return Time length of current song in seconds
+     */
+    double  timeLength();
+
+    /**
+     * @brief Gives loop start time position in seconds
+     * @return Loop start time position in seconds or -1 if song has no loop points
+     */
+    double  getLoopStart();
+
+    /**
+     * @brief Gives loop end time position in seconds
+     * @return Loop end time position in seconds or -1 if song has no loop points
+     */
+    double  getLoopEnd();
+
+    /**
+     * @brief Return to begin of current song
+     */
+    void    rewind();
+
+    /**
+     * @brief Set tempo multiplier
+     * @param tempo Tempo multiplier: 1.0 - original tempo. >1 - faster, <1 - slower
+     */
+    void    setTempo(double tempo);
+
+    /* RealTime event triggers */
+    void realTime_ResetState();
+
+    bool realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocity);
+    void realTime_NoteOff(uint8_t channel, uint8_t note);
+
+    void realTime_NoteAfterTouch(uint8_t channel, uint8_t note, uint8_t atVal);
+    void realTime_ChannelAfterTouch(uint8_t channel, uint8_t atVal);
+
+    void realTime_Controller(uint8_t channel, uint8_t type, uint8_t value);
+
+    void realTime_PatchChange(uint8_t channel, uint8_t patch);
+
+    void realTime_PitchBend(uint8_t channel, uint16_t pitch);
+    void realTime_PitchBend(uint8_t channel, uint8_t msb, uint8_t lsb);
+
+    void realTime_BankChangeLSB(uint8_t channel, uint8_t lsb);
+    void realTime_BankChangeMSB(uint8_t channel, uint8_t msb);
+    void realTime_BankChange(uint8_t channel, uint16_t bank);
+
+    void realTime_panic();
+
 private:
     enum
     {
@@ -754,8 +822,8 @@ private:
                     MIDIchannel::activenoteiterator i,
                     unsigned props_mask,
                     int32_t select_adlchn = -1);
-    void ProcessEvents();
-    void HandleEvent(size_t tk);
+    bool ProcessEventsNew(bool isSeek = false);
+    void HandleEvent(size_t tk, const MidiEvent &evt, int &status);
 
     // Determine how good a candidate this adlchannel
     // would be for playing a note from this instrument.
@@ -769,6 +837,7 @@ private:
         size_t  from_channel,
         OpnChannel::users_t::iterator j,
         MIDIchannel::activenoteiterator i);
+    void Panic();
     void KillSustainingNotes(int32_t MidCh = -1, int32_t this_adlchn = -1);
     void SetRPN(unsigned MidCh, unsigned value, bool MSB);
     //void UpdatePortamento(unsigned MidCh)
@@ -779,37 +848,6 @@ private:
 
 public:
     uint64_t ChooseDevice(const std::string &name);
-
-
-/**************LEGACY SHIT*****************/
-
-    // Information about each track
-    struct Position
-    {
-        bool began;
-        char padding[7];
-        double wait;
-        struct TrackInfo
-        {
-            size_t ptr;
-            uint64_t delay;
-            int    status;
-            char padding2[4];
-            TrackInfo(): ptr(0), delay(0), status(0) {}
-        };
-        std::vector<TrackInfo> track;
-
-        Position(): began(false), wait(0.0l), track() { }
-    } CurrentPosition, LoopBeginPosition, trackBeginPosition;
-
-
-public:
-    char ____padding[7];
-
-public:
-    uint64_t ReadVarLen(size_t tk);
-    uint64_t ReadVarLenEx(size_t tk, bool &ok);
-
 };
 
 extern int opn2RefreshNumCards(OPN2_MIDIPlayer *device);

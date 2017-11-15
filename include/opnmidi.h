@@ -28,6 +28,21 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
+
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
+#include <stdint.h>
+typedef uint8_t         ADL_UInt8;
+typedef uint16_t        ADL_Uint16;
+typedef int8_t          ADL_Sint8;
+typedef int16_t         ADL_Sint16;
+#else
+typedef unsigned char   ADL_UInt8;
+typedef unsigned short  ADL_Uint16;
+typedef char            ADL_Sint8;
+typedef short           ADL_Sint16;
+#endif
+
 enum OPNMIDI_VolumeModels
 {
     OPNMIDI_VolumeModel_AUTO = 0,
@@ -40,34 +55,17 @@ enum OPNMIDI_VolumeModels
 
 struct OPN2_MIDIPlayer
 {
-    unsigned int OpnBank;
-    unsigned int NumCards;
-    unsigned int LogarithmicVolumes;
-    int VolumeModel;
-    unsigned int QuitFlag;
-    unsigned int SkipForward;
-    unsigned int QuitWithoutLooping;
-    unsigned int ScaleModulators;
-    double delay;
-    double carry;
-
-    /* The lag between visual content and audio content equals */
-    /* the sum of these two buffers. */
-    double mindelay;
-    double maxdelay;
-
-    /* For internal usage */
-    int     stored_samples; /* num of collected samples */
-    short   backup_samples[1024]; /* Backup sample storage. */
-    int     backup_samples_size; /* Backup sample storage. */
-    /* For internal usage */
-
     void *opn2_midiPlayer;
-    unsigned long PCM_RATE;
 };
 
+//DEPRECATED
+#define opn2_setNumCards opn2_setNumChips
+
 /* Sets number of emulated sound cards (from 1 to 100). Emulation of multiple sound cards exchanges polyphony limits*/
-extern int  opn2_setNumCards(struct OPN2_MIDIPlayer *device, int numCards);
+extern int  opn2_setNumChips(struct OPN2_MIDIPlayer *device, int numCards);
+
+/* Get current number of emulated chips */
+extern int  opn_getNumChips(struct OPN2_MIDIPlayer *device);
 
 /*Enable or disable Enables scaling of modulator volumes*/
 extern void opn2_setScaleModulators(struct OPN2_MIDIPlayer *device, int smod);
@@ -81,21 +79,27 @@ extern void opn2_setLogarithmicVolumes(struct OPN2_MIDIPlayer *device, int logvo
 /*Set different volume range model */
 extern void opn2_setVolumeRangeModel(struct OPN2_MIDIPlayer *device, int volumeModel);
 
-
-/*Returns chip emulator name string*/
-extern const char *opn2_emulatorName();
-
-/*Returns string which contains last error message*/
-extern const char *opn2_errorString();
-
-/*Initialize ADLMIDI Player device*/
-extern struct OPN2_MIDIPlayer *opn2_init(long sample_rate);
-
 /*Load WOPN bank file from File System*/
 extern int opn2_openBankFile(struct OPN2_MIDIPlayer *device, char *filePath);
 
 /*Load WOPN bank file from memory data*/
 extern int opn2_openBankData(struct OPN2_MIDIPlayer *device, void *mem, long size);
+
+
+/*Returns chip emulator name string*/
+extern const char *opn2_emulatorName();
+
+/*Returns string which contains a version number*/
+extern const char *opn2_linkedLibraryVersion();
+
+/*Returns string which contains last error message*/
+extern const char *opn2_errorString();
+
+/*Returns string which contains last error message on specific device*/
+extern const char *opn_errorInfo(struct OPN2_MIDIPlayer *device);
+
+/*Initialize ADLMIDI Player device*/
+extern struct OPN2_MIDIPlayer *opn2_init(long sample_rate);
 
 /*Load MIDI file from File System*/
 extern int opn2_openFile(struct OPN2_MIDIPlayer *device, char *filePath);
@@ -106,11 +110,100 @@ extern int opn2_openData(struct OPN2_MIDIPlayer *device, void *mem, long size);
 /*Resets MIDI player*/
 extern void opn2_reset(struct OPN2_MIDIPlayer *device);
 
-/*Close and delete ADLMIDI device*/
+/*Get total time length of current song*/
+extern double opn2_totalTimeLength(struct OPN2_MIDIPlayer *device);
+
+/*Get loop start time if presented. -1 means MIDI file has no loop points */
+extern double opn2_loopStartTime(struct OPN2_MIDIPlayer *device);
+
+/*Get loop end time if presented. -1 means MIDI file has no loop points */
+extern double opn2_loopEndTime(struct OPN2_MIDIPlayer *device);
+
+/*Get current time position in seconds*/
+extern double opn2_positionTell(struct OPN2_MIDIPlayer *device);
+
+/*Jump to absolute time position in seconds*/
+extern void opn2_positionSeek(struct OPN2_MIDIPlayer *device, double seconds);
+
+/*Reset MIDI track position to begin */
+extern void opn2_positionRewind(struct OPN2_MIDIPlayer *device);
+
+/*Set tempo multiplier: 1.0 - original tempo, >1 - play faster, <1 - play slower */
+extern void opn2_setTempo(struct OPN2_MIDIPlayer *device, double tempo);
+
+/*Close and delete OPNMIDI device*/
 extern void opn2_close(struct OPN2_MIDIPlayer *device);
 
-/*Take a sample buffer*/
+
+
+/**META**/
+
+/*Returns string which contains a music title*/
+extern const char *opn2_metaMusicTitle(struct OPN2_MIDIPlayer *device);
+
+/*Returns string which contains a copyright string*/
+extern const char *opn2_metaMusicCopyright(struct OPN2_MIDIPlayer *device);
+
+/*Returns count of available track titles: NOTE: there are CAN'T be associated with channel in any of event or note hooks */
+extern size_t opn2_metaTrackTitleCount(struct OPN2_MIDIPlayer *device);
+
+/*Get track title by index*/
+extern const char *opn2_metaTrackTitle(struct OPN2_MIDIPlayer *device, size_t index);
+
+struct Opn2_MarkerEntry
+{
+    const char      *label;
+    double          pos_time;
+    unsigned long   pos_ticks;
+};
+
+/*Returns count of available markers*/
+extern size_t adl_metaMarkerCount(struct OPN2_MIDIPlayer *device);
+
+/*Returns the marker entry*/
+extern const struct Opn2_MarkerEntry opn2_metaMarker(struct OPN2_MIDIPlayer *device, size_t index);
+
+
+
+
+/*Take a sample buffer and iterate MIDI timers */
 extern int  opn2_play(struct OPN2_MIDIPlayer *device, int sampleCount, short out[]);
+
+/*Generate audio output from chip emulators without iteration of MIDI timers. 512 samples per channel is a maximum*/
+extern int  opn2_generate(struct OPN2_MIDIPlayer *device, int sampleCount, short *out);
+
+/**
+ * @brief Periodic tick handler.
+ * @param device
+ * @param seconds seconds since last call
+ * @param granularity don't expect intervals smaller than this, in seconds
+ * @return desired number of seconds until next call
+ *
+ * Use it for Hardware OPL3 mode or when you want to process events differently from adl_play() function.
+ * DON'T USE IT TOGETHER WITH adl_play()!!!
+ */
+extern double opn2_tickEvents(struct OPN2_MIDIPlayer *device, double seconds, double granuality);
+
+/*Returns 1 if music position has reached end*/
+extern int opn2_atEnd(struct OPN2_MIDIPlayer *device);
+
+/*Force Off all notes on all channels*/
+extern void opn2_panic(struct OPN2_MIDIPlayer *device);
+
+/**Hooks**/
+
+typedef void (*OPN2_RawEventHook)(void *userdata, ADL_UInt8 type, ADL_UInt8 subtype, ADL_UInt8 channel, const ADL_UInt8 *data, size_t len);
+typedef void (*OPN2_NoteHook)(void *userdata, int adlchn, int note, int ins, int pressure, double bend);
+typedef void (*OPN2_DebugMessageHook)(void *userdata, const char *fmt, ...);
+
+/* Set raw MIDI event hook */
+extern void opn2_setRawEventHook(struct OPN2_MIDIPlayer *device, OPN2_RawEventHook rawEventHook, void *userData);
+
+/* Set note hook */
+extern void opn2_setNoteHook(struct OPN2_MIDIPlayer *device, OPN2_NoteHook noteHook, void *userData);
+
+/* Set debug message hook */
+extern void opn2_setDebugMessageHook(struct OPN2_MIDIPlayer *device, OPN2_DebugMessageHook debugMessageHook, void *userData);
 
 #ifdef __cplusplus
 }

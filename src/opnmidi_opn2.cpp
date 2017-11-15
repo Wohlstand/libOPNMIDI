@@ -58,6 +58,7 @@ OPN2::OPN2() :
     DynamicMetaInstrumentTag(0x4000000u),
     NumCards(1),
     LogarithmicVolumes(false),
+    m_musicMode(MODE_MIDI),
     m_volumeScale(VOLUME_Generic)
 {}
 
@@ -255,7 +256,7 @@ void OPN2::ClearChips()
     cardsOP2.clear();
 }
 
-void OPN2::Reset()
+void OPN2::Reset(unsigned long PCM_RATE)
 {
     ClearChips();
     ins.clear();
@@ -270,11 +271,11 @@ void OPN2::Reset()
     {
     #ifdef USE_LEGACY_EMULATOR
         cardsOP2[i] = new OPNMIDI_Ym2612_Emu();
-        cardsOP2[i]->set_rate(_parent->PCM_RATE, 7670454.0);
+        cardsOP2[i]->set_rate(PCM_RATE, 7670454.0);
     #else
         cardsOP2[i] = new ym3438_t;
         std::memset(cardsOP2[i], 0, sizeof(ym3438_t));
-        OPN2_Reset(cardsOP2[i], (Bit32u)_parent->PCM_RATE, 7670454);
+        OPN2_Reset(cardsOP2[i], (Bit32u)PCM_RATE, 7670454);
     #endif
     }
     NumChannels = NumCards * 6;

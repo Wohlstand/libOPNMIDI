@@ -144,7 +144,7 @@ int main(int argc, char **argv)
     }
 
     #ifdef USE_LEGACY_EMULATOR
-    opn2_setNumCards(myDevice, 8);
+    opn2_setNumChips(myDevice, 8);
     #else
     opn2_setNumCards(myDevice, 3);
     #endif
