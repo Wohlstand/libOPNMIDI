@@ -166,7 +166,7 @@ void OPN2::Touch_Real(unsigned c, unsigned volume)
     //   63 + chanvol * (instrvol / 63.0 - 1)
 }
 
-void OPN2::Patch(uint16_t c, uint16_t i)
+void OPN2::Patch(uint16_t c, size_t i)
 {
     unsigned    card;
     uint8_t     port, cc;

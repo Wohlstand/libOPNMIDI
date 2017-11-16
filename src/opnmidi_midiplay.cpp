@@ -23,7 +23,6 @@
 
 #include "opnmidi_private.hpp"
 
-
 // Mapping from MIDI volume level to OPL level value.
 
 #if defined(ANDROID) && (cplusplus < 201103L)
@@ -279,9 +278,9 @@ bool OPNMIDIplay::buildTrackData()
         //Time delay that follows the first event in the track
         {
             MidiTrackRow evtPos;
-            //if(opl.m_musicMode == OPL3::MODE_RSXX)
-            //    ok = true;
-            //else
+            if(opn.m_musicMode == OPN2::MODE_RSXX)
+                ok = true;
+            else
                 evtPos.delay = ReadVarLenEx(&trackPtr, end, ok);
             if(!ok)
             {
@@ -645,11 +644,12 @@ OPNMIDIplay::OPNMIDIplay():
     m_setup.LogarithmicVolumes  = false;
     //m_setup.SkipForward = 0;
     m_setup.loopingIsEnabled = false;
-    m_setup.ScaleModulators     = -1;
+    m_setup.ScaleModulators     = 0;
     m_setup.delay = 0.0;
     m_setup.carry = 0.0;
     m_setup.stored_samples = 0;
     m_setup.backup_samples_size = 0;
+
     opn.NumCards = m_setup.NumCards;
     opn.LogarithmicVolumes = m_setup.LogarithmicVolumes;
     opn.ScaleModulators = m_setup.ScaleModulators;
@@ -1143,9 +1143,7 @@ void OPNMIDIplay::realTime_Controller(uint8_t channel, uint8_t type, uint8_t val
 
     case 64: // Enable/disable sustain
         Ch[channel].sustain = value;
-
         if(!value) KillSustainingNotes(channel);
-
         break;
 
     case 11: // Change expression (another volume factor)
@@ -1155,9 +1153,8 @@ void OPNMIDIplay::realTime_Controller(uint8_t channel, uint8_t type, uint8_t val
 
     case 10: // Change panning
         Ch[channel].panning = 0x00;
-        if(value  < 64 + 32) Ch[channel].panning |= 0x10;
-        if(value >= 64 - 32) Ch[channel].panning |= 0x20;
-
+        if(value  < 64 + 32) Ch[channel].panning |= 0x80;
+        if(value >= 64 - 32) Ch[channel].panning |= 0x40;
         NoteUpdate_All(channel, Upd_Pan);
         break;
 
@@ -1170,7 +1167,7 @@ void OPNMIDIplay::realTime_Controller(uint8_t channel, uint8_t type, uint8_t val
         Ch[channel].vibspeed   = 2 * 3.141592653 * 5.0;
         Ch[channel].vibdepth   = 0.5 / 127;
         Ch[channel].vibdelay   = 0;
-        Ch[channel].panning    = 0x30;
+        Ch[channel].panning    = 0xC0;
         Ch[channel].portamento = 0;
         //UpdatePortamento(MidCh);
         NoteUpdate_All(channel, Upd_Pan + Upd_Volume + Upd_Pitch);
@@ -1298,7 +1295,7 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
     my_loc.MidCh = MidCh;
     my_loc.note  = i->first;
 
-    for(std::map<uint16_t, uint16_t>::iterator
+    for(MIDIchannel::NoteInfo::PhysMap::iterator
         jnext = info.phys.begin();
         jnext != info.phys.end();
        )

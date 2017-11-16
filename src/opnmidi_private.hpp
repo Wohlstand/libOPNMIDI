@@ -41,14 +41,16 @@
 
 #ifdef _WIN32
 #   undef NO_OLDNAMES
-#endif
 
-#ifdef _MSC_VER
-#   ifdef _WIN64
+#   ifdef _MSC_VER
+#       ifdef _WIN64
 typedef __int64 ssize_t;
-#   else
+#       else
 typedef __int32 ssize_t;
+#       endif
+#       define NOMINMAX //Don't override std::min and std::max
 #   endif
+#   include <windows.h>
 #endif
 
 #include <vector>
@@ -127,12 +129,12 @@ public:
 };
 
 class OPNMIDIplay;
-struct OPN2
+class OPN2
 {
+public:
     friend class OPNMIDIplay;
     uint32_t NumChannels;
     char ____padding[4];
-    OPN2_MIDIPlayer *_parent;
 #ifdef USE_LEGACY_EMULATOR
     std::vector<OPNMIDI_Ym2612_Emu*> cardsOP2;
 #else
@@ -160,9 +162,10 @@ private:
     const opnInstData       &GetAdlIns(size_t insno);
 
 public:
-    unsigned int    NumCards;
-    bool            ScaleModulators;
-
+    //! Total number of running concurrent emulated chips
+    unsigned int NumCards;
+    //! Carriers-only are scaled by default by volume level. This flag will tell to scale modulators too.
+    bool ScaleModulators;
     //! Required to play CMF files. Can be turned on by using of "CMF" volume model
     bool LogarithmicVolumes;
     char ___padding2[3];
@@ -201,7 +204,7 @@ public:
     void NoteOn(unsigned c, double hertz);
     void Touch_Real(unsigned c, unsigned volume);
 
-    void Patch(uint16_t c, uint16_t i);
+    void Patch(uint16_t c, size_t i);
     void Pan(unsigned c, unsigned value);
     void Silence();
     void ChangeVolumeRangesModel(OPNMIDI_VolumeModels volumeModel);
@@ -418,17 +421,17 @@ public:
         {
             // Current pressure
             uint8_t vol;
-            // Tone selected on noteon:
             char ____padding[1];
+            // Tone selected on noteon:
             int16_t tone;
-            // Patch selected on noteon; index to banks[AdlBank][]
             char ____padding2[4];
+            // Patch selected on noteon; index to banks[AdlBank][]
             size_t  midiins;
             // Index to physical adlib data structure, adlins[]
             size_t  insmeta;
             typedef std::map<uint16_t, uint16_t> PhysMap;
             typedef uint16_t Phys;
-            // List of adlib channels it is currently occupying.
+            // List of OPN2 channels it is currently occupying.
             std::map<uint16_t /*adlchn*/, Phys> phys;
         };
         typedef std::map<uint8_t, NoteInfo> activenotemap_t;

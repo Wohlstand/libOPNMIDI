@@ -82,6 +82,14 @@ static void debugPrint(void * /*userdata*/, const char *fmt, ...)
     }
 }
 
+#ifdef DEBUG_TRACE_ALL_EVENTS
+static void debugPrintEvent(void * /*userdata*/, ADL_UInt8 type, ADL_UInt8 subtype, ADL_UInt8 channel, const ADL_UInt8 * /*data*/, size_t len)
+{
+    std::fprintf(stdout, " - E: 0x%02X 0x%02X %02d (%d)\r\n", type, subtype, channel, (int)len);
+    std::fflush(stdout);
+}
+#endif
+
 int main(int argc, char **argv)
 {
     if(argc < 3 || std::string(argv[1]) == "--help" || std::string(argv[1]) == "-h")
@@ -159,9 +167,12 @@ int main(int argc, char **argv)
 
     //Set internal debug messages hook to print all libADLMIDI's internal debug messages
     opn2_setDebugMessageHook(myDevice, debugPrint, NULL);
+    #ifdef DEBUG_TRACE_ALL_EVENTS
+    opn2_setRawEventHook(myDevice, debugPrintEvent, NULL);
+    #endif
 
     #ifdef USE_LEGACY_EMULATOR
-    opn2_setNumChips(myDevice, 1);
+    opn2_setNumChips(myDevice, 8);
     #else
     opn2_setNumCards(myDevice, 3);
     #endif
