@@ -24,20 +24,42 @@ Library is based on core of the [libADLMIDI](https://github.com/Wohlstand/libADL
 * Sustain enable/disable
 * MIDI and RMI file support
 * loopStart / loopEnd tag support (Final Fantasy VII)
+* 111-th controller based loop start (RPG-Maker)
 * Use automatic arpeggio with chords to relieve channel pressure
 * Support for multiple concurrent MIDI synthesizers (per-track device/port select FF 09 message), can be used to overcome 16 channel limit
 
 # How to build
-You can build shared version and additional tools on the Linux when you will run a "make" command and you will have libopnmidi.so in the "bin" directory.
+To build libOPNMIDI you need to use CMake:
 
-You also can build library manually:
+```bash
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make
+sudo make install
+```
+
+## Available CMake options
+* **CMAKE_PREFIX_PATH** - destinition folder where libADLMIDI will be installed. On Linux it is /usr/local/ by default.
+* **CMAKE_BUILD_TYPE** - Build types: **Debug** or **Release**
+* **WITH_MIDIPLAY** - (ON/OFF, default OFF) Build demo MIDI player (Requires SDL2 and also pthread on Windows with MinGW)
+* **WITH_EMBEDDED_BANKS** - (ON/OFF, default ON) Enable or disable embedded banks (Original ADLMIDI and older versions of libADLMIDI are had embedded-only banks with no ability to load custom banks in runtime).
+* **USE_GENS_EMULATOR** - (ON/OFF, default ON) Use GENS 2.10 emulator instead of Nuked OPN2. This emulator has less accuracy and seems outdated (will be replaced with MAME), but it is well optimized for a work on slow devices such as older computers, embedded or mobile devices.
+
+* **libOPNMIDI_STATIC** - (ON/OFF, default ON) Build static library
+* **libOPNMIDI_SHARED** - (ON/OFF, default OFF) Build shared library
+
+
+## You also can build library manually:
 You need to make in the any IDE a library project and put into it next files
 (or include those files into subfolder of your exist project instead if you want to use it statically):
 
+### Public header (include)
 * opnmidi.h    - Library API, use it to control library
 
+### Internal code (src)
 * Ym2612_ChipEmu.h  - Yamaha OPN2 Emulation header
-* fraction.h    - Fraction number handling
+* fraction.hpp  - Fraction number handling
 * opnbank.h    - bank structures definition
 * opnmidi_private.hpp - header of internal private APIs
 * opnmidi_mus2mid.h - MUS2MID converter header
@@ -53,7 +75,10 @@ You need to make in the any IDE a library project and put into it next files
 * opnmidi_mus2mid.c	- MUS2MID converter source
 * opnmidi_xmi2mid.c	- XMI2MID converter source
 
+**Important**: Please use GENS emulator on mobile devices because it requires small CPU power. Nuked OPN2 emulator is very accurate (compared to real OPN2 chip), however, it requires a VERY POWERFUL device even for a single chip emulation and is a high probability that your device will lag and playback will be dirty and choppy.
+
 # Working demos
 
-* {Coming soon}
+* [PGE MusPlay for Win32](http://wohlsoft.ru/docs/_laboratory/_Builds/win32/bin-w32/_packed/pge-musplay-dev-win32.zip) (also available for other platforms as part of [PGE Project](https://github.com/WohlSoft/PGE-Project)) - a little music player which uses SDL Mixer X library (fork of the SDL Mixer 2.0) which has embedded libOPNMIDI to play MIDI files independently from operating system's settings and drivers. <br>(source code of player can be find [here](https://github.com/WohlSoft/PGE-Project/tree/master/MusicPlayer) and source code of SDL Mixer X [here](https://github.com/WohlSoft/PGE-Project/tree/master/_Libs/SDL2_mixer_modified))
+* [OPNMIDI Player for Android](https://github.com/Wohlstand/OPNMIDI-Player-Java/) - a little MIDI-player for Android which uses libOPNMIDI to play MIDI files and provides flexible GUI with ability to change bank, flags, number of emulated chips, etc.
 
