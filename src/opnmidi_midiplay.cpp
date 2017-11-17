@@ -232,6 +232,8 @@ bool OPNMIDIplay::buildTrackData()
     musTrackTitles.clear();
     musMarkers.clear();
     caugh_missing_instruments.clear();
+    caugh_missing_banks_melodic.clear();
+    caugh_missing_banks_percussion.clear();
     trackDataNew.clear();
     const size_t    trackCount = TrackData.size();
     trackDataNew.resize(trackCount, MidiTrackQueue());
@@ -928,10 +930,13 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
             if(b != opn.dynamic_percussion_banks.end())
                 midiins += b->second * 128;
             else
+            if(hooks.onDebugMessage)
             {
-                if(hooks.onDebugMessage)
-                    hooks.onDebugMessage(hooks.onDebugMessage_userData,
-                                         "[%i] Playing missing percussion bank %i (patch %i)", channel, bank, midiins);
+                if(!caugh_missing_banks_melodic.count(bank))
+                {
+                    hooks.onDebugMessage(hooks.onDebugMessage_userData, "[%i] Playing missing percussion bank %i (patch %i)", channel, bank, midiins);
+                    caugh_missing_banks_melodic.insert(bank);
+                }
             }
         }
         else
@@ -940,10 +945,13 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
             if(b != opn.dynamic_melodic_banks.end())
                 midiins += b->second * 128;
             else
+            if(hooks.onDebugMessage)
             {
-                if(hooks.onDebugMessage)
-                    hooks.onDebugMessage(hooks.onDebugMessage_userData,
-                                         "[%i] Playing missing melodic bank %i (patch %i)", channel, bank, midiins);
+                if(!caugh_missing_banks_melodic.count(bank))
+                {
+                    hooks.onDebugMessage(hooks.onDebugMessage_userData, "[%i] Playing missing melodic bank %i (patch %i)", channel, bank, midiins);
+                    caugh_missing_banks_melodic.insert(bank);
+                }
             }
         }
     }
@@ -955,47 +963,6 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
         if(midiins == 48 || midiins == 50) vol /= 4; // HACK
         */
     //if(midiins == 56) vol = vol*6/10; // HACK
-
-    /* ====================================================================================
-     * TODO: Instead of this shit implement support of multiple banks by using WOPL format
-     * (which will allow to implement GS or XG compatible banks!)
-     * ====================================================================================
-
-    static std::set<uint32_t> bank_warnings;
-
-    if(Ch[channel].bank_msb)
-    {
-        uint32_t bankid = midiins + 256 * Ch[channel].bank_msb;
-        std::set<uint32_t>::iterator
-        i = bank_warnings.lower_bound(bankid);
-
-        if(i == bank_warnings.end() || *i != bankid)
-        {
-            ADLMIDI_ErrorString.clear();
-            std::stringstream s;
-            s << "[" << channel  << "]Bank " << Ch[channel].bank_msb <<
-              " undefined, patch=" << ((midiins & 128) ? 'P' : 'M') << (midiins & 127);
-            ADLMIDI_ErrorString = s.str();
-            bank_warnings.insert(i, bankid);
-        }
-    }
-
-    if(Ch[channel].bank_lsb)
-    {
-        unsigned bankid = Ch[channel].bank_lsb * 65536;
-        std::set<unsigned>::iterator
-        i = bank_warnings.lower_bound(bankid);
-
-        if(i == bank_warnings.end() || *i != bankid)
-        {
-            ADLMIDI_ErrorString.clear();
-            std::stringstream s;
-            s << "[" << channel  << "]Bank lsb " << Ch[channel].bank_lsb << " undefined";
-            ADLMIDI_ErrorString = s.str();
-            bank_warnings.insert(i, bankid);
-        }
-    }
-    */
 
     const size_t        meta    = opn.GetAdlMetaNumber(midiins);
     const opnInstMeta  &ains    = opn.GetAdlMetaIns(meta);
