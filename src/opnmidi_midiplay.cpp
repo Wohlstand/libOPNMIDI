@@ -877,16 +877,21 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     {
         bank = (uint16_t(Ch[channel].bank_msb) * 256) + uint16_t(Ch[channel].bank_lsb);
         if(bank == 0x7E00) //XG SFX1/SFX2 channel (16128 signed decimal)
+        {
+            //Let XG SFX1/SFX2 bank will have LSB==1 (128...255 range in WOPN file)
+            bank = (uint16_t)midiins + 128; // MIDI instrument defines the patch
             isPercussion = true;
+        }
         if(bank == 0x7F00) //XG Percussion channel (16256 signed decimal)
+        {
+            //Let XG Percussion bank will use (0...127 range in WOPN file)
+            bank = (uint16_t)midiins; // MIDI instrument defines the patch
             isPercussion = true;
+        }
     }
 
     if(isPercussion)
-    {
-        bank = (uint16_t)midiins; // MIDI instrument defines the patch
         midiins = opn.dynamic_percussion_offset + note; // Percussion instrument
-    }
 
     //Set bank bank
     if(bank > 0)
