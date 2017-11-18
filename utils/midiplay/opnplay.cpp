@@ -181,6 +181,7 @@ int main(int argc, char **argv)
 
     opn2_setLogarithmicVolumes(myDevice, 0);
     opn2_setVolumeRangeModel(myDevice, OPNMIDI_VolumeModel_Generic);
+    opn2_setLoopEnabled(myDevice, 1);
 
     int arg = 1;
     for(arg = 1; arg < argc; arg++)
