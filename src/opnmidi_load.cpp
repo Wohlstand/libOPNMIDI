@@ -83,7 +83,7 @@ bool OPNMIDIplay::LoadBank(const std::string &filename)
     return LoadBank(file);
 }
 
-bool OPNMIDIplay::LoadBank(void *data, unsigned long size)
+bool OPNMIDIplay::LoadBank(const void *data, size_t size)
 {
     fileReader file;
     file.openData(data, (size_t)size);
@@ -209,10 +209,10 @@ bool OPNMIDIplay::LoadMIDI(const std::string &filename)
     return true;
 }
 
-bool OPNMIDIplay::LoadMIDI(void *data, unsigned long size)
+bool OPNMIDIplay::LoadMIDI(const void *data, size_t size)
 {
     fileReader file;
-    file.openData(data, (size_t)size);
+    file.openData(data, size);
     return LoadMIDI(file);
 }
 

@@ -73,7 +73,7 @@ OPNMIDI_EXPORT int opn2_setNumChips(OPN2_MIDIPlayer *device, int numCards)
     return opn2RefreshNumCards(device);
 }
 
-OPNMIDI_EXPORT int opn_getNumChips(struct OPN2_MIDIPlayer *device)
+OPNMIDI_EXPORT int opn2_getNumChips(struct OPN2_MIDIPlayer *device)
 {
     if(device == NULL)
         return -2;
@@ -83,7 +83,7 @@ OPNMIDI_EXPORT int opn_getNumChips(struct OPN2_MIDIPlayer *device)
     return -2;
 }
 
-OPNMIDI_EXPORT int opn2_openBankFile(OPN2_MIDIPlayer *device, char *filePath)
+OPNMIDI_EXPORT int opn2_openBankFile(OPN2_MIDIPlayer *device, const char *filePath)
 {
     if(device && device->opn2_midiPlayer)
     {
@@ -103,7 +103,7 @@ OPNMIDI_EXPORT int opn2_openBankFile(OPN2_MIDIPlayer *device, char *filePath)
     return -1;
 }
 
-OPNMIDI_EXPORT int opn2_openBankData(OPN2_MIDIPlayer *device, void *mem, long size)
+OPNMIDI_EXPORT int opn2_openBankData(OPN2_MIDIPlayer *device, const void *mem, long size)
 {
     if(device && device->opn2_midiPlayer)
     {
@@ -155,7 +155,7 @@ OPNMIDI_EXPORT void opn2_setVolumeRangeModel(OPN2_MIDIPlayer *device, int volume
     play->opn.ChangeVolumeRangesModel(static_cast<OPNMIDI_VolumeModels>(volumeModel));
 }
 
-OPNMIDI_EXPORT int opn2_openFile(OPN2_MIDIPlayer *device, char *filePath)
+OPNMIDI_EXPORT int opn2_openFile(OPN2_MIDIPlayer *device, const char *filePath)
 {
     if(device && device->opn2_midiPlayer)
     {
@@ -176,7 +176,7 @@ OPNMIDI_EXPORT int opn2_openFile(OPN2_MIDIPlayer *device, char *filePath)
     return -1;
 }
 
-OPNMIDI_EXPORT int opn2_openData(OPN2_MIDIPlayer *device, void *mem, long size)
+OPNMIDI_EXPORT int opn2_openData(OPN2_MIDIPlayer *device, const void *mem, unsigned long size)
 {
     if(device && device->opn2_midiPlayer)
     {
@@ -217,7 +217,7 @@ OPNMIDI_EXPORT const char *opn2_errorString()
     return OPN2MIDI_ErrorString.c_str();
 }
 
-OPNMIDI_EXPORT const char *adl_errorInfo(struct OPN2_MIDIPlayer *device)
+OPNMIDI_EXPORT const char *opn2_errorInfo(struct OPN2_MIDIPlayer *device)
 {
     if(!device)
         return opn2_errorString();
@@ -227,7 +227,7 @@ OPNMIDI_EXPORT const char *adl_errorInfo(struct OPN2_MIDIPlayer *device)
     return play->getErrorString().c_str();
 }
 
-OPNMIDI_EXPORT const char *adl_getMusicTitle(struct OPN2_MIDIPlayer *device)
+OPNMIDI_EXPORT const char *opn2_getMusicTitle(struct OPN2_MIDIPlayer *device)
 {
     if(!device)
         return "";
@@ -347,7 +347,7 @@ OPNMIDI_EXPORT size_t opn2_metaMarkerCount(struct OPN2_MIDIPlayer *device)
     return reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer)->musMarkers.size();
 }
 
-OPNMIDI_EXPORT const struct Opn2_MarkerEntry adl_metaMarker(struct OPN2_MIDIPlayer *device, size_t index)
+OPNMIDI_EXPORT const struct Opn2_MarkerEntry opn2_metaMarker(struct OPN2_MIDIPlayer *device, size_t index)
 {
     struct Opn2_MarkerEntry marker;
     OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);

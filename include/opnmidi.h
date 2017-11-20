@@ -32,15 +32,15 @@ extern "C" {
 
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
 #include <stdint.h>
-typedef uint8_t         ADL_UInt8;
-typedef uint16_t        ADL_Uint16;
-typedef int8_t          ADL_Sint8;
-typedef int16_t         ADL_Sint16;
+typedef uint8_t         OPN2_UInt8;
+typedef uint16_t        OPN2_Uint16;
+typedef int8_t          OPN2_Sint8;
+typedef int16_t         OPN2_Sint16;
 #else
-typedef unsigned char   ADL_UInt8;
-typedef unsigned short  ADL_Uint16;
-typedef char            ADL_Sint8;
-typedef short           ADL_Sint16;
+typedef unsigned char   OPN2_UInt8;
+typedef unsigned short  OPN2_Uint16;
+typedef char            OPN2_Sint8;
+typedef short           OPN2_Sint16;
 #endif
 
 enum OPNMIDI_VolumeModels
@@ -65,7 +65,7 @@ struct OPN2_MIDIPlayer
 extern int  opn2_setNumChips(struct OPN2_MIDIPlayer *device, int numCards);
 
 /* Get current number of emulated chips */
-extern int  opn_getNumChips(struct OPN2_MIDIPlayer *device);
+extern int  opn2_getNumChips(struct OPN2_MIDIPlayer *device);
 
 /*Enable or disable Enables scaling of modulator volumes*/
 extern void opn2_setScaleModulators(struct OPN2_MIDIPlayer *device, int smod);
@@ -80,10 +80,10 @@ extern void opn2_setLogarithmicVolumes(struct OPN2_MIDIPlayer *device, int logvo
 extern void opn2_setVolumeRangeModel(struct OPN2_MIDIPlayer *device, int volumeModel);
 
 /*Load WOPN bank file from File System*/
-extern int opn2_openBankFile(struct OPN2_MIDIPlayer *device, char *filePath);
+extern int opn2_openBankFile(struct OPN2_MIDIPlayer *device, const char *filePath);
 
 /*Load WOPN bank file from memory data*/
-extern int opn2_openBankData(struct OPN2_MIDIPlayer *device, void *mem, long size);
+extern int opn2_openBankData(struct OPN2_MIDIPlayer *device, const void *mem, long size);
 
 
 /*Returns chip emulator name string*/
@@ -96,16 +96,16 @@ extern const char *opn2_linkedLibraryVersion();
 extern const char *opn2_errorString();
 
 /*Returns string which contains last error message on specific device*/
-extern const char *opn_errorInfo(struct OPN2_MIDIPlayer *device);
+extern const char *opn2_errorInfo(struct OPN2_MIDIPlayer *device);
 
 /*Initialize ADLMIDI Player device*/
 extern struct OPN2_MIDIPlayer *opn2_init(long sample_rate);
 
 /*Load MIDI file from File System*/
-extern int opn2_openFile(struct OPN2_MIDIPlayer *device, char *filePath);
+extern int opn2_openFile(struct OPN2_MIDIPlayer *device, const char *filePath);
 
 /*Load MIDI file from memory data*/
-extern int opn2_openData(struct OPN2_MIDIPlayer *device, void *mem, long size);
+extern int opn2_openData(struct OPN2_MIDIPlayer *device, const void *mem, unsigned long size);
 
 /*Resets MIDI player*/
 extern void opn2_reset(struct OPN2_MIDIPlayer *device);
@@ -158,7 +158,7 @@ struct Opn2_MarkerEntry
 };
 
 /*Returns count of available markers*/
-extern size_t adl_metaMarkerCount(struct OPN2_MIDIPlayer *device);
+extern size_t opn2_metaMarkerCount(struct OPN2_MIDIPlayer *device);
 
 /*Returns the marker entry*/
 extern const struct Opn2_MarkerEntry opn2_metaMarker(struct OPN2_MIDIPlayer *device, size_t index);
@@ -179,8 +179,8 @@ extern int  opn2_generate(struct OPN2_MIDIPlayer *device, int sampleCount, short
  * @param granularity don't expect intervals smaller than this, in seconds
  * @return desired number of seconds until next call
  *
- * Use it for Hardware OPL3 mode or when you want to process events differently from adl_play() function.
- * DON'T USE IT TOGETHER WITH adl_play()!!!
+ * Use it for Hardware OPL3 mode or when you want to process events differently from opn2_play() function.
+ * DON'T USE IT TOGETHER WITH opn2_play()!!!
  */
 extern double opn2_tickEvents(struct OPN2_MIDIPlayer *device, double seconds, double granuality);
 
@@ -192,7 +192,7 @@ extern void opn2_panic(struct OPN2_MIDIPlayer *device);
 
 /**Hooks**/
 
-typedef void (*OPN2_RawEventHook)(void *userdata, ADL_UInt8 type, ADL_UInt8 subtype, ADL_UInt8 channel, const ADL_UInt8 *data, size_t len);
+typedef void (*OPN2_RawEventHook)(void *userdata, OPN2_UInt8 type, OPN2_UInt8 subtype, OPN2_UInt8 channel, const OPN2_UInt8 *data, size_t len);
 typedef void (*OPN2_NoteHook)(void *userdata, int adlchn, int note, int ins, int pressure, double bend);
 typedef void (*OPN2_DebugMessageHook)(void *userdata, const char *fmt, ...);
 
