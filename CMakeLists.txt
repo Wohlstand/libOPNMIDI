@@ -107,6 +107,7 @@ if(WITH_MIDIPLAY)
 
     add_executable(opnmidiplay
         ${libOPNMIDI_SOURCE_DIR}/utils/midiplay/opnplay.cpp
+        ${libOPNMIDI_SOURCE_DIR}/utils/midiplay/wave_writer.c
         # ${libOPNMIDI_SOURCE_DIR}/utils/midiplay/wave_writer.c # WIP
     )
 

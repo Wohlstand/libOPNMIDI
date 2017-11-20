@@ -1,22 +1,21 @@
-
 #include <vector>
 #include <string>
 #include <cstdio>
+#include <cctype>
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <cstdarg>
 #include <deque>
-#define SDL_MAIN_HANDLED
-#include <SDL2/SDL.h>
+#include <algorithm>
 #include <signal.h>
 
-#ifdef DEBUG_DUMP_RAW_STREAM
-#include <pwd.h>
-#include <unistd.h>
-#include <sys/types.h>
-#endif
-
 #include <opnmidi.h>
+
+#define SDL_MAIN_HANDLED
+#include <SDL2/SDL.h>
+
+#include "wave_writer.h"
 
 class MutexType
 {
@@ -37,36 +36,42 @@ public:
     }
 };
 
-
 typedef std::deque<int16_t> AudioBuff;
 static AudioBuff g_audioBuffer;
-static MutexType AudioBuffer_lock;
+static MutexType g_audioBuffer_lock;
 
 static void SDL_AudioCallbackX(void *, Uint8 *stream, int len)
 {
     SDL_LockAudio();
     short *target = reinterpret_cast<int16_t*>(stream);
-    AudioBuffer_lock.Lock();
+    g_audioBuffer_lock.Lock();
     size_t ate = size_t(len) / 2; // number of shorts
     if(ate > g_audioBuffer.size()) ate = g_audioBuffer.size();
     for(size_t a = 0; a < ate; ++a)
         target[a] = g_audioBuffer[a];
     g_audioBuffer.erase(g_audioBuffer.begin(), g_audioBuffer.begin() + AudioBuff::difference_type(ate));
-    AudioBuffer_lock.Unlock();
+    g_audioBuffer_lock.Unlock();
     SDL_UnlockAudio();
 }
 
-static bool g_playing = true;
-
-void handle_signal(int signal)
+static void printError(const char *err)
 {
-    if(signal == SIGINT)
-    {
-        g_playing = false;
-        printf("\n\n");
-        fflush(stdout);
-    }
+    std::fprintf(stderr, "\nERROR: %s\n\n", err);
+    std::fflush(stderr);
 }
+
+static int stop = 0;
+static void sighandler(int dum)
+{
+    if((dum == SIGINT)
+        || (dum == SIGTERM)
+    #ifndef _WIN32
+        || (dum == SIGHUP)
+    #endif
+    )
+        stop = 1;
+}
+
 
 static void debugPrint(void * /*userdata*/, const char *fmt, ...)
 {
@@ -92,10 +97,15 @@ static void debugPrintEvent(void * /*userdata*/, ADL_UInt8 type, ADL_UInt8 subty
 
 int main(int argc, char **argv)
 {
+    std::fprintf(stdout, "==========================================\n"
+                         "         libOPNMIDI demo utility\n"
+                         "==========================================\n\n");
+    std::fflush(stdout);
+
     if(argc < 3 || std::string(argv[1]) == "--help" || std::string(argv[1]) == "-h")
     {
         std::printf(
-            "Usage: opnmidi <bankfile>.wopn <midifilename>\n"
+            "Usage: opnmidi [-s] [-w] [-nl] <bankfile>.wopn <midifilename>\n"
             //" -p Enables adlib percussion instrument mode\n"
             //" -t Enables tremolo amplification mode\n"
             //" -v Enables vibrato amplification mode\n"
@@ -103,24 +113,8 @@ int main(int argc, char **argv)
             " -nl Quit without looping\n"
             " -w Write WAV file rather than playing\n"
         );
-        /*
-                for(unsigned a=0; a<sizeof(banknames)/sizeof(*banknames); ++a)
-                    std::printf("%10s%2u = %s\n",
-                        a?"":"Banks:",
-                        a,
-                        banknames[a]);
-        */
-        std::printf(
-            "     Use banks 2-5 to play Descent \"q\" soundtracks.\n"
-            "     Look up the relevant bank number from descent.sng.\n"
-            "\n"
-            "     The fourth parameter can be used to specify the number\n"
-            "     of four-op channels to use. Each four-op channel eats\n"
-            "     the room of two regular channels. Use as many as required.\n"
-            "     The Doom & Hexen sets require one or two, while\n"
-            "     Miles four-op set requires the maximum of numcards*6.\n"
-            "\n"
-        );
+        std::fflush(stdout);
+
         return 0;
     }
 
@@ -140,25 +134,12 @@ int main(int argc, char **argv)
     spec.freq     = 44100;
     spec.format   = AUDIO_S16SYS;
     spec.channels = 2;
-    spec.samples  = Uint16(spec.freq * AudioBufferLength);
+    spec.samples  = Uint16((double)spec.freq * AudioBufferLength);
     spec.callback = SDL_AudioCallbackX;
 
-    // Set up SDL
-    if(SDL_OpenAudio(&spec, &obtained) < 0)
-    {
-        std::fprintf(stderr, "Couldn't open audio: %s\n", SDL_GetError());
-        return 1;
-    }
-
-    if(spec.samples != obtained.samples)
-        std::fprintf(stderr,
-                     "Wanted (samples=%u,rate=%u,channels=%u);\n"
-                     "Obtained (samples=%u,rate=%u,channels=%u)\n",
-                     spec.samples,    spec.freq,    spec.channels,
-                     obtained.samples, obtained.freq, obtained.channels);
-
     OPN2_MIDIPlayer *myDevice;
-    myDevice = opn2_init(obtained.freq);
+
+    myDevice = opn2_init(44100);
     if(myDevice == NULL)
     {
         std::fprintf(stderr, "Failed to init MIDI device!\n");
@@ -167,9 +148,75 @@ int main(int argc, char **argv)
 
     //Set internal debug messages hook to print all libADLMIDI's internal debug messages
     opn2_setDebugMessageHook(myDevice, debugPrint, NULL);
+
+
+    /*
+     * Set library options by parsing of command line arguments
+     */
+    bool recordWave = false;
+    int loopEnabled = 1;
+
+    int arg = 1;
+    for(arg = 1; arg < argc; arg++)
+    {
+        if(!std::strcmp("-w", argv[arg]))
+            recordWave = true;//Record library output into WAV file
+        else if(!std::strcmp("-nl", argv[arg]))
+            loopEnabled = 0; //Enable loop
+        else if(!std::strcmp("-s", argv[arg]))
+            opn2_setScaleModulators(myDevice, 1);//Turn on modulators scaling by volume
+        else if(!std::strcmp("--", argv[arg]))
+            break;
+        else
+            break;
+    }
+
+    //Turn loop on/off (for WAV recording loop must be disabled!)
+    opn2_setLoopEnabled(myDevice, recordWave ? 0 : loopEnabled);
     #ifdef DEBUG_TRACE_ALL_EVENTS
-    opn2_setRawEventHook(myDevice, debugPrintEvent, NULL);
+    //Hook all MIDI events are ticking while generating an output buffer
+    if(!recordWave)
+        opn2_setRawEventHook(myDevice, debugPrintEvent, NULL);
     #endif
+
+    if(arg > argc - 2)
+    {
+        printError("Missing bank and/or music file paths!\n");
+        return 2;
+    }
+
+    std::string bankPath = argv[arg];
+    std::string musPath = argv[arg + 1];
+
+    std::fprintf(stdout, " - %s OPN2 Emulator in use\n", opn2_emulatorName());
+
+    if(!recordWave)
+    {
+        // Set up SDL
+        if(SDL_OpenAudio(&spec, &obtained) < 0)
+        {
+            std::fprintf(stderr, "\nERROR: Couldn't open audio: %s\n\n", SDL_GetError());
+            //return 1;
+        }
+        if(spec.samples != obtained.samples)
+        {
+            std::fprintf(stderr, " - Audio wanted (samples=%u,rate=%u,channels=%u);\n"
+                                 " - Audio obtained (samples=%u,rate=%u,channels=%u)\n",
+                         spec.samples,    spec.freq,    spec.channels,
+                         obtained.samples, obtained.freq, obtained.channels);
+        }
+    }
+
+    std::fprintf(stdout, " - Use bank [%s]...", bankPath.c_str());
+    std::fflush(stdout);
+    if(opn2_openBankFile(myDevice, bankPath.c_str()) != 0)
+    {
+        std::fprintf(stdout, "FAILED!\n");
+        std::fflush(stdout);
+        printError(opn2_errorInfo(myDevice));
+        return 2;
+    }
+    std::fprintf(stdout, "OK!\n");
 
     #ifdef USE_LEGACY_EMULATOR
     opn2_setNumChips(myDevice, 8);
@@ -177,89 +224,121 @@ int main(int argc, char **argv)
     opn2_setNumCards(myDevice, 3);
     #endif
 
-    std::printf("[%s emulator in use]\n", opn2_emulatorName());
+    std::fprintf(stdout, " - Number of chips %d\n", opn2_getNumChips(myDevice));
 
-    opn2_setLogarithmicVolumes(myDevice, 0);
-    opn2_setVolumeRangeModel(myDevice, OPNMIDI_VolumeModel_Generic);
-    opn2_setLoopEnabled(myDevice, 1);
-
-    int arg = 1;
-    for(arg = 1; arg < argc; arg++)
+    if(opn2_openFile(myDevice, musPath.c_str()) != 0)
     {
-        if(!std::strcmp("-nl", argv[arg]))
-            opn2_setLoopEnabled(myDevice, 0);
-        else if(!std::strcmp("-s", argv[arg]))
-            opn2_setScaleModulators(myDevice, 1);
-        else if(!std::strcmp("--", argv[arg]))
-            break;
-        else
-            break;
-    }
-
-    if(arg > argc - 2)
-    {
-        std::fprintf(stderr, "Missing paths!\n");
+        printError(opn2_errorInfo(myDevice));
         return 2;
     }
 
-    if(opn2_openBankFile(myDevice, argv[arg]) != 0)
-    {
-        std::fprintf(stderr, "%s\n", opn2_errorString());
-        return 2;
-    }
+    std::fprintf(stdout, " - File [%s] opened!\n", musPath.c_str());
+    std::fflush(stdout);
 
-    if(opn2_openFile(myDevice, argv[arg + 1]) != 0)
-    {
-        std::fprintf(stderr, "%s\n", opn2_errorString());
-        return 2;
-    }
-
-    SDL_PauseAudio(0);
-
-    signal(SIGINT,  &handle_signal);
-    printf("Playing of %s...\n\nPress Ctrl+C to abort", argv[2]);
-    fflush(stdout);
-
-    #ifdef DEBUG_DUMP_RAW_STREAM
-    passwd* pw = getpwuid(getuid());
-    std::string path(pw->pw_dir);
-    path += "/opnOutput.raw";
-    FILE *rawOutput = fopen(path.c_str(), "wb");
+    signal(SIGINT, sighandler);
+    signal(SIGTERM, sighandler);
+    #ifndef _WIN32
+    signal(SIGHUP, sighandler);
     #endif
 
-    //int16_t buff[204800];
-    std::vector<int16_t> buff;
-    buff.resize(obtained.samples);
-    while(g_playing)
+    double total        = opn2_totalTimeLength(myDevice);
+    double loopStart    = opn2_loopStartTime(myDevice);
+    double loopEnd      = opn2_loopEndTime(myDevice);
+
+    if(!recordWave)
     {
-        size_t got = (size_t)opn2_play(myDevice, obtained.samples, buff.data());
-        if(got <= 0)
-            break;
-        #ifdef DEBUG_DUMP_RAW_STREAM
-        fwrite(buff.data(), 1, sizeof(int16_t) * buff.size(), rawOutput);
+        std::fprintf(stdout, " - Loop is turned %s\n", loopEnabled ? "ON" : "OFF");
+        if(loopStart >= 0.0 && loopEnd >= 0.0)
+            std::fprintf(stdout, " - Has loop points: %10f ... %10f\n", loopStart, loopEnd);
+        std::fprintf(stdout, "\n==========================================\n");
+        std::fflush(stdout);
+
+        SDL_PauseAudio(0);
+
+        #ifdef DEBUG_SEEKING_TEST
+        int delayBeforeSeek = 50;
+        std::fprintf(stdout, "DEBUG: === Random position set test is active! ===\n");
+        std::fflush(stdout);
         #endif
 
-        AudioBuffer_lock.Lock();
-        size_t pos = g_audioBuffer.size();
-        g_audioBuffer.resize(pos + got);
-        for(size_t p = 0; p < got; ++p)
-            g_audioBuffer[pos + p] = buff[p];
-        AudioBuffer_lock.Unlock();
+        short buff[4096];
+        while(!stop)
+        {
+            size_t got = (size_t)opn2_play(myDevice, 4096, buff);
+            if(got <= 0)
+                break;
 
-        const SDL_AudioSpec &spec_ = obtained;
-        while(g_audioBuffer.size() > spec_.samples + (spec_.freq * 2) * OurHeadRoomLength)
-            SDL_Delay(1);
+            #ifndef DEBUG_TRACE_ALL_EVENTS
+            std::fprintf(stdout, "                                               \r");
+            std::fprintf(stdout, "Time position: %10f / %10f\r", opn2_positionTell(myDevice), total);
+            std::fflush(stdout);
+            #endif
+
+            g_audioBuffer_lock.Lock();
+            size_t pos = g_audioBuffer.size();
+            g_audioBuffer.resize(pos + got);
+            for(size_t p = 0; p < got; ++p)
+                g_audioBuffer[pos + p] = buff[p];
+            g_audioBuffer_lock.Unlock();
+
+            const SDL_AudioSpec &spec = obtained;
+            while(g_audioBuffer.size() > spec.samples + (spec.freq * 2) * OurHeadRoomLength)
+            {
+                SDL_Delay(1);
+            }
+
+            #ifdef DEBUG_SEEKING_TEST
+            if(delayBeforeSeek-- <= 0)
+            {
+                delayBeforeSeek = rand() % 50;
+                double seekTo = double((rand() % int(opn2_totalTimeLength(myDevice)) - delayBeforeSeek - 1 ));
+                opn2_positionSeek(myDevice, seekTo);
+            }
+            #endif
+        }
+        std::fprintf(stdout, "                                               \n\n");
+        SDL_CloseAudio();
+    }
+    else
+    {
+        std::string wave_out = musPath + ".wav";
+        std::fprintf(stdout, " - Recording WAV file %s...\n", wave_out.c_str());
+        std::fprintf(stdout, "\n==========================================\n");
+        std::fflush(stdout);
+
+        if(wave_open(spec.freq, wave_out.c_str()) == 0)
+        {
+            wave_enable_stereo();
+            while(!stop)
+            {
+                short buff[4096];
+                size_t got = (size_t)opn2_play(myDevice, 4096, buff);
+                if(got <= 0)
+                    break;
+                wave_write(buff, (long)got);
+
+                double complete = std::floor(100.0 * opn2_positionTell(myDevice) / total);
+                std::fprintf(stdout, "                                               \r");
+                std::fprintf(stdout, "Recording WAV... [%d%% completed]\r", (int)complete);
+                std::fflush(stdout);
+            }
+            wave_close();
+            std::fprintf(stdout, "                                               \n\n");
+
+            if(stop)
+                std::fprintf(stdout, "Interrupted! Recorded WAV is incomplete, but playable!\n");
+            else
+                std::fprintf(stdout, "Completed!\n");
+            std::fflush(stdout);
+        }
+        else
+        {
+            opn2_close(myDevice);
+            return 1;
+        }
     }
 
-    #ifdef DEBUG_DUMP_RAW_STREAM
-    fclose(rawOutput);
-    #endif
-
     opn2_close(myDevice);
-    SDL_CloseAudio();
-
-    printf("Bye!\n\n");
-    fflush(stdout);
 
     return 0;
 }
