@@ -117,47 +117,132 @@ int16_t toSint16BE(uint8_t *arr)
     return num;
 }
 
+static uint16_t toUint16LE(const uint8_t *arr)
+{
+    uint16_t num = arr[0];
+    num |= ((arr[1] << 8) & 0xFF00);
+    return num;
+}
+
+static uint16_t toUint16BE(const uint8_t *arr)
+{
+    uint16_t num = arr[1];
+    num |= ((arr[0] << 8) & 0xFF00);
+    return num;
+}
+
+
+static const char *wopn2_magic1 = "WOPN2-BANK\0";
+static const char *wopn2_magic2 = "WOPN2-B2NK\0";
+
+#define WOPL_INST_SIZE_V1 65
+#define WOPL_INST_SIZE_V2 69
+
+static const uint16_t latest_version = 2;
+
 bool OPNMIDIplay::LoadBank(OPNMIDIplay::fileReader &fr)
 {
-    #define qqq(x) (void)x
     size_t  fsize;
-    qqq(fsize);
+    ADL_UNUSED(fsize);
     if(!fr.isValid())
     {
-        errorStringOut = "Invalid data stream!";
+        errorStringOut = "Can't load bank file: Invalid data stream!";
         return false;
     }
 
     char magic[32];
-    memset(magic, 0, 32);
+    std::memset(magic, 0, 32);
+    uint16_t version = 1;
 
     uint16_t count_melodic_banks     = 1;
     uint16_t count_percusive_banks   = 1;
 
     if(fr.read(magic, 1, 11) != 11)
     {
-        errorStringOut = "Can't read magic number!";
+        errorStringOut = "Can't load bank file: Can't read magic number!";
         return false;
     }
 
-    if(strncmp(magic, "WOPN2-BANK\0", 11) != 0)
+    bool is1 = std::strncmp(magic, wopn2_magic1, 11) == 0;
+    bool is2 = std::strncmp(magic, wopn2_magic2, 11) == 0;
+
+    if(!is1 && !is2)
     {
-        errorStringOut = "Invalid magic number!";
+        errorStringOut = "Can't load bank file: Invalid magic number!";
         return false;
+    }
+
+    if(is2)
+    {
+        uint8_t ver[2];
+        if(fr.read(ver, 1, 2) != 2)
+        {
+            errorStringOut = "Can't load bank file: Can't read version number!";
+            return false;
+        }
+        version = toUint16LE(ver);
+        if(version < 2 || version > latest_version)
+        {
+            errorStringOut = "Can't load bank file: unsupported WOPN version!";
+            return false;
+        }
     }
 
     opn.dynamic_instruments.clear();
     opn.dynamic_metainstruments.clear();
     if((readU16BE(fr, count_melodic_banks) != 2) || (readU16BE(fr, count_percusive_banks) != 2))
     {
-        errorStringOut = "Can't read count of banks!";
+        errorStringOut = "Can't load bank file: Can't read count of banks!";
+        return false;
+    }
+
+    if((count_melodic_banks < 1) || (count_percusive_banks < 1))
+    {
+        errorStringOut = "Custom bank: Too few banks in this file!";
         return false;
     }
 
     if(fr.read(&opn.regLFO, 1, 1) != 1)
     {
-        errorStringOut = "Can't read LFO registry state!";
+        errorStringOut = "Can't load bank file: Can't read LFO registry state!";
         return false;
+    }
+
+    opn.dynamic_melodic_banks.clear();
+    opn.dynamic_percussion_banks.clear();
+
+    if(version >= 2)//Read bank meta-entries
+    {
+        for(uint16_t i = 0; i < count_melodic_banks; i++)
+        {
+            uint8_t bank_meta[34];
+            if(fr.read(bank_meta, 1, 34) != 34)
+            {
+                opn.dynamic_melodic_banks.clear();
+                errorStringOut = "Custom bank: Fail to read melodic bank meta-data!";
+                return false;
+            }
+            uint16_t bank = uint16_t(bank_meta[33]) * 256 + uint16_t(bank_meta[32]);
+            size_t offset = opn.dynamic_melodic_banks.size();
+            opn.dynamic_melodic_banks[bank] = offset;
+            //strncpy(bankMeta.name, char_p(bank_meta), 32);
+        }
+
+        for(uint16_t i = 0; i < count_percusive_banks; i++)
+        {
+            uint8_t bank_meta[34];
+            if(fr.read(bank_meta, 1, 34) != 34)
+            {
+                opn.dynamic_melodic_banks.clear();
+                opn.dynamic_percussion_banks.clear();
+                errorStringOut = "Custom bank: Fail to read percussion bank meta-data!";
+                return false;
+            }
+            uint16_t bank = uint16_t(bank_meta[33]) * 256 + uint16_t(bank_meta[32]);
+            size_t offset = opn.dynamic_percussion_banks.size();
+            opn.dynamic_percussion_banks[bank] = offset;
+            //strncpy(bankMeta.name, char_p(bank_meta), 32);
+        }
     }
 
     opn.dynamic_percussion_offset = count_melodic_banks * 128;
@@ -167,17 +252,16 @@ bool OPNMIDIplay::LoadBank(OPNMIDIplay::fileReader &fr)
     {
         opnInstData data;
         opnInstMeta meta;
-        uint8_t idata[65];
-        /* Junk, delete later */
-        meta.flags = 0;
-        meta.ms_sound_kon   = 1000;
-        meta.ms_sound_koff  = 500;
-        meta.fine_tune      = 0.0;
-        /* Junk, delete later */
+        uint8_t idata[WOPL_INST_SIZE_V2];
 
-        if(fr.read(idata, 1, 65) != 65)
+        size_t readSize = version >= 2 ? WOPL_INST_SIZE_V2 : WOPL_INST_SIZE_V1;
+        if(fr.read(idata, 1, readSize) != readSize)
         {
-            errorStringOut = "Failed to read instrument data";
+            opn.dynamic_instruments.clear();
+            opn.dynamic_metainstruments.clear();
+            opn.dynamic_melodic_banks.clear();
+            opn.dynamic_percussion_banks.clear();
+            errorStringOut = "Can't load bank file: Failed to read instrument data";
             return false;
         }
         data.finetune = toSint16BE(idata + 32);
@@ -190,14 +274,30 @@ bool OPNMIDIplay::LoadBank(OPNMIDIplay::fileReader &fr)
             size_t off = 37 + op * 7;
             std::memcpy(data.OPS[op].data, idata + off, 7);
         }
+        if(version >= 2)
+        {
+            meta.ms_sound_kon   = toUint16BE(idata + 65);
+            meta.ms_sound_koff  = toUint16BE(idata + 67);
+        }
+        else
+        {
+            meta.ms_sound_kon   = 1000;
+            meta.ms_sound_koff  = 500;
+        }
+
         meta.opnno1 = uint16_t(opn.dynamic_instruments.size());
         meta.opnno2 = uint16_t(opn.dynamic_instruments.size());
+
+        /* Junk, delete later */
+        meta.flags = 0;
+        meta.fine_tune      = 0.0;
+        /* Junk, delete later */
+
         opn.dynamic_instruments.push_back(data);
         opn.dynamic_metainstruments.push_back(meta);
     }
 
     return true;
-    #undef qqq
 }
 
 bool OPNMIDIplay::LoadMIDI(const std::string &filename)
