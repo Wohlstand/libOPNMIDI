@@ -1407,7 +1407,7 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
                 //volume = (int)(volume * std::sqrt( (double) ch[c].users.size() ));
 
                 if(opn.LogarithmicVolumes)
-                    volume = volume * 127 / (127 * 127 * 127);
+                    volume = volume * 127 / (2048383/*127 * 127 * 127*/);
                 else
                 {
                     // The formula below: SOLVE(V=127^3 * 2^( (A-63.49999) / 8), A)

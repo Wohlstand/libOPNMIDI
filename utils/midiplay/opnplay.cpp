@@ -173,6 +173,7 @@ int main(int argc, char **argv)
 
     //Turn loop on/off (for WAV recording loop must be disabled!)
     opn2_setLoopEnabled(myDevice, recordWave ? 0 : loopEnabled);
+    opn2_setVolumeRangeModel(myDevice, OPNMIDI_VolumeModel_Generic);
     #ifdef DEBUG_TRACE_ALL_EVENTS
     //Hook all MIDI events are ticking while generating an output buffer
     if(!recordWave)
