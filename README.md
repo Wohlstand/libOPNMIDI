@@ -28,6 +28,7 @@ Library is based on core of the [libADLMIDI](https://github.com/Wohlstand/libADL
 * Use automatic arpeggio with chords to relieve channel pressure
 * Support for multiple concurrent MIDI synthesizers (per-track device/port select FF 09 message), can be used to overcome 16 channel limit
 * Partial support for XG standard (having more instruments than in one 128:128 GM set and ability to use multiple channels for percussion purposes)
+* CC74 affects a modulator scale
 
 # How to build
 To build libOPNMIDI you need to use CMake:

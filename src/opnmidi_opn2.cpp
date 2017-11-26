@@ -114,7 +114,7 @@ void OPN2::NoteOn(unsigned c, double hertz) // Hertz range: 0..131071
     pit[c] = static_cast<uint8_t>(x2 >> 8);
 }
 
-void OPN2::Touch_Real(unsigned c, unsigned volume)
+void OPN2::Touch_Real(unsigned c, unsigned volume, uint8_t brightness)
 {
     if(volume > 127) volume = 127;
 
@@ -154,8 +154,15 @@ void OPN2::Touch_Real(unsigned c, unsigned volume)
     uint8_t alg = adli.fbalg & 0x07;
     for(uint8_t op = 0; op < 4; op++)
     {
+        bool do_op = alg_do[alg][op] || ScaleModulators;
         uint8_t x = op_vol[op];
-        uint8_t vol_res = (alg_do[alg][op]) ? uint8_t(127 - (volume * (127 - (x&127)))/127) : x;
+        uint8_t vol_res = do_op ? uint8_t(127 - (volume * (127 - (x&127)))/127) : x;
+        if(brightness != 127)
+        {
+            brightness = static_cast<uint8_t>(std::round(127.0 * std::sqrt((static_cast<double>(brightness)) * (1.0 / 127.0))));
+            if(!do_op)
+                vol_res = uint8_t(127 - (brightness * (127 - (uint32_t(vol_res) & 127))) / 127);
+        }
         PokeO(card, port, 0x40 + cc + (4 * op), vol_res);
     }
     // Correct formula (ST3, AdPlug):
