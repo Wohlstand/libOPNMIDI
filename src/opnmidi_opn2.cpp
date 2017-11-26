@@ -159,7 +159,7 @@ void OPN2::Touch_Real(unsigned c, unsigned volume, uint8_t brightness)
         uint8_t vol_res = do_op ? uint8_t(127 - (volume * (127 - (x&127)))/127) : x;
         if(brightness != 127)
         {
-            brightness = static_cast<uint8_t>(::round(127.0 * std::sqrt((static_cast<double>(brightness)) * (1.0 / 127.0))));
+            brightness = static_cast<uint8_t>(::round(127.0 * ::sqrt((static_cast<double>(brightness)) * (1.0 / 127.0))));
             if(!do_op)
                 vol_res = uint8_t(127 - (brightness * (127 - (uint32_t(vol_res) & 127))) / 127);
         }
