@@ -683,6 +683,7 @@ OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate):
 
     applySetup();
     ChooseDevice("none");
+    realTime_ResetState();
 }
 
 void OPNMIDIplay::applySetup()
@@ -885,7 +886,7 @@ void OPNMIDIplay::realTime_ResetState()
         MIDIchannel &chan = Ch[ch];
         chan.volume = (opn.m_musicMode == OPN2::MODE_RSXX) ? 127 : 100;
         chan.expression = 127;
-        chan.panning = 0x30;
+        chan.panning = 0xC0;
         chan.vibrato = 0;
         chan.sustain = 0;
         chan.bend = 0.0;

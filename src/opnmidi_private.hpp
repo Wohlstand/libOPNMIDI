@@ -452,7 +452,7 @@ public:
             patch = 0;
             volume  = 100;
             expression = 127;
-            panning = 0x30;
+            panning = 0xC0;
             vibrato = 0;
             sustain = 0;
             bend = 0.0;
