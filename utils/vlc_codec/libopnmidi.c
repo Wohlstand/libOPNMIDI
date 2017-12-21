@@ -76,7 +76,7 @@ vlc_module_begin ()
     set_category (CAT_INPUT)
     set_subcategory (SUBCAT_INPUT_ACODEC)
     set_callbacks (Open, Close)
-    add_loadfile ("custombank", "",
+    add_loadfile ("opnmidi-custombank", "",
                   SOUNDFONT_TEXT, SOUNDFONT_LONGTEXT, false)
     /*
     add_bool ("synth-chorus", true, CHORUS_TEXT, CHORUS_TEXT, false)
@@ -86,9 +86,9 @@ vlc_module_begin ()
         change_integer_range (1, 65535)
     add_bool ("synth-reverb", true, REVERB_TEXT, REVERB_TEXT, true)
     */
-    add_integer ("synth-sample-rate", 44100, SAMPLE_RATE_TEXT, SAMPLE_RATE_TEXT, true)
+    add_integer ("opnmidi-sample-rate", 44100, SAMPLE_RATE_TEXT, SAMPLE_RATE_TEXT, true)
         change_integer_range (22050, 96000)
-    add_integer ("emulated-chips", 6, EMULATED_CHIPS_TEXT, EMULATED_CHIPS_TEXT, true)
+    add_integer ("opnmidi-emulated-chips", 6, EMULATED_CHIPS_TEXT, EMULATED_CHIPS_TEXT, true)
         change_integer_range (1, 100)
 vlc_module_end ()
 
@@ -117,12 +117,12 @@ static int Open (vlc_object_t *p_this)
     if (unlikely(p_sys == NULL))
         return VLC_ENOMEM;
 
-    p_sys->sample_rate = var_InheritInteger (p_this, "synth-sample-rate");
+    p_sys->sample_rate = var_InheritInteger (p_this, "opnmidi-sample-rate");
     p_sys->synth = opn2_init( p_sys->sample_rate );
 
-    opn2_setNumChips(p_sys->synth, (int)var_InheritInteger (p_this, "emulated-chips") );
+    opn2_setNumChips(p_sys->synth, (int)var_InheritInteger (p_this, "opnmidi-emulated-chips") );
 
-    char *font_path = var_InheritString (p_this, "custombank");
+    char *font_path = var_InheritString (p_this, "opnmidi-custombank");
     if (font_path != NULL)
     {
         msg_Dbg (p_this, "loading custom bank file %s", font_path);
