@@ -652,7 +652,7 @@ bool OPNMIDIplay::buildTrackData()
 
 
 
-OPNMIDIplay::OPNMIDIplay():
+OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate):
     //cmf_percussion_mode(false),
     fullSongTimeLength(0.0),
     postSongWaitDelay(1.0),
@@ -666,20 +666,41 @@ OPNMIDIplay::OPNMIDIplay():
 {
     devices.clear();
 
+    m_setup.PCM_RATE = sampleRate;
+    m_setup.mindelay = 1.0 / (double)m_setup.PCM_RATE;
+    m_setup.maxdelay = 512.0 / (double)m_setup.PCM_RATE;
+
     m_setup.OpnBank    = 0;
     m_setup.NumCards   = 2;
     m_setup.LogarithmicVolumes  = false;
+    m_setup.VolumeModel = OPNMIDI_VolumeModel_AUTO;
     //m_setup.SkipForward = 0;
     m_setup.loopingIsEnabled = false;
     m_setup.ScaleModulators     = 0;
     m_setup.delay = 0.0;
     m_setup.carry = 0.0;
-    m_setup.stored_samples = 0;
-    m_setup.backup_samples_size = 0;
+    m_setup.tick_skip_samples_delay = 0;
 
-    opn.NumCards = m_setup.NumCards;
-    opn.LogarithmicVolumes = m_setup.LogarithmicVolumes;
-    opn.ScaleModulators = m_setup.ScaleModulators;
+    applySetup();
+    ChooseDevice("none");
+}
+
+void OPNMIDIplay::applySetup()
+{
+    m_setup.tick_skip_samples_delay = 0;
+
+    opn.ScaleModulators         = m_setup.ScaleModulators;
+    opn.LogarithmicVolumes      = m_setup.LogarithmicVolumes;
+    opn.m_musicMode             = OPN2::MODE_MIDI;
+    opn.ChangeVolumeRangesModel(static_cast<OPNMIDI_VolumeModels>(m_setup.VolumeModel));
+    if(m_setup.VolumeModel == OPNMIDI_VolumeModel_AUTO)
+        opn.m_volumeScale = OPN2::VOLUME_Generic;
+
+    opn.NumCards    = m_setup.NumCards;
+
+    opn.Reset(m_setup.PCM_RATE);
+    ch.clear();
+    ch.resize(opn.NumChannels);
 }
 
 uint64_t OPNMIDIplay::ReadVarLen(uint8_t **ptr)
@@ -748,6 +769,14 @@ double OPNMIDIplay::Tick(double s, double granularity)
         return 0.0;
 
     return CurrentPositionNew.wait;
+}
+
+void OPNMIDIplay::TickIteratos(double s)
+{
+    for(uint16_t c = 0; c < opn.NumChannels; ++c)
+        ch[c].AddAge(static_cast<int64_t>(s * 1000.0));
+    UpdateVibrato(s);
+    UpdateArpeggio(s);
 }
 
 void OPNMIDIplay::seek(double seconds)
@@ -1298,6 +1327,7 @@ void OPNMIDIplay::realTime_BankChange(uint8_t channel, uint16_t bank)
 void OPNMIDIplay::realTime_panic()
 {
     Panic();
+    KillSustainingNotes(-1, -1);
 }
 
 

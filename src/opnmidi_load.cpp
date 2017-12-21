@@ -297,6 +297,8 @@ bool OPNMIDIplay::LoadBank(OPNMIDIplay::fileReader &fr)
         opn.dynamic_metainstruments.push_back(meta);
     }
 
+    applySetup();
+
     return true;
 }
 
@@ -340,19 +342,7 @@ bool OPNMIDIplay::LoadMIDI(OPNMIDIplay::fileReader &fr)
     }
 
     /**** Set all properties BEFORE starting of actial file reading! ****/
-    m_setup.stored_samples = 0;
-    m_setup.backup_samples_size = 0;
-    opn.ScaleModulators         = m_setup.ScaleModulators;
-    opn.LogarithmicVolumes      = m_setup.LogarithmicVolumes;
-    opn.m_musicMode             = OPN2::MODE_MIDI;
-    opn.ChangeVolumeRangesModel(static_cast<OPNMIDI_VolumeModels>(m_setup.VolumeModel));
-    if(m_setup.VolumeModel == OPNMIDI_VolumeModel_AUTO)
-        opn.m_volumeScale = OPN2::VOLUME_Generic;
-
-    opn.NumCards        = m_setup.NumCards;
-    //opn.NumFourOps  = m_setup.NumFourOps;
-    //cmf_percussion_mode = false;
-    opn.Reset(m_setup.PCM_RATE);
+    applySetup();
 
     atEnd            = false;
     loopStart        = true;

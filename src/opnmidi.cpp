@@ -38,19 +38,14 @@ OPNMIDI_EXPORT struct OPN2_MIDIPlayer *opn2_init(long sample_rate)
         return NULL;
     }
 
-    OPNMIDIplay *player = new OPNMIDIplay;
+    OPNMIDIplay *player = new OPNMIDIplay(static_cast<unsigned long>(sample_rate));
     if(!player)
     {
         free(midi_device);
         OPN2MIDI_ErrorString = "Can't initialize OPNMIDI: out of memory!";
         return NULL;
     }
-
     midi_device->opn2_midiPlayer = player;
-    player->m_setup.PCM_RATE = static_cast<unsigned long>(sample_rate);
-    player->m_setup.mindelay = 1.0 / (double)player->m_setup.PCM_RATE;
-    player->m_setup.maxdelay = 512.0 / (double)player->m_setup.PCM_RATE;
-    player->ChooseDevice("none");
     opn2RefreshNumCards(midi_device);
     return midi_device;
 }
@@ -69,6 +64,7 @@ OPNMIDI_EXPORT int opn2_setNumChips(OPN2_MIDIPlayer *device, int numCards)
     }
 
     play->opn.NumCards = play->m_setup.NumCards;
+    opn2_reset(device);
 
     return opn2RefreshNumCards(device);
 }
@@ -88,8 +84,7 @@ OPNMIDI_EXPORT int opn2_openBankFile(OPN2_MIDIPlayer *device, const char *filePa
     if(device && device->opn2_midiPlayer)
     {
         OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
-        play->m_setup.stored_samples = 0;
-        play->m_setup.backup_samples_size = 0;
+        play->m_setup.tick_skip_samples_delay = 0;
         if(!play->LoadBank(filePath))
         {
             std::string err = play->getErrorString();
@@ -108,8 +103,7 @@ OPNMIDI_EXPORT int opn2_openBankData(OPN2_MIDIPlayer *device, const void *mem, l
     if(device && device->opn2_midiPlayer)
     {
         OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
-        play->m_setup.stored_samples = 0;
-        play->m_setup.backup_samples_size = 0;
+        play->m_setup.tick_skip_samples_delay = 0;
         if(!play->LoadBank(mem, static_cast<size_t>(size)))
         {
             std::string err = play->getErrorString();
@@ -128,7 +122,7 @@ OPNMIDI_EXPORT void opn2_setScaleModulators(OPN2_MIDIPlayer *device, int smod)
 {
     if(!device) return;
     OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
-    play->m_setup.ScaleModulators = (smod != 0);
+    play->m_setup.ScaleModulators = smod;
     play->opn.ScaleModulators = play->m_setup.ScaleModulators;
 }
 
@@ -143,7 +137,7 @@ OPNMIDI_EXPORT void opn2_setLogarithmicVolumes(struct OPN2_MIDIPlayer *device, i
 {
     if(!device) return;
     OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
-    play->m_setup.LogarithmicVolumes = (logvol != 0);
+    play->m_setup.LogarithmicVolumes = static_cast<unsigned int>(logvol);
     play->opn.LogarithmicVolumes = play->m_setup.LogarithmicVolumes;
 }
 
@@ -160,8 +154,7 @@ OPNMIDI_EXPORT int opn2_openFile(OPN2_MIDIPlayer *device, const char *filePath)
     if(device && device->opn2_midiPlayer)
     {
         OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
-        play->m_setup.stored_samples = 0;
-        play->m_setup.backup_samples_size = 0;
+        play->m_setup.tick_skip_samples_delay = 0;
         if(!play->LoadMIDI(filePath))
         {
             std::string err = play->getErrorString();
@@ -181,8 +174,7 @@ OPNMIDI_EXPORT int opn2_openData(OPN2_MIDIPlayer *device, const void *mem, unsig
     if(device && device->opn2_midiPlayer)
     {
         OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
-        play->m_setup.stored_samples = 0;
-        play->m_setup.backup_samples_size = 0;
+        play->m_setup.tick_skip_samples_delay = 0;
         if(!play->LoadMIDI(mem, static_cast<size_t>(size)))
         {
             std::string err = play->getErrorString();
@@ -251,58 +243,81 @@ OPNMIDI_EXPORT void opn2_reset(OPN2_MIDIPlayer *device)
     if(!device)
         return;
     OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
-    play->m_setup.stored_samples = 0;
-    play->m_setup.backup_samples_size = 0;
+    play->m_setup.tick_skip_samples_delay = 0;
     play->opn.Reset(play->m_setup.PCM_RATE);
+    play->ch.clear();
+    play->ch.resize(play->opn.NumChannels);
 }
 
 OPNMIDI_EXPORT double opn2_totalTimeLength(struct OPN2_MIDIPlayer *device)
 {
     if(!device)
         return -1.0;
-    return reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer)->timeLength();
+    OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(play)
+        return play->timeLength();
+    else
+        return -1.0;
 }
 
 OPNMIDI_EXPORT double opn2_loopStartTime(struct OPN2_MIDIPlayer *device)
 {
     if(!device)
         return -1.0;
-    return reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer)->getLoopStart();
+    OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(play)
+        return play->getLoopStart();
+    else
+        return -1.0;
 }
 
 OPNMIDI_EXPORT double opn2_loopEndTime(struct OPN2_MIDIPlayer *device)
 {
     if(!device)
         return -1.0;
-    return reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer)->getLoopEnd();
+    OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(play)
+        return play->getLoopEnd();
+    else
+        return -1.0;
 }
 
 OPNMIDI_EXPORT double opn2_positionTell(struct OPN2_MIDIPlayer *device)
 {
     if(!device)
         return -1.0;
-    return reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer)->tell();
+    OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(play)
+        return play->tell();
+    else
+        return -1.0;
 }
 
 OPNMIDI_EXPORT void opn2_positionSeek(struct OPN2_MIDIPlayer *device, double seconds)
 {
     if(!device)
         return;
-    reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer)->seek(seconds);
+    OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(play)
+        return play->seek(seconds);
 }
 
 OPNMIDI_EXPORT void opn2_positionRewind(struct OPN2_MIDIPlayer *device)
 {
     if(!device)
         return;
-    reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer)->rewind();
+    OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(play)
+        return play->rewind();
 }
 
 OPNMIDI_EXPORT void opn2_setTempo(struct OPN2_MIDIPlayer *device, double tempo)
 {
     if(!device || (tempo <= 0.0))
         return;
-    reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer)->setTempo(tempo);
+    OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(play)
+        return play->setTempo(tempo);
 }
 
 
@@ -311,7 +326,11 @@ OPNMIDI_EXPORT const char *opn2_metaMusicTitle(struct OPN2_MIDIPlayer *device)
 {
     if(!device)
         return "";
-    return reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer)->musTitle.c_str();
+    OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(play)
+        return play->musTitle.c_str();
+    else
+        return "";
 }
 
 
@@ -319,14 +338,22 @@ OPNMIDI_EXPORT const char *opn2_metaMusicCopyright(struct OPN2_MIDIPlayer *devic
 {
     if(!device)
         return "";
-    return reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer)->musCopyright.c_str();
+    OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(play)
+        return play->musCopyright.c_str();
+    else
+        return "";
 }
 
 OPNMIDI_EXPORT size_t opn2_metaTrackTitleCount(struct OPN2_MIDIPlayer *device)
 {
     if(!device)
         return 0;
-    return reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer)->musTrackTitles.size();
+    OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(play)
+        return play->musTrackTitles.size();
+    else
+        return 0;
 }
 
 OPNMIDI_EXPORT const char *opn2_metaTrackTitle(struct OPN2_MIDIPlayer *device, size_t index)
@@ -344,7 +371,11 @@ OPNMIDI_EXPORT size_t opn2_metaMarkerCount(struct OPN2_MIDIPlayer *device)
 {
     if(!device)
         return 0;
-    return reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer)->musMarkers.size();
+    OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(play)
+        return play->musMarkers.size();
+    else
+        return 0;
 }
 
 OPNMIDI_EXPORT const struct Opn2_MarkerEntry opn2_metaMarker(struct OPN2_MIDIPlayer *device, size_t index)
@@ -399,8 +430,7 @@ OPNMIDI_EXPORT void opn2_setDebugMessageHook(struct OPN2_MIDIPlayer *device, OPN
 
 
 
-inline static void SendStereoAudio(OPNMIDIplay::Setup &device,
-                                   int      &samples_requested,
+inline static void SendStereoAudio(int      &samples_requested,
                                    ssize_t  &in_size,
                                    short    *_in,
                                    ssize_t   out_pos,
@@ -408,21 +438,11 @@ inline static void SendStereoAudio(OPNMIDIplay::Setup &device,
 {
     if(!in_size)
         return;
-    device.stored_samples = 0;
     size_t offset       = static_cast<size_t>(out_pos);
     size_t inSamples    = static_cast<size_t>(in_size * 2);
     size_t maxSamples   = static_cast<size_t>(samples_requested) - offset;
     size_t toCopy       = std::min(maxSamples, inSamples);
-    memcpy(_out + out_pos, _in, toCopy * sizeof(short));
-
-    if(maxSamples < inSamples)
-    {
-        size_t appendSize = inSamples - maxSamples;
-        memcpy(device.backup_samples + device.backup_samples_size,
-               maxSamples + _in, appendSize * sizeof(short));
-        device.backup_samples_size += appendSize;
-        device.stored_samples += appendSize;
-    }
+    std::memcpy(_out + out_pos, _in, toCopy * sizeof(short));
 }
 
 
@@ -441,38 +461,24 @@ OPNMIDI_EXPORT int opn2_play(OPN2_MIDIPlayer *device, int sampleCount, short *ou
     ssize_t n_periodCountStereo = 512;
     //ssize_t n_periodCountPhys = n_periodCountStereo * 2;
     int left = sampleCount;
+    bool hasSkipped = setup.tick_skip_samples_delay > 0;
 
     while(left > 0)
     {
-        if(setup.backup_samples_size > 0)
-        {
-            //Send reserved samples if exist
-            ssize_t ate = 0;
-
-            while((ate < setup.backup_samples_size) && (ate < left))
-            {
-                out[ate] = setup.backup_samples[ate];
-                ate++;
-            }
-
-            left -= (int)ate;
-            gotten_len += ate;
-
-            if(ate < setup.backup_samples_size)
-            {
-                for(ssize_t j = 0; j < ate; j++)
-                    setup.backup_samples[(ate - 1) - j] = setup.backup_samples[(setup.backup_samples_size - 1) - j];
-            }
-
-            setup.backup_samples_size -= ate;
-        }
-        else
-        {
+        {//
             const double eat_delay = setup.delay < setup.maxdelay ? setup.delay : setup.maxdelay;
-            setup.delay -= eat_delay;
-            setup.carry += setup.PCM_RATE * eat_delay;
-            n_periodCountStereo = static_cast<ssize_t>(setup.carry);
-            setup.carry -= n_periodCountStereo;
+            if(hasSkipped)
+            {
+                size_t samples = setup.tick_skip_samples_delay > sampleCount ? sampleCount : setup.tick_skip_samples_delay;
+                n_periodCountStereo = samples / 2;
+            }
+            else
+            {
+                setup.delay -= eat_delay;
+                setup.carry += setup.PCM_RATE * eat_delay;
+                n_periodCountStereo = static_cast<ssize_t>(setup.carry);
+                setup.carry -= n_periodCountStereo;
+            }
 
             //if(setup.SkipForward > 0)
             //    setup.SkipForward -= 1;
@@ -481,6 +487,12 @@ OPNMIDI_EXPORT int opn2_play(OPN2_MIDIPlayer *device, int sampleCount, short *ou
                 if((player->atEnd) && (setup.delay <= 0.0))
                     break;//Stop to fetch samples at reaching the song end with disabled loop
 
+                ssize_t leftSamples = left / 2;
+                if(n_periodCountStereo > leftSamples)
+                {
+                    setup.tick_skip_samples_delay = (n_periodCountStereo - leftSamples) * 2;
+                    n_periodCountStereo = leftSamples;
+                }
                 //! Count of stereo samples
                 ssize_t in_generatedStereo = (n_periodCountStereo > 512) ? 512 : n_periodCountStereo;
                 //! Total count of samples
@@ -511,14 +523,19 @@ OPNMIDI_EXPORT int opn2_play(OPN2_MIDIPlayer *device, int sampleCount, short *ou
                     }
                 }
                 /* Process it */
-                SendStereoAudio(setup, sampleCount, in_generatedStereo, out_buf, gotten_len, out);
+                SendStereoAudio(sampleCount, in_generatedStereo, out_buf, gotten_len, out);
 
                 left -= (int)in_generatedPhys;
-                gotten_len += (in_generatedPhys) - setup.stored_samples;
+                gotten_len += (in_generatedPhys) /* - setup.stored_samples*/;
             }
-
-            setup.delay = player->Tick(eat_delay, setup.mindelay);
-        }
+            if(hasSkipped)
+            {
+                setup.tick_skip_samples_delay -= n_periodCountStereo * 2;
+                hasSkipped = setup.tick_skip_samples_delay > 0;
+            }
+            else
+                setup.delay = player->Tick(eat_delay, setup.mindelay);
+        }//
     }
 
     return static_cast<int>(gotten_len);
@@ -533,45 +550,69 @@ OPNMIDI_EXPORT int opn2_generate(struct OPN2_MIDIPlayer *device, int sampleCount
     if(!device)
         return 0;
 
-    OPNMIDIplay *player = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
-    sampleCount = (sampleCount > 1024) ? 1024 : sampleCount;
+    OPNMIDIplay * player = (reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer));
+    OPNMIDIplay::Setup &setup = player->m_setup;
 
     ssize_t gotten_len = 0;
     ssize_t n_periodCountStereo = 512;
 
-    int16_t *out_buf = player->outBuf;
-    ssize_t in_generatedStereo = (n_periodCountStereo > 512) ? 512 : n_periodCountStereo;
+    int     left = sampleCount;
+    double  delay = double(sampleCount) / double(setup.PCM_RATE);
 
-    //fill buffer with zeros
-    size_t in_countStereoU = static_cast<size_t>(in_generatedStereo * 2);
-    std::memset(out_buf, 0, in_countStereoU * sizeof(short));
-    unsigned int chips = player->opn.NumCards;
-    if(chips == 1)
+    while(left > 0)
     {
-        #ifdef USE_LEGACY_EMULATOR
-        player->opn.cardsOP2[0]->run(int(in_generatedStereo), out_buf);
-        #else
-        OPN2_GenerateStream(player->opn.cardsOP2[0], out_buf, (Bit32u)in_generatedStereo);
-        #endif
-        /* Process it */
-        SendStereoAudio(player->m_setup, sampleCount, in_generatedStereo, out_buf, gotten_len, out);
-    }
-    else if(n_periodCountStereo > 0)
-    {
-        /* Generate data from every chip and mix result */
-        for(unsigned card = 0; card < chips; ++card)
-        {
-            #ifdef USE_LEGACY_EMULATOR
-            player->opn.cardsOP2[card]->run(int(in_generatedStereo), out_buf);
-            #else
-            OPN2_GenerateStreamMix(player->opn.cardsOP2[card], out_buf, (Bit32u)in_generatedStereo);
-            #endif
-        }
-        /* Process it */
-        SendStereoAudio(player->m_setup, sampleCount, in_generatedStereo, out_buf, gotten_len, out);
+        {//
+            const double eat_delay = delay < setup.maxdelay ? delay : setup.maxdelay;
+            delay -= eat_delay;
+            setup.carry += setup.PCM_RATE * eat_delay;
+            n_periodCountStereo = static_cast<ssize_t>(setup.carry);
+            setup.carry -= n_periodCountStereo;
+
+            {
+                ssize_t leftSamples = left / 2;
+                if(n_periodCountStereo > leftSamples)
+                    n_periodCountStereo = leftSamples;
+                //! Count of stereo samples
+                ssize_t in_generatedStereo = (n_periodCountStereo > 512) ? 512 : n_periodCountStereo;
+                //! Total count of samples
+                ssize_t in_generatedPhys = in_generatedStereo * 2;
+                //! Unsigned total sample count
+                //fill buffer with zeros
+                int16_t *out_buf = player->outBuf;
+                std::memset(out_buf, 0, static_cast<size_t>(in_generatedPhys) * sizeof(int16_t));
+                unsigned int chips = player->opn.NumCards;
+                if(chips == 1)
+                {
+                    #ifdef USE_LEGACY_EMULATOR
+                    player->opn.cardsOP2[0]->run(int(in_generatedStereo), out_buf);
+                    #else
+                    OPN2_GenerateStream(player->opn.cardsOP2[0], out_buf, (Bit32u)in_generatedStereo);
+                    #endif
+                }
+                else/* if(n_periodCountStereo > 0)*/
+                {
+                    /* Generate data from every chip and mix result */
+                    for(unsigned card = 0; card < chips; ++card)
+                    {
+                        #ifdef USE_LEGACY_EMULATOR
+                        player->opn.cardsOP2[card]->run(int(in_generatedStereo), out_buf);
+                        #else
+                        OPN2_GenerateStreamMix(player->opn.cardsOP2[card], out_buf, (Bit32u)in_generatedStereo);
+                        #endif
+                    }
+                }
+                /* Process it */
+                SendStereoAudio(sampleCount, in_generatedStereo, out_buf, gotten_len, out);
+
+                left -= (int)in_generatedPhys;
+                gotten_len += (in_generatedPhys) /* - setup.stored_samples*/;
+            }
+
+            player->TickIteratos(eat_delay);
+        }//
     }
 
-    return sampleCount;
+    return static_cast<int>(gotten_len);
 }
 
 OPNMIDI_EXPORT double opn2_tickEvents(struct OPN2_MIDIPlayer *device, double seconds, double granuality)
@@ -602,4 +643,124 @@ OPNMIDI_EXPORT void opn2_panic(struct OPN2_MIDIPlayer *device)
     if(!player)
         return;
     player->realTime_panic();
+}
+
+OPNMIDI_EXPORT void opn2_rt_resetState(struct OPN2_MIDIPlayer *device)
+{
+    if(!device)
+        return;
+    OPNMIDIplay *player = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(!player)
+        return;
+    player->realTime_ResetState();
+}
+
+OPNMIDI_EXPORT bool opn2_rt_noteOn(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 note, OPN2_UInt8 velocity)
+{
+    if(!device)
+        return false;
+    OPNMIDIplay *player = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(!player)
+        return false;
+    return player->realTime_NoteOn(channel, note, velocity);
+}
+
+OPNMIDI_EXPORT void opn2_rt_noteOff(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 note)
+{
+    if(!device)
+        return;
+    OPNMIDIplay *player = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(!player)
+        return;
+    player->realTime_NoteOff(channel, note);
+}
+
+OPNMIDI_EXPORT void opn2_rt_noteAfterTouch(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 note, OPN2_UInt8 atVal)
+{
+    if(!device)
+        return;
+    OPNMIDIplay *player = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(!player)
+        return;
+    player->realTime_NoteAfterTouch(channel, note, atVal);
+}
+
+OPNMIDI_EXPORT void opn2_rt_channelAfterTouch(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 atVal)
+{
+    if(!device)
+        return;
+    OPNMIDIplay *player = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(!player)
+        return;
+    player->realTime_ChannelAfterTouch(channel, atVal);
+}
+
+OPNMIDI_EXPORT void opn2_rt_controllerChange(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 type, OPN2_UInt8 value)
+{
+    if(!device)
+        return;
+    OPNMIDIplay *player = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(!player)
+        return;
+    player->realTime_Controller(channel, type, value);
+}
+
+OPNMIDI_EXPORT void opn2_rt_patchChange(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 patch)
+{
+    if(!device)
+        return;
+    OPNMIDIplay *player = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(!player)
+        return;
+    player->realTime_PatchChange(channel, patch);
+}
+
+OPNMIDI_EXPORT void opn2_rt_pitchBend(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt16 pitch)
+{
+    if(!device)
+        return;
+    OPNMIDIplay *player = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(!player)
+        return;
+    player->realTime_PitchBend(channel, pitch);
+}
+
+OPNMIDI_EXPORT void opn2_rt_pitchBendML(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 msb, OPN2_UInt8 lsb)
+{
+    if(!device)
+        return;
+    OPNMIDIplay *player = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(!player)
+        return;
+    player->realTime_PitchBend(channel, msb, lsb);
+}
+
+OPNMIDI_EXPORT void opn2_rt_bankChangeLSB(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 lsb)
+{
+    if(!device)
+        return;
+    OPNMIDIplay *player = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(!player)
+        return;
+    player->realTime_BankChangeLSB(channel, lsb);
+}
+
+OPNMIDI_EXPORT void opn2_rt_bankChangeMSB(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 msb)
+{
+    if(!device)
+        return;
+    OPNMIDIplay *player = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(!player)
+        return;
+    player->realTime_BankChangeMSB(channel, msb);
+}
+
+OPNMIDI_EXPORT void opn2_rt_bankChange(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_SInt16 bank)
+{
+    if(!device)
+        return;
+    OPNMIDIplay *player = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(!player)
+        return;
+    player->realTime_BankChange(channel, (uint16_t)bank);
 }

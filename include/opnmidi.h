@@ -33,14 +33,14 @@ extern "C" {
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
 #include <stdint.h>
 typedef uint8_t         OPN2_UInt8;
-typedef uint16_t        OPN2_Uint16;
-typedef int8_t          OPN2_Sint8;
-typedef int16_t         OPN2_Sint16;
+typedef uint16_t        OPN2_UInt16;
+typedef int8_t          OPN2_SInt8;
+typedef int16_t         OPN2_SInt16;
 #else
 typedef unsigned char   OPN2_UInt8;
-typedef unsigned short  OPN2_Uint16;
-typedef char            OPN2_Sint8;
-typedef short           OPN2_Sint16;
+typedef unsigned short  OPN2_UInt16;
+typedef char            OPN2_SInt8;
+typedef short           OPN2_SInt16;
 #endif
 
 enum OPNMIDI_VolumeModels
@@ -73,13 +73,13 @@ extern void opn2_setScaleModulators(struct OPN2_MIDIPlayer *device, int smod);
 /*Enable or disable built-in loop (built-in loop supports 'loopStart' and 'loopEnd' tags to loop specific part)*/
 extern void opn2_setLoopEnabled(struct OPN2_MIDIPlayer *device, int loopEn);
 
-/*Enable or disable Logariphmic volume changer */
+/*Enable or disable Logariphmic volume changer (-1 sets default per bank, 0 disable, 1 enable) */
 extern void opn2_setLogarithmicVolumes(struct OPN2_MIDIPlayer *device, int logvol);
 
 /*Set different volume range model */
 extern void opn2_setVolumeRangeModel(struct OPN2_MIDIPlayer *device, int volumeModel);
 
-/*Load WOPN bank file from File System*/
+/*Load WOPN bank file from File System. Is recommended to call adl_reset() to apply changes to already-loaded file player or real-time.*/
 extern int opn2_openBankFile(struct OPN2_MIDIPlayer *device, const char *filePath);
 
 /*Load WOPN bank file from memory data*/
@@ -169,7 +169,7 @@ extern const struct Opn2_MarkerEntry opn2_metaMarker(struct OPN2_MIDIPlayer *dev
 /*Take a sample buffer and iterate MIDI timers */
 extern int  opn2_play(struct OPN2_MIDIPlayer *device, int sampleCount, short out[]);
 
-/*Generate audio output from chip emulators without iteration of MIDI timers. 512 samples per channel is a maximum*/
+/*Generate audio output from chip emulators without iteration of MIDI timers.*/
 extern int  opn2_generate(struct OPN2_MIDIPlayer *device, int sampleCount, short *out);
 
 /**
@@ -187,8 +187,43 @@ extern double opn2_tickEvents(struct OPN2_MIDIPlayer *device, double seconds, do
 /*Returns 1 if music position has reached end*/
 extern int opn2_atEnd(struct OPN2_MIDIPlayer *device);
 
+/**RealTime**/
+
 /*Force Off all notes on all channels*/
 extern void opn2_panic(struct OPN2_MIDIPlayer *device);
+
+/*Reset states of all controllers on all MIDI channels*/
+extern void opn2_rt_resetState(struct OPN2_MIDIPlayer *device);
+
+/*Turn specific MIDI note ON*/
+extern bool opn2_rt_noteOn(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 note, OPN2_UInt8 velocity);
+
+/*Turn specific MIDI note OFF*/
+extern void opn2_rt_noteOff(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 note);
+
+/*Set note after-touch*/
+extern void opn2_rt_noteAfterTouch(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 note, OPN2_UInt8 atVal);
+/*Set channel after-touch*/
+extern void opn2_rt_channelAfterTouch(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 atVal);
+
+/*Apply controller change*/
+extern void opn2_rt_controllerChange(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 type, OPN2_UInt8 value);
+
+/*Apply patch change*/
+extern void opn2_rt_patchChange(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 patch);
+
+/*Apply pitch bend change*/
+extern void opn2_rt_pitchBend(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt16 pitch);
+/*Apply pitch bend change*/
+extern void opn2_rt_pitchBendML(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 msb, OPN2_UInt8 lsb);
+
+/*Change LSB of the bank*/
+extern void opn2_rt_bankChangeLSB(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 lsb);
+/*Change MSB of the bank*/
+extern void opn2_rt_bankChangeMSB(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 msb);
+/*Change bank by absolute signed value*/
+extern void opn2_rt_bankChange(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_SInt16 bank);
+
 
 /**Hooks**/
 

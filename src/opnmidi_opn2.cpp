@@ -46,8 +46,20 @@ size_t OPN2::GetAdlMetaNumber(size_t midiins)
     return midiins;
 }
 
+static const opnInstData opn2_emptyInstrument = {
+    {
+        {{0, 0, 0, 0, 0, 0, 0}},
+        {{0, 0, 0, 0, 0, 0, 0}},
+        {{0, 0, 0, 0, 0, 0, 0}},
+        {{0, 0, 0, 0, 0, 0, 0}}
+    },
+    0, 0, 0
+};
+
 const opnInstData &OPN2::GetAdlIns(size_t insno)
 {
+    if(insno >= dynamic_instruments.size())
+        return opn2_emptyInstrument;
     return dynamic_instruments[insno];
 }
 

@@ -25,7 +25,7 @@
 #define ADLMIDI_PRIVATE_HPP
 
 #ifndef OPNMIDI_VERSION
-#define OPNMIDI_VERSION "1.0"
+#define OPNMIDI_VERSION "1.1.0"
 #endif
 
 // Setup compiler defines useful for exporting required public API symbols in gme.cpp
@@ -245,11 +245,14 @@ struct MIDIEventHooks
 
 class OPNMIDIplay
 {
+    friend void opn2_reset(struct OPN2_MIDIPlayer*);
 public:
-    OPNMIDIplay();
+    OPNMIDIplay(unsigned long sampleRate = 22050);
 
     ~OPNMIDIplay()
     {}
+
+    void applySetup();
 
     /**********************Internal structures and classes**********************/
 
@@ -653,9 +656,7 @@ public:
         double maxdelay;
 
         /* For internal usage */
-        ssize_t stored_samples; /* num of collected samples */
-        short   backup_samples[1024]; /* Backup sample storage. */
-        ssize_t backup_samples_size; /* Backup sample storage. */
+        ssize_t tick_skip_samples_delay; /* Skip tick processing after samples count. */
         /* For internal usage */
 
         unsigned long PCM_RATE;
@@ -778,6 +779,12 @@ public:
      * @return desired number of seconds until next call
      */
     double Tick(double s, double granularity);
+
+    /**
+     * @brief Process extra iterators like vibrato or arpeggio
+     * @param s seconds since last call
+     */
+    void   TickIteratos(double s);
 
     /**
      * @brief Change current position to specified time position in seconds
