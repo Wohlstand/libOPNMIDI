@@ -196,7 +196,7 @@ extern void opn2_panic(struct OPN2_MIDIPlayer *device);
 extern void opn2_rt_resetState(struct OPN2_MIDIPlayer *device);
 
 /*Turn specific MIDI note ON*/
-extern bool opn2_rt_noteOn(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 note, OPN2_UInt8 velocity);
+extern int opn2_rt_noteOn(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 note, OPN2_UInt8 velocity);
 
 /*Turn specific MIDI note OFF*/
 extern void opn2_rt_noteOff(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 note);

@@ -655,14 +655,14 @@ OPNMIDI_EXPORT void opn2_rt_resetState(struct OPN2_MIDIPlayer *device)
     player->realTime_ResetState();
 }
 
-OPNMIDI_EXPORT bool opn2_rt_noteOn(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 note, OPN2_UInt8 velocity)
+OPNMIDI_EXPORT int opn2_rt_noteOn(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 note, OPN2_UInt8 velocity)
 {
     if(!device)
-        return false;
+        return 0;
     OPNMIDIplay *player = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
     if(!player)
-        return false;
-    return player->realTime_NoteOn(channel, note, velocity);
+        return 0;
+    return (int)player->realTime_NoteOn(channel, note, velocity);
 }
 
 OPNMIDI_EXPORT void opn2_rt_noteOff(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 note)
