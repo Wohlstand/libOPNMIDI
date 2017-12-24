@@ -161,7 +161,7 @@ struct Opn2_MarkerEntry
 extern size_t opn2_metaMarkerCount(struct OPN2_MIDIPlayer *device);
 
 /*Returns the marker entry*/
-extern const struct Opn2_MarkerEntry opn2_metaMarker(struct OPN2_MIDIPlayer *device, size_t index);
+extern struct Opn2_MarkerEntry opn2_metaMarker(struct OPN2_MIDIPlayer *device, size_t index);
 
 
 
