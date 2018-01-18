@@ -58,7 +58,7 @@ struct OPN2_MIDIPlayer
     void *opn2_midiPlayer;
 };
 
-//DEPRECATED
+/* DEPRECATED */
 #define opn2_setNumCards opn2_setNumChips
 
 /* Sets number of emulated sound cards (from 1 to 100). Emulation of multiple sound cards exchanges polyphony limits*/
