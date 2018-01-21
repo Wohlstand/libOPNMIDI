@@ -89,7 +89,6 @@ You need to make in the any IDE a library project and put into it next files
 * First stable release
 * Contains all features are made in libADLMIDI 1.3.1
 
-# Changelog
 ## 1.0.0-beta   2017-05-06
 * First experimental release
 
