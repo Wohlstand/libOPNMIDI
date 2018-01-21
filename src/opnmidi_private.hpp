@@ -24,10 +24,6 @@
 #ifndef ADLMIDI_PRIVATE_HPP
 #define ADLMIDI_PRIVATE_HPP
 
-#ifndef OPNMIDI_VERSION
-#define OPNMIDI_VERSION "1.1.0"
-#endif
-
 // Setup compiler defines useful for exporting required public API symbols in gme.cpp
 #ifndef OPNMIDI_EXPORT
 #   if defined (_WIN32) && defined(ADLMIDI_BUILD_DLL)

@@ -26,6 +26,12 @@
 #define MaxCards 100
 #define MaxCards_STR "100"
 
+static OPN2_Version opn2_version = {
+    OPNMIDI_VERSION_MAJOR,
+    OPNMIDI_VERSION_MINOR,
+    OPNMIDI_VERSION_PATCHLEVEL
+};
+
 /*---------------------------EXPORTS---------------------------*/
 
 OPNMIDI_EXPORT struct OPN2_MIDIPlayer *opn2_init(long sample_rate)
@@ -203,6 +209,10 @@ OPNMIDI_EXPORT const char *opn2_linkedLibraryVersion()
     return OPNMIDI_VERSION;
 }
 
+OPNMIDI_EXPORT const OPN2_Version *opn2_linkedVersion()
+{
+    return &opn2_version;
+}
 
 OPNMIDI_EXPORT const char *opn2_errorString()
 {
