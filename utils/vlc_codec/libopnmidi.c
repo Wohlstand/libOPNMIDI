@@ -260,7 +260,7 @@ static block_t *DecodeBlock (decoder_t *p_dec, block_t **pp_block)
             opn2_rt_channelAfterTouch(p_sys->synth, channel, p1);
             break;
         case 0xE0:
-            opn2_rt_pitchBendML(p_sys->synth, channel, p2, p2);
+            opn2_rt_pitchBendML(p_sys->synth, channel, p2, p1);
             break;
     }
 
