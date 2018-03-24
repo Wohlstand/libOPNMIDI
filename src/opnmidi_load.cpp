@@ -23,12 +23,14 @@
 
 #include "opnmidi_private.hpp"
 
-#ifndef OPNMIDI_DISABLE_MUS_SUPPORT
-#include "opnmidi_mus2mid.h"
-#endif
-#ifndef OPNMIDI_DISABLE_XMI_SUPPORT
-#include "opnmidi_xmi2mid.h"
-#endif
+#ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
+#   ifndef OPNMIDI_DISABLE_MUS_SUPPORT
+#       include "opnmidi_mus2mid.h"
+#   endif
+#   ifndef OPNMIDI_DISABLE_XMI_SUPPORT
+#       include "opnmidi_xmi2mid.h"
+#   endif
+#endif //OPNMIDI_DISABLE_MIDI_SEQUENCER
 
 uint64_t OPNMIDIplay::ReadBEint(const void *buffer, size_t nbytes)
 {
@@ -306,6 +308,7 @@ bool OPNMIDIplay::LoadBank(OPNMIDIplay::fileReader &fr)
     return true;
 }
 
+#ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
 bool OPNMIDIplay::LoadMIDI(const std::string &filename)
 {
     fileReader file;
@@ -566,3 +569,4 @@ riffskip:
     ch.resize(opn.NumChannels);
     return true;
 }
+#endif //OPNMIDI_DISABLE_MIDI_SEQUENCER

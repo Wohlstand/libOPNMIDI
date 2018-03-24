@@ -93,6 +93,10 @@ else()
     )
 endif()
 
+if(NOT WITH_MIDI_SEQUENCER)
+    add_definitions(-DOPNMIDI_DISABLE_MIDI_SEQUENCER)
+endif()
+
 # WIP
 #if(NOT WITH_CPP_EXTRAS)
 #    add_definitions(-DADLMIDI_DISABLE_CPP_EXTRAS)
