@@ -78,11 +78,11 @@ typedef __int32 ssize_t;
 #include <algorithm>
 
 #ifdef _MSC_VER
-#pragma warning(disable:4319)
-#pragma warning(disable:4267)
 #pragma warning(disable:4244)
+#pragma warning(disable:4267)
 #pragma warning(disable:4146)
 #endif
+
 
 #include "fraction.hpp"
 #ifdef OPNMIDI_USE_LEGACY_EMULATOR
