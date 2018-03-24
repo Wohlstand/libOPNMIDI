@@ -49,6 +49,10 @@ typedef __int32 ssize_t;
 #   include <windows.h>
 #endif
 
+#ifdef USE_LEGACY_EMULATOR // Kept for a backward compatibility
+#define OPNMIDI_USE_LEGACY_EMULATOR
+#endif
+
 #include <vector>
 #include <list>
 #include <string>
@@ -75,7 +79,7 @@ typedef __int32 ssize_t;
 #include <algorithm>
 
 #include "fraction.hpp"
-#ifdef USE_LEGACY_EMULATOR
+#ifdef OPNMIDI_USE_LEGACY_EMULATOR
 #include "Ym2612_ChipEmu.h"
 #else
 #include "ym3438.h"
@@ -131,7 +135,7 @@ public:
     friend class OPNMIDIplay;
     uint32_t NumChannels;
     char ____padding[4];
-#ifdef USE_LEGACY_EMULATOR
+#ifdef OPNMIDI_USE_LEGACY_EMULATOR
     std::vector<OPNMIDI_Ym2612_Emu*> cardsOP2;
 #else
     std::vector<ym3438_t*> cardsOP2;

@@ -197,7 +197,7 @@ OPNMIDI_EXPORT int opn2_openData(OPN2_MIDIPlayer *device, const void *mem, unsig
 
 OPNMIDI_EXPORT const char *opn2_emulatorName()
 {
-    #ifdef USE_LEGACY_EMULATOR
+    #ifdef OPNMIDI_USE_LEGACY_EMULATOR
     return "GENS 2.10 YM2612";
     #else
     return "Nuked OPN2 YM3438";
@@ -514,7 +514,7 @@ OPNMIDI_EXPORT int opn2_play(OPN2_MIDIPlayer *device, int sampleCount, short *ou
                 unsigned int chips = player->opn.NumCards;
                 if(chips == 1)
                 {
-                    #ifdef USE_LEGACY_EMULATOR
+                    #ifdef OPNMIDI_USE_LEGACY_EMULATOR
                     player->opn.cardsOP2[0]->run(int(in_generatedStereo), out_buf);
                     #else
                     OPN2_GenerateStream(player->opn.cardsOP2[0], out_buf, (Bit32u)in_generatedStereo);
@@ -525,7 +525,7 @@ OPNMIDI_EXPORT int opn2_play(OPN2_MIDIPlayer *device, int sampleCount, short *ou
                     /* Generate data from every chip and mix result */
                     for(unsigned card = 0; card < chips; ++card)
                     {
-                        #ifdef USE_LEGACY_EMULATOR
+                        #ifdef OPNMIDI_USE_LEGACY_EMULATOR
                         player->opn.cardsOP2[card]->run(int(in_generatedStereo), out_buf);
                         #else
                         OPN2_GenerateStreamMix(player->opn.cardsOP2[card], out_buf, (Bit32u)in_generatedStereo);
@@ -593,7 +593,7 @@ OPNMIDI_EXPORT int opn2_generate(struct OPN2_MIDIPlayer *device, int sampleCount
                 unsigned int chips = player->opn.NumCards;
                 if(chips == 1)
                 {
-                    #ifdef USE_LEGACY_EMULATOR
+                    #ifdef OPNMIDI_USE_LEGACY_EMULATOR
                     player->opn.cardsOP2[0]->run(int(in_generatedStereo), out_buf);
                     #else
                     OPN2_GenerateStream(player->opn.cardsOP2[0], out_buf, (Bit32u)in_generatedStereo);
@@ -604,7 +604,7 @@ OPNMIDI_EXPORT int opn2_generate(struct OPN2_MIDIPlayer *device, int sampleCount
                     /* Generate data from every chip and mix result */
                     for(unsigned card = 0; card < chips; ++card)
                     {
-                        #ifdef USE_LEGACY_EMULATOR
+                        #ifdef OPNMIDI_USE_LEGACY_EMULATOR
                         player->opn.cardsOP2[card]->run(int(in_generatedStereo), out_buf);
                         #else
                         OPN2_GenerateStreamMix(player->opn.cardsOP2[card], out_buf, (Bit32u)in_generatedStereo);
