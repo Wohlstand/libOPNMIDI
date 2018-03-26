@@ -39,6 +39,9 @@ option(USE_GENS_EMULATOR    "Use GENS 2.10 emulator" ON)
 
 # WIP FEATURES
 # option(WITH_CPP_EXTRAS      "Build with support for C++ extras (features are can be found in 'adlmidi.hpp' header)" OFF)
+option(WITH_MIDI_SEQUENCER  "Build with embedded MIDI sequencer. Disable this if you want use library in real-time MIDI drivers or plugins.)" ON)
+option(WITH_MUS_SUPPORT     "Build with support for DMX MUS files)" ON)
+option(WITH_XMI_SUPPORT     "Build with support for AIL XMI files)" ON)
 
 option(libOPNMIDI_STATIC   "Build static library of libOPNMIDI" ON)
 option(libOPNMIDI_SHARED   "Build shared library of libOPNMIDI" OFF)
@@ -61,12 +64,26 @@ list(APPEND libOPNMIDI_SOURCES
     ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_midiplay.cpp
     ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_opn2.cpp
     ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_private.cpp
-    ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_mus2mid.c
-    ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_xmi2mid.c
 )
 
+if(WITH_MUS_SUPPORT AND WITH_MIDI_SEQUENCER)
+    list(APPEND libOPNMIDI_SOURCES
+        ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_mus2mid.c
+    )
+else()
+    add_definitions(-DOPNMIDI_DISABLE_MUS_SUPPORT)
+endif()
+
+if(WITH_XMI_SUPPORT AND WITH_MIDI_SEQUENCER)
+    list(APPEND libOPNMIDI_SOURCES
+        ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_xmi2mid.c
+    )
+else()
+    add_definitions(-DOPNMIDI_DISABLE_XMI_SUPPORT)
+endif()
+
 if(USE_GENS_EMULATOR)
-    add_definitions(-DUSE_LEGACY_EMULATOR)
+    add_definitions(-DOPNMIDI_USE_LEGACY_EMULATOR)
     list(APPEND libOPNMIDI_SOURCES
         ${libOPNMIDI_SOURCE_DIR}/src/Ym2612_ChipEmu.cpp
     )
@@ -74,6 +91,10 @@ else()
     list(APPEND libOPNMIDI_SOURCES
         ${libOPNMIDI_SOURCE_DIR}/src/ym3438.c
     )
+endif()
+
+if(NOT WITH_MIDI_SEQUENCER)
+    add_definitions(-DOPNMIDI_DISABLE_MIDI_SEQUENCER)
 endif()
 
 # WIP
@@ -149,7 +170,10 @@ install(FILES
 message("==== libOPNMIDI options ====")
 message("WITH_MIDIPLAY            = ${WITH_MIDIPLAY}")
 message("USE_GENS_EMULATOR        = ${USE_GENS_EMULATOR}")
+message("WITH_MIDI_SEQUENCER      = ${WITH_MIDI_SEQUENCER}")
 # message("WITH_CPP_EXTRAS          = ${WITH_CPP_EXTRAS}")
+message("WITH_MUS_SUPPORT         = ${WITH_MUS_SUPPORT}")
+message("WITH_XMI_SUPPORT         = ${WITH_XMI_SUPPORT}")
 message("libOPNMIDI_STATIC        = ${libOPNMIDI_STATIC}")
 message("libOPNMIDI_SHARED        = ${libOPNMIDI_SHARED}")
 

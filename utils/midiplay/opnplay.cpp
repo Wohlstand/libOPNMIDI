@@ -219,7 +219,7 @@ int main(int argc, char **argv)
     }
     std::fprintf(stdout, "OK!\n");
 
-    #ifdef USE_LEGACY_EMULATOR
+    #ifdef OPNMIDI_USE_LEGACY_EMULATOR
     opn2_setNumChips(myDevice, 8);
     #else
     opn2_setNumCards(myDevice, 3);
