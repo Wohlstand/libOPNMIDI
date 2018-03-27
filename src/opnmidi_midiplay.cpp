@@ -280,7 +280,7 @@ bool OPNMIDIplay::buildTrackData()
                 evtPos.delay = ReadVarLenEx(&trackPtr, end, ok);
             if(!ok)
             {
-                int len = std::sprintf(error, "buildTrackData: Can't read variable-length value at begin of track %d.\n", (int)tk);
+                int len = std::snprintf(error, 150, "buildTrackData: Can't read variable-length value at begin of track %d.\n", (int)tk);
                 if((len > 0) && (len < 150))
                     errorString += std::string(error, (size_t)len);
                 return false;
@@ -308,7 +308,7 @@ bool OPNMIDIplay::buildTrackData()
             event = parseEvent(&trackPtr, end, status);
             if(!event.isValid)
             {
-                int len = std::sprintf(error, "buildTrackData: Fail to parse event in the track %d.\n", (int)tk);
+                int len = std::snprintf(error, 150, "buildTrackData: Fail to parse event in the track %d.\n", (int)tk);
                 if((len > 0) && (len < 150))
                     errorString += std::string(error, (size_t)len);
                 return false;
@@ -2567,12 +2567,12 @@ retry_arpeggio:
 //        if(ains.tone)
 //        {
 //            /*if(ains.tone < 20)
-//                    std::sprintf(ToneIndication, "+%-2d", ains.tone);
+//                    std::snprintf(ToneIndication, 8, "+%-2d", ains.tone);
 //                else*/
 //            if(ains.tone < 128)
-//                std::sprintf(ToneIndication, "=%-2d", ains.tone);
+//                std::snprintf(ToneIndication, 8, "=%-2d", ains.tone);
 //            else
-//                std::sprintf(ToneIndication, "-%-2d", ains.tone - 128);
+//                std::snprintf(ToneIndication, 8, "-%-2d", ains.tone - 128);
 //        }
 //        std::printf("%s%s%s%u\t",
 //                    ToneIndication,
