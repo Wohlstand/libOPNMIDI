@@ -113,7 +113,7 @@ void OPN2::NoteOn(unsigned c, double hertz) // Hertz range: 0..131071
     if(hertz < 0 || hertz > 262143) // Avoid infinite loop
         return;
 
-    while(hertz >= 2047.5)
+    while((hertz >= 1023.75) && (x2 < 0x3800))
     {
         hertz /= 2.0;    // Calculate octave
         x2 += 0x800;
