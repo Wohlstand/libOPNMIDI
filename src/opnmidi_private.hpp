@@ -142,7 +142,7 @@ public:
 //#else
 //    std::vector<ym3438_t*> cardsOP2;
 //#endif
-    std::vector<AdlMIDI_CPtr<OPNChipBase>> cardsOP2;
+    std::vector<AdlMIDI_CPtr<OPNChipBase > > cardsOP2;
 private:
     std::vector<size_t>     ins; // index to adl[], cached, needed by Touch()
     std::vector<uint8_t>    pit;  // value poked to B0, cached, needed by NoteOff)(
