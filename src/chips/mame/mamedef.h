@@ -1,7 +1,7 @@
 #ifndef MAMEDEF_H_
 #define MAMEDEF_H_
 
-// typedefs to use MAME's (U)INTxx types (copied from MAME\src\ods\odscomm.h)
+/* typedefs to use MAME's (U)INTxx types (copied from MAME\src\ods\odscomm.h) */
 /* 8-bit values */
 typedef unsigned char						UINT8;
 typedef signed char 						INT8;
@@ -38,7 +38,7 @@ typedef INT16 stream_sample_t;
 #elif defined(VGM_LITTLE_ENDIAN)
 #define BYTE_XOR_BE(x)	((x) ^ 0x01)
 #else
-// don't define BYTE_XOR_BE so that it throws an error when compiling
+/* don't define BYTE_XOR_BE so that it throws an error when compiling */
 #endif
 
 #if defined(_MSC_VER)
@@ -59,4 +59,4 @@ typedef INT16 stream_sample_t;
 
 typedef void (*SRATE_CALLBACK)(void*, UINT32);
 
-#endif	// __MAMEDEF_H__
+#endif	/* __MAMEDEF_H__ */

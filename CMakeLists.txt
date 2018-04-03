@@ -31,6 +31,22 @@ IF(NOT WIN32 AND NOT DJGPP AND NOT MSDOS)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 ENDIF()
+
+if(WIN32)
+    add_definitions(-DUNICODE -D_UNICODE)
+endif()
+
+function(set_legacy_standard destTarget)
+    if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.2)
+        if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+            # Turn on warnings and legacy C/C++ standards to support more compilers
+            target_compile_options(${destTarget} PRIVATE
+                $<$<COMPILE_LANGUAGE:C>:-Wall -pedantic -std=c90>
+                $<$<COMPILE_LANGUAGE:CXX>:-Wall -pedantic -std=gnu++98>
+            )
+        endif()
+    endif()
+endfunction()
 #===========================================================================================
 
 option(WITH_MIDIPLAY        "Build also demo MIDI player" OFF)
@@ -135,6 +151,7 @@ if(libOPNMIDI_STATIC)
     add_library(OPNMIDI_static STATIC ${libOPNMIDI_SOURCES})
     set_target_properties(OPNMIDI_static PROPERTIES OUTPUT_NAME OPNMIDI)
     target_include_directories(OPNMIDI_static PUBLIC ${SDLMixerX_SOURCE_DIR}/include)
+    set_legacy_standard(OPNMIDI_static)
     list(APPEND libOPNMIDI_INSTALLS OPNMIDI_static)
 endif()
 
@@ -142,6 +159,7 @@ if(libOPNMIDI_SHARED)
     add_library(OPNMIDI_shared SHARED ${libOPNMIDI_SOURCES})
     set_target_properties(OPNMIDI_shared PROPERTIES OUTPUT_NAME OPNMIDI)
     target_include_directories(OPNMIDI_shared PUBLIC ${SDLMixerX_SOURCE_DIR}/include)
+    set_legacy_standard(OPNMIDI_shared)
     list(APPEND libOPNMIDI_INSTALLS OPNMIDI_shared)
 endif()
 
@@ -193,7 +211,7 @@ install(TARGETS ${libOPNMIDI_INSTALLS}
 
 install(FILES
         include/opnmidi.h
-        #include/adlmidi.hpp # WIP
+        #include/opnmidi.hpp # WIP
         DESTINATION include/)
 
 message("==== libOPNMIDI options ====")

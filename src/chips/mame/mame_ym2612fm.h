@@ -40,7 +40,7 @@ extern "C" {
 
 /* --- speedup optimize --- */
 /* busy flag enulation , The definition of FM_GET_TIME_NOW() is necessary. */
-//#define FM_BUSY_FLAG_SUPPORT 1
+/* #define FM_BUSY_FLAG_SUPPORT 1 */
 
 /* --- external SSG(YM2149/AY-3-8910)emulator interface port */
 /* used by YM2203,YM2608,and YM2610 */
@@ -102,8 +102,8 @@ typedef void (*FM_IRQHANDLER)(void *param,int irq);
 /* int irq     = IRQ level 0=OFF,1=ON            */
 
 #if (BUILD_YM2612||BUILD_YM3438)
-//void * ym2612_init(void *param, const device_config *device, int baseclock, int rate,
-//               FM_TIMERHANDLER TimerHandler,FM_IRQHANDLER IRQHandler);
+/*void * ym2612_init(void *param, const device_config *device, int baseclock, int rate,
+               FM_TIMERHANDLER TimerHandler,FM_IRQHANDLER IRQHandler); */
 void * ym2612_init(void *param, int baseclock, int rate,
                FM_TIMERHANDLER TimerHandler,FM_IRQHANDLER IRQHandler);
 void ym2612_shutdown(void *chip);
@@ -131,4 +131,4 @@ void ym2612_setoptions(UINT8 Flags);
 }
 #endif
 
-#endif //FM_HHHHH
+#endif /* FM_HHHHH */
