@@ -560,14 +560,14 @@ riffskip:
         return false;
     }
 
-    //Build new MIDI events table (ALPHA!!!)
+    //Build new MIDI events table
     if(!buildTrackData())
     {
         errorStringOut = fr._fileName + ": MIDI data parsing error has occouped!\n" + errorString;
         return false;
     }
 
-    opn.Reset(m_setup.PCM_RATE); // Reset AdLib
+    opn.Reset(m_setup.emulator, m_setup.PCM_RATE); // Reset OPN2 chip
     ch.clear();
     ch.resize(opn.NumChannels);
     return true;

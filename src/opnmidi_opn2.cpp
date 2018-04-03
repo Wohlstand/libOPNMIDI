@@ -23,6 +23,26 @@
 
 #include "opnmidi_private.hpp"
 
+#if defined(OPNMIDI_DISABLE_NUKED_EMULATOR) && defined(OPNMIDI_DISABLE_MAME_EMULATOR) && defined(OPNMIDI_DISABLE_GENS_EMULATOR)
+#error "No emulators enabled. You must enable at least one emulator to use this library!"
+#endif
+
+// Nuked OPN2 emulator, Most accurate, but requires the powerful CPU
+#ifndef OPNMIDI_DISABLE_NUKED_EMULATOR
+#include "chips/nuked_opn2.h"
+#endif
+
+// MAME YM2612 emulator, Well-accurate and fast
+#ifndef OPNMIDI_DISABLE_MAME_EMULATOR
+#include "chips/mame_opn2.h"
+#endif
+
+// GENS 2.10 emulator, very outdated and inaccurate, but gives the best performance
+#ifndef OPNMIDI_DISABLE_GENS_EMULATOR
+#include "chips/gens_opn2.h"
+#endif
+
+
 static const uint8_t NoteChannels[6] = { 0, 1, 2, 4, 5, 6 };
 
 static inline void getOpnChannel(uint32_t   in_channel,
@@ -81,15 +101,7 @@ OPN2::~OPN2()
 
 void OPN2::PokeO(size_t card, uint8_t port, uint8_t index, uint8_t value)
 {
-    #ifdef OPNMIDI_USE_LEGACY_EMULATOR
-    if(port == 1)
-        cardsOP2[card]->write1(index, value);
-    else
-        cardsOP2[card]->write0(index, value);
-    #else
-    OPN2_WriteBuffered(cardsOP2[card], 0 + (port) * 2, index);
-    OPN2_WriteBuffered(cardsOP2[card], 1 + (port) * 2, value);
-    #endif
+    cardsOP2[card]->writeReg(port, index, value);
 }
 
 void OPN2::NoteOff(size_t c)
@@ -269,32 +281,42 @@ void OPN2::ChangeVolumeRangesModel(OPNMIDI_VolumeModels volumeModel)
 void OPN2::ClearChips()
 {
     for(size_t i = 0; i < cardsOP2.size(); i++)
-        delete cardsOP2[i];
+        cardsOP2[i].reset(NULL);
     cardsOP2.clear();
 }
 
-void OPN2::Reset(unsigned long PCM_RATE)
+void OPN2::Reset(int emulator, unsigned long PCM_RATE)
 {
     ClearChips();
     ins.clear();
     pit.clear();
     regBD.clear();
-    cardsOP2.resize(NumCards, NULL);
+    cardsOP2.resize(NumCards, AdlMIDI_CPtr<OPNChipBase>());
 
-    #ifndef OPNMIDI_USE_LEGACY_EMULATOR
-    OPN2_SetChipType(ym3438_type_asic);
-    #endif
     for(size_t i = 0; i < cardsOP2.size(); i++)
     {
-    #ifdef OPNMIDI_USE_LEGACY_EMULATOR
-        cardsOP2[i] = new OPNMIDI_Ym2612_Emu();
-        cardsOP2[i]->set_rate(PCM_RATE, 7670454.0);
-    #else
-        cardsOP2[i] = new ym3438_t;
-        std::memset(cardsOP2[i], 0, sizeof(ym3438_t));
-        OPN2_Reset(cardsOP2[i], (Bit32u)PCM_RATE, 7670454);
-    #endif
+        switch(emulator)
+        {
+        default:
+#ifndef OPNMIDI_DISABLE_MAME_EMULATOR
+        case OPNMIDI_EMU_MAME:
+            cardsOP2[i].reset(new MameOPN2());
+            break;
+#endif
+#ifndef OPNMIDI_DISABLE_NUKED_EMULATOR
+        case OPNMIDI_EMU_NUKED:
+            cardsOP2[i].reset(new NukedOPN2());
+            break;
+#endif
+#ifndef OPNMIDI_DISABLE_GENS_EMULATOR
+        case OPNMIDI_EMU_GENS:
+            cardsOP2[i].reset(new GensOPN2());
+            break;
+#endif
+        }
+        cardsOP2[i]->setRate((uint32_t)PCM_RATE, 7670454);
     }
+
     NumChannels = NumCards * 6;
     ins.resize(NumChannels,   189);
     pit.resize(NumChannels,   0);

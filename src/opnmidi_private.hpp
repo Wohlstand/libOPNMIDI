@@ -85,11 +85,7 @@ typedef __int32 ssize_t;
 
 
 #include "fraction.hpp"
-#ifdef OPNMIDI_USE_LEGACY_EMULATOR
-#include "Ym2612_ChipEmu.h"
-#else
-#include "ym3438.h"
-#endif
+#include "chips/opn_chip_base.h"
 
 #include "opnbank.h"
 #include "opnmidi.h"
@@ -141,11 +137,12 @@ public:
     friend class OPNMIDIplay;
     uint32_t NumChannels;
     char ____padding[4];
-#ifdef OPNMIDI_USE_LEGACY_EMULATOR
-    std::vector<OPNMIDI_Ym2612_Emu*> cardsOP2;
-#else
-    std::vector<ym3438_t*> cardsOP2;
-#endif
+//#ifdef OPNMIDI_USE_LEGACY_EMULATOR
+//    std::vector<OPNMIDI_Ym2612_Emu*> cardsOP2;
+//#else
+//    std::vector<ym3438_t*> cardsOP2;
+//#endif
+    std::vector<AdlMIDI_CPtr<OPNChipBase>> cardsOP2;
 private:
     std::vector<size_t>     ins; // index to adl[], cached, needed by Touch()
     std::vector<uint8_t>    pit;  // value poked to B0, cached, needed by NoteOff)(
@@ -215,7 +212,7 @@ public:
     void Silence();
     void ChangeVolumeRangesModel(OPNMIDI_VolumeModels volumeModel);
     void ClearChips();
-    void Reset(unsigned long PCM_RATE);
+    void Reset(int emulator, unsigned long PCM_RATE);
 };
 
 
@@ -647,6 +644,7 @@ public:
 
     struct Setup
     {
+        int     emulator;
         unsigned int OpnBank;
         unsigned int NumCards;
         unsigned int LogarithmicVolumes;

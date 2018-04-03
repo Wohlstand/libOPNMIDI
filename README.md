@@ -64,18 +64,34 @@ You need to make in the any IDE a library project and put into it next files
 * opnmidi.h    - Library API, use it to control library
 
 ### Internal code (src)
-* Ym2612_ChipEmu.h  - Yamaha OPN2 Emulation header
 * fraction.hpp  - Fraction number handling
 * opnbank.h    - bank structures definition
 * opnmidi_private.hpp - header of internal private APIs
 
-* Ym2612_ChipEmu.cpp   - code of Yamaha OPN2 emulator by Stéphane Dallongeville, improved by Shay Green
 * opnmidi.cpp   - code of library
 
 * opnmidi_load.cpp	- Source of file loading and parsing processing
 * opnmidi_midiplay.cpp	- MIDI event sequencer
 * opnmidi_opn2.cpp	- OPN2 chips manager
 * opnmidi_private.cpp	- some internal functions sources
+
+* `chips/opn_chip_base.h`   - Header of base class over all emulation cores
+* `chips/opn_chip_base.cpp` - Code of base class over all emulation cores
+
+* chips/gens_opn2.h  - Header of emulator frontent over Gens 2.10 emulator
+* chips/gens_opn2.cpp  - Code of emulator frontent over Gens 2.10 emulator
+* chips/gens/Ym2612_ChipEmu.h  - Gens 2.10 OPN2 Emulation header
+* chips/gens/Ym2612_ChipEmu.cpp   - Code of Gens 2.10 OPN2 emulator by Stéphane Dallongeville, improved by Shay Green
+
+* chips/mame_opn2.h  - Header of emulator frontent over MAME YM2612 emulator
+* chips/mame_opn2.cpp  - Code of emulator frontent over MAME YM2612 emulator
+* chips/mame/mame_ym2612fm.h  - MAME YM2612 Emulation header
+* chips/mame/mame_ym2612fm.cpp   - Code of MAME YM2612 emulator by Stéphane Dallongeville, improved by Shay Green
+
+* chips/nuked_opn2.h  - Header of emulator frontent over Nuked OPN2 emulator
+* chips/nuked_opn2.cpp  - Code of emulator frontent over Nuked OPN2 emulator
+* chips/nuked/ym3438.h  - Nuked OPN2 Emulation header
+* chips/nuked/ym3438.cpp   - Code of Nuked OPN2 emulator by Stéphane Dallongeville, improved by Shay Green
 
 #### MUS2MIDI converter
 To remove MUS support, define `OPNMIDI_DISABLE_MUS_SUPPORT` macro and remove those files:
@@ -95,10 +111,12 @@ To remove XMI support, define `OPNMIDI_DISABLE_XMI_SUPPORT` macro and remove tho
 * [OPNMIDI Player for Android](https://github.com/Wohlstand/OPNMIDI-Player-Java/) - a little MIDI-player for Android which uses libOPNMIDI to play MIDI files and provides flexible GUI with ability to change bank, flags, number of emulated chips, etc.
 
 # Changelog
-## 1.3.1   dev
+## 1.2.0   dev
  * Added ability to disable MUS and XMI converters
  * Added ability to disable embedded MIDI sequencer to use library as RealTime synthesizer only or use any custom MIDI sequencer plugins.
  * Fixed blank instruments fallback in multi-bank support. When using non-zero bank, if instrument is blank, then, instrument will be taken from a root (I.e. zero bank).
+ * Added support for real-time switching the emulator
+ * Added support for MAME YM2612 Emulator
 
 ## 1.1.0   2018-01-21
 * First stable release

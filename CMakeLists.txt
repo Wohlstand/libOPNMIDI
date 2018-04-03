@@ -35,7 +35,9 @@ ENDIF()
 
 option(WITH_MIDIPLAY        "Build also demo MIDI player" OFF)
 
-option(USE_GENS_EMULATOR    "Use GENS 2.10 emulator" ON)
+option(USE_MAME_EMULATOR    "Use MAME YM2612 emulator (for most of hardware)" ON)
+option(USE_GENS_EMULATOR    "Use GENS 2.10 emulator (fastest, very outdated, inaccurate)" ON)
+option(USE_NUKED_EMULATOR    "Use Nuked OPN2 emulator (most accurate, heavy)" ON)
 
 # WIP FEATURES
 # option(WITH_CPP_EXTRAS      "Build with support for C++ extras (features are can be found in 'adlmidi.hpp' header)" OFF)
@@ -82,15 +84,42 @@ else()
     add_definitions(-DOPNMIDI_DISABLE_XMI_SUPPORT)
 endif()
 
+list(APPEND libOPNMIDI_SOURCES
+    ${libOPNMIDI_SOURCE_DIR}/src/chips/opn_chip_base.cpp
+)
+
 if(USE_GENS_EMULATOR)
-    add_definitions(-DOPNMIDI_USE_LEGACY_EMULATOR)
     list(APPEND libOPNMIDI_SOURCES
-        ${libOPNMIDI_SOURCE_DIR}/src/Ym2612_ChipEmu.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/gens_opn2.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/gens/Ym2612_Emu.cpp
     )
+    set(HAS_EMULATOR TRUE)
 else()
+    add_definitions(-DOPNMIDI_DISABLE_GENS_EMULATOR)
+endif()
+
+if(USE_MAME_EMULATOR)
     list(APPEND libOPNMIDI_SOURCES
-        ${libOPNMIDI_SOURCE_DIR}/src/ym3438.c
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/mame_opn2.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/mame/mame_ym2612fm.c
     )
+    set(HAS_EMULATOR TRUE)
+else()
+    add_definitions(-DOPNMIDI_DISABLE_MAME_EMULATOR)
+endif()
+
+if(USE_NUKED_EMULATOR)
+    list(APPEND libOPNMIDI_SOURCES
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_opn2.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked/ym3438.c
+    )
+    set(HAS_EMULATOR TRUE)
+else()
+    add_definitions(-DOPNMIDI_DISABLE_NUKED_EMULATOR)
+endif()
+
+if(NOT HAS_EMULATOR)
+    message(FATAL_ERROR "No emulators enabled! You must enable at least one emulator!")
 endif()
 
 if(NOT WITH_MIDI_SEQUENCER)
@@ -169,7 +198,9 @@ install(FILES
 
 message("==== libOPNMIDI options ====")
 message("WITH_MIDIPLAY            = ${WITH_MIDIPLAY}")
+message("USE_MAME_EMULATOR        = ${USE_MAME_EMULATOR}")
 message("USE_GENS_EMULATOR        = ${USE_GENS_EMULATOR}")
+message("USE_NUKED_EMULATOR       = ${USE_NUKED_EMULATOR}")
 message("WITH_MIDI_SEQUENCER      = ${WITH_MIDI_SEQUENCER}")
 # message("WITH_CPP_EXTRAS          = ${WITH_CPP_EXTRAS}")
 message("WITH_MUS_SUPPORT         = ${WITH_MUS_SUPPORT}")

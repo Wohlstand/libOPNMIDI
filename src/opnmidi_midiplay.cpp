@@ -670,6 +670,8 @@ OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate)
 {
     devices.clear();
 
+    m_setup.emulator = OPNMIDI_EMU_MAME;
+
     m_setup.PCM_RATE = sampleRate;
     m_setup.mindelay = 1.0 / (double)m_setup.PCM_RATE;
     m_setup.maxdelay = 512.0 / (double)m_setup.PCM_RATE;
@@ -703,7 +705,7 @@ void OPNMIDIplay::applySetup()
 
     opn.NumCards    = m_setup.NumCards;
 
-    opn.Reset(m_setup.PCM_RATE);
+    opn.Reset(m_setup.emulator, m_setup.PCM_RATE);
     ch.clear();
     ch.resize(opn.NumChannels);
 }

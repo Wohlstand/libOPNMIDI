@@ -29,8 +29,8 @@ extern "C" {
 #endif
 
 #define OPNMIDI_VERSION_MAJOR       1
-#define OPNMIDI_VERSION_MINOR       1
-#define OPNMIDI_VERSION_PATCHLEVEL  1
+#define OPNMIDI_VERSION_MINOR       2
+#define OPNMIDI_VERSION_PATCHLEVEL  0
 
 #define OPNMIDI_TOSTR(s) #s
 #define OPNMIDI_VERSION \
@@ -96,8 +96,22 @@ extern int opn2_openBankFile(struct OPN2_MIDIPlayer *device, const char *filePat
 extern int opn2_openBankData(struct OPN2_MIDIPlayer *device, const void *mem, long size);
 
 
-/*Returns chip emulator name string*/
+/* DEPRECATED */
 extern const char *opn2_emulatorName();
+
+/*Returns chip emulator name string*/
+extern const char *opn2_chipEmulatorName(struct OPN2_MIDIPlayer *device);
+
+enum Opn2_Emulator
+{
+    OPNMIDI_EMU_MAME = 0,
+    OPNMIDI_EMU_NUKED,
+    OPNMIDI_EMU_GENS,
+    OPNMIDI_EMU_end
+};
+
+/* Switch the emulation core */
+extern int opn2_switchEmulator(struct OPN2_MIDIPlayer *device, int emulator);
 
 typedef struct {
     OPN2_UInt16 major;

@@ -105,13 +105,16 @@ int main(int argc, char **argv)
     if(argc < 3 || std::string(argv[1]) == "--help" || std::string(argv[1]) == "-h")
     {
         std::printf(
-            "Usage: opnmidi [-s] [-w] [-nl] <bankfile>.wopn <midifilename>\n"
+            "Usage: opnmidi [-s] [-w] [-nl] [--emu-mame|--emu-nuked|--emu-gens] <bankfile>.wopn <midifilename>\n"
             //" -p Enables adlib percussion instrument mode\n"
             //" -t Enables tremolo amplification mode\n"
             //" -v Enables vibrato amplification mode\n"
             " -s Enables scaling of modulator volumes\n"
             " -nl Quit without looping\n"
             " -w Write WAV file rather than playing\n"
+            " --emu-mame Use MAME YM2612 Emulator\n"
+            " --emu-gens Use GENS 2.10 Emulator\n"
+            " --emu-nuked Use Nuked OPN2 Emulator\n"
         );
         std::fflush(stdout);
 
@@ -155,6 +158,7 @@ int main(int argc, char **argv)
      */
     bool recordWave = false;
     int loopEnabled = 1;
+    int emulator = OPNMIDI_EMU_MAME;
 
     int arg = 1;
     for(arg = 1; arg < argc; arg++)
@@ -163,6 +167,12 @@ int main(int argc, char **argv)
             recordWave = true;//Record library output into WAV file
         else if(!std::strcmp("-nl", argv[arg]))
             loopEnabled = 0; //Enable loop
+        else if(!std::strcmp("--emu-nuked", argv[arg]))
+            emulator = OPNMIDI_EMU_NUKED;
+        else if(!std::strcmp("--emu-gens", argv[arg]))
+            emulator = OPNMIDI_EMU_GENS;
+        else if(!std::strcmp("--emu-mame", argv[arg]))
+            emulator = OPNMIDI_EMU_MAME;
         else if(!std::strcmp("-s", argv[arg]))
             opn2_setScaleModulators(myDevice, 1);//Turn on modulators scaling by volume
         else if(!std::strcmp("--", argv[arg]))
@@ -189,7 +199,15 @@ int main(int argc, char **argv)
     std::string bankPath = argv[arg];
     std::string musPath = argv[arg + 1];
 
-    std::fprintf(stdout, " - %s OPN2 Emulator in use\n", opn2_emulatorName());
+    if(opn2_switchEmulator(myDevice, emulator) != 0)
+    {
+        std::fprintf(stdout, "FAILED!\n");
+        std::fflush(stdout);
+        printError(opn2_errorInfo(myDevice));
+        return 2;
+    }
+
+    std::fprintf(stdout, " - %s Emulator in use\n", opn2_chipEmulatorName(myDevice));
 
     if(!recordWave)
     {
@@ -219,11 +237,10 @@ int main(int argc, char **argv)
     }
     std::fprintf(stdout, "OK!\n");
 
-    #ifdef OPNMIDI_USE_LEGACY_EMULATOR
-    opn2_setNumChips(myDevice, 8);
-    #else
-    opn2_setNumCards(myDevice, 3);
-    #endif
+    if(emulator == OPNMIDI_EMU_NUKED)
+        opn2_setNumChips(myDevice, 3);//Too slow emulator to process so much chips
+    else
+        opn2_setNumChips(myDevice, 8);
 
     std::fprintf(stdout, " - Number of chips %d\n", opn2_getNumChips(myDevice));
 

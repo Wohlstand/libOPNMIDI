@@ -209,11 +209,34 @@ OPNMIDI_EXPORT int opn2_openData(OPN2_MIDIPlayer *device, const void *mem, unsig
 
 OPNMIDI_EXPORT const char *opn2_emulatorName()
 {
-    #ifdef OPNMIDI_USE_LEGACY_EMULATOR
-    return "GENS 2.10 YM2612";
-    #else
-    return "Nuked OPN2 YM3438";
-    #endif
+    return "<opn2_emulatorName() is deprecated! Use opn2_chipEmulatorName() instead!>";
+}
+
+OPNMIDI_EXPORT const char *opn2_chipEmulatorName(struct OPN2_MIDIPlayer *device)
+{
+    if(device)
+    {
+        OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+        if(play && !play->opn.cardsOP2.empty())
+            return play->opn.cardsOP2[0]->emulatorName();
+    }
+    return "Unknown";
+}
+
+OPNMIDI_EXPORT int opn2_switchEmulator(struct OPN2_MIDIPlayer *device, int emulator)
+{
+    if(device)
+    {
+        OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+        if(play && (emulator >= 0) && (emulator < OPNMIDI_EMU_end))
+        {
+            play->m_setup.emulator = emulator;
+            opn2_reset(device);
+            return 0;
+        }
+        play->setErrorString("OPN2 MIDI: Unknown emulation core!");
+    }
+    return -1;
 }
 
 OPNMIDI_EXPORT const char *opn2_linkedLibraryVersion()
@@ -270,7 +293,7 @@ OPNMIDI_EXPORT void opn2_reset(OPN2_MIDIPlayer *device)
         return;
     OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
     play->m_setup.tick_skip_samples_delay = 0;
-    play->opn.Reset(play->m_setup.PCM_RATE);
+    play->opn.Reset(play->m_setup.emulator, play->m_setup.PCM_RATE);
     play->ch.clear();
     play->ch.resize(play->opn.NumChannels);
 }
@@ -566,24 +589,12 @@ OPNMIDI_EXPORT int opn2_play(OPN2_MIDIPlayer *device, int sampleCount, short *ou
                 std::memset(out_buf, 0, static_cast<size_t>(in_generatedPhys) * sizeof(int16_t));
                 unsigned int chips = player->opn.NumCards;
                 if(chips == 1)
-                {
-                    #ifdef OPNMIDI_USE_LEGACY_EMULATOR
-                    player->opn.cardsOP2[0]->run(int(in_generatedStereo), out_buf);
-                    #else
-                    OPN2_GenerateStream(player->opn.cardsOP2[0], out_buf, (Bit32u)in_generatedStereo);
-                    #endif
-                }
+                    player->opn.cardsOP2[0]->generate(out_buf, (size_t)in_generatedStereo);
                 else/* if(n_periodCountStereo > 0)*/
                 {
                     /* Generate data from every chip and mix result */
                     for(unsigned card = 0; card < chips; ++card)
-                    {
-                        #ifdef OPNMIDI_USE_LEGACY_EMULATOR
-                        player->opn.cardsOP2[card]->run(int(in_generatedStereo), out_buf);
-                        #else
-                        OPN2_GenerateStreamMix(player->opn.cardsOP2[card], out_buf, (Bit32u)in_generatedStereo);
-                        #endif
-                    }
+                        player->opn.cardsOP2[card]->generateAndMix(out_buf, (size_t)in_generatedStereo);
                 }
                 /* Process it */
                 SendStereoAudio(sampleCount, in_generatedStereo, out_buf, gotten_len, out);
@@ -648,24 +659,12 @@ OPNMIDI_EXPORT int opn2_generate(struct OPN2_MIDIPlayer *device, int sampleCount
                 std::memset(out_buf, 0, static_cast<size_t>(in_generatedPhys) * sizeof(int16_t));
                 unsigned int chips = player->opn.NumCards;
                 if(chips == 1)
-                {
-                    #ifdef OPNMIDI_USE_LEGACY_EMULATOR
-                    player->opn.cardsOP2[0]->run(int(in_generatedStereo), out_buf);
-                    #else
-                    OPN2_GenerateStream(player->opn.cardsOP2[0], out_buf, (Bit32u)in_generatedStereo);
-                    #endif
-                }
+                    player->opn.cardsOP2[0]->generate(out_buf, (size_t)in_generatedStereo);
                 else/* if(n_periodCountStereo > 0)*/
                 {
                     /* Generate data from every chip and mix result */
                     for(unsigned card = 0; card < chips; ++card)
-                    {
-                        #ifdef OPNMIDI_USE_LEGACY_EMULATOR
-                        player->opn.cardsOP2[card]->run(int(in_generatedStereo), out_buf);
-                        #else
-                        OPN2_GenerateStreamMix(player->opn.cardsOP2[card], out_buf, (Bit32u)in_generatedStereo);
-                        #endif
-                    }
+                        player->opn.cardsOP2[card]->generateAndMix(out_buf, (size_t)in_generatedStereo);
                 }
                 /* Process it */
                 SendStereoAudio(sampleCount, in_generatedStereo, out_buf, gotten_len, out);
