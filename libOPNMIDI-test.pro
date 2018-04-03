@@ -20,17 +20,28 @@ INCLUDEPATH += $$PWD/include $$PWD/src
 
 HEADERS += \
     include/opnmidi.h \
-    src/ym3438.h \
-    src/Ym2612_ChipEmu.h \
-    src/opnmidi_xmi2mid.h \
-    src/opnmidi_private.hpp \
-    src/opnmidi_mus2mid.h \
+    src/chips/gens_opn2.h \
+    src/chips/gens/Ym2612_Emu.h \
+    src/chips/mame/mamedef.h \
+    src/chips/mame/mame_ym2612fm.h \
+    src/chips/mame_opn2.h \
+    src/chips/nuked_opn2.h \
+    src/chips/nuked/ym3438.h \
+    src/chips/opn_chip_base.h \
+    src/fraction.hpp \
     src/opnbank.h \
-    src/fraction.hpp
+    src/opnmidi_mus2mid.h \
+    src/opnmidi_private.hpp \
+    src/opnmidi_xmi2mid.h
 
 SOURCES += \
-    src/Ym2612_ChipEmu.cpp \
-    src/ym3438.c \
+    src/chips/opn_chip_base.cpp \
+    src/chips/mame_opn2.cpp \
+    src/chips/gens_opn2.cpp \
+    src/chips/nuked_opn2.cpp \
+    src/chips/mame/mame_ym2612fm.c \
+    src/chips/gens/Ym2612_Emu.cpp \
+    src/chips/nuked/ym3438.c \
     src/opnmidi.cpp \
     src/opnmidi_xmi2mid.c \
     src/opnmidi_private.cpp \
