@@ -35,18 +35,18 @@ HEADERS += \
     src/opnmidi_xmi2mid.h
 
 SOURCES += \
-    src/chips/opn_chip_base.cpp \
-    src/chips/mame_opn2.cpp \
     src/chips/gens_opn2.cpp \
-    src/chips/nuked_opn2.cpp \
-    src/chips/mame/mame_ym2612fm.c \
     src/chips/gens/Ym2612_Emu.cpp \
+    src/chips/mame/mame_ym2612fm.c \
+    src/chips/mame_opn2.cpp \
+    src/chips/nuked_opn2.cpp \
     src/chips/nuked/ym3438.c \
+    src/chips/opn_chip_base.cpp \
     src/opnmidi.cpp \
-    src/opnmidi_xmi2mid.c \
-    src/opnmidi_private.cpp \
     src/opnmidi_load.cpp \
     src/opnmidi_midiplay.cpp \
     src/opnmidi_mus2mid.c \
     src/opnmidi_opn2.cpp \
+    src/opnmidi_private.cpp \
+    src/opnmidi_xmi2mid.c \
     utils/midiplay/opnplay.cpp
