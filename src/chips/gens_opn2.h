@@ -10,7 +10,7 @@ class GensOPN2 final : public OPNChipBase
 public:
     GensOPN2();
     GensOPN2(const GensOPN2 &c);
-    virtual ~GensOPN2();
+    virtual ~GensOPN2() override;
 
     virtual void setRate(uint32_t rate, uint32_t clock) override;
     virtual void reset() override;

@@ -9,7 +9,7 @@ class MameOPN2 final : public OPNChipBase
 public:
     MameOPN2();
     MameOPN2(const MameOPN2 &c);
-    virtual ~MameOPN2();
+    virtual ~MameOPN2() override;
 
     virtual void setRate(uint32_t rate, uint32_t clock) override;
     virtual void reset() override;

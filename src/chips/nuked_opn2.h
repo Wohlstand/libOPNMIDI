@@ -9,7 +9,7 @@ class NukedOPN2 final : public OPNChipBase
 public:
     NukedOPN2();
     NukedOPN2(const NukedOPN2 &c);
-    virtual ~NukedOPN2();
+    virtual ~NukedOPN2() override;
 
     virtual void setRate(uint32_t rate, uint32_t clock) override;
     virtual void reset() override;
