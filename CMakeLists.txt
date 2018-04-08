@@ -37,7 +37,7 @@ if(WIN32)
 endif()
 
 function(set_legacy_standard destTarget)
-    if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.2)
+    if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_GREATER 3.2)
         if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
             # Turn on warnings and legacy C/C++ standards to support more compilers
             target_compile_options(${destTarget} PRIVATE
