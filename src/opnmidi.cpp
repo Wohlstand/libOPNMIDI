@@ -593,7 +593,7 @@ OPNMIDI_EXPORT int opn2_play(OPN2_MIDIPlayer *device, int sampleCount, short *ou
                 else/* if(n_periodCountStereo > 0)*/
                 {
                     /* Generate data from every chip and mix result */
-                    for(unsigned card = 0; card < chips; ++card)
+                    for(size_t card = 0; card < chips; ++card)
                         player->opn.cardsOP2[card]->generateAndMix(out_buf, (size_t)in_generatedStereo);
                 }
                 /* Process it */
@@ -663,7 +663,7 @@ OPNMIDI_EXPORT int opn2_generate(struct OPN2_MIDIPlayer *device, int sampleCount
                 else/* if(n_periodCountStereo > 0)*/
                 {
                     /* Generate data from every chip and mix result */
-                    for(unsigned card = 0; card < chips; ++card)
+                    for(size_t card = 0; card < chips; ++card)
                         player->opn.cardsOP2[card]->generateAndMix(out_buf, (size_t)in_generatedStereo);
                 }
                 /* Process it */
