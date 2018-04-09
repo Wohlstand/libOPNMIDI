@@ -53,7 +53,7 @@ option(WITH_MIDIPLAY        "Build also demo MIDI player" OFF)
 
 option(USE_MAME_EMULATOR    "Use MAME YM2612 emulator (for most of hardware)" ON)
 option(USE_GENS_EMULATOR    "Use GENS 2.10 emulator (fastest, very outdated, inaccurate)" ON)
-option(USE_NUKED_EMULATOR    "Use Nuked OPN2 emulator (most accurate, heavy)" ON)
+option(USE_NUKED_EMULATOR   "Use Nuked OPN2 emulator (most accurate, heavy)" ON)
 
 # WIP FEATURES
 # option(WITH_CPP_EXTRAS      "Build with support for C++ extras (features are can be found in 'adlmidi.hpp' header)" OFF)
