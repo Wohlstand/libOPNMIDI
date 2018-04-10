@@ -111,9 +111,11 @@ public:
 
     void reset(PTR *p = NULL)
     {
-        if(m_p)
-            free(m_p);
-        m_p = p;
+        if(p != m_p) {
+            if(m_p)
+                free(m_p);
+            m_p = p;
+        }
     }
 
     PTR *get()
@@ -128,6 +130,77 @@ public:
     {
         return m_p;
     }
+private:
+    AdlMIDI_CPtr(const AdlMIDI_CPtr &);
+    AdlMIDI_CPtr &operator=(const AdlMIDI_CPtr &);
+};
+
+/*
+    Shared pointer with non-atomic counter
+    FAQ: Why not std::shared_ptr? Because of Android NDK now doesn't supports it
+*/
+template<class VALUE>
+class AdlMIDI_SPtr
+{
+    VALUE *m_p;
+    size_t *m_counter;
+public:
+    AdlMIDI_SPtr() : m_p(NULL), m_counter(NULL) {}
+    ~AdlMIDI_SPtr()
+    {
+        reset(NULL);
+    }
+
+    AdlMIDI_SPtr(const AdlMIDI_SPtr &other)
+        : m_p(other.m_p), m_counter(other.m_counter)
+    {
+        if(m_counter)
+            ++*m_counter;
+    }
+
+    AdlMIDI_SPtr &operator=(const AdlMIDI_SPtr &other)
+    {
+        reset();
+        m_p = other.m_p;
+        m_counter = other.m_counter;
+        if(m_counter)
+            ++*m_counter;
+        return *this;
+    }
+
+    void reset(VALUE *p = NULL)
+    {
+        if(p != m_p) {
+            if(m_p && --*m_counter == 0)
+                delete m_p;
+            m_p = p;
+            if(!p) {
+                if(m_counter) {
+                    delete m_counter;
+                    m_counter = NULL;
+                }
+            }
+            else
+            {
+                if(!m_counter)
+                    m_counter = new size_t;
+                *m_counter = 1;
+            }
+        }
+    }
+
+    VALUE *get()
+    {
+        return m_p;
+    }
+    VALUE &operator*()
+    {
+        return *m_p;
+    }
+    VALUE *operator->()
+    {
+        return m_p;
+    }
 };
 
 class OPNMIDIplay;
@@ -137,12 +210,7 @@ public:
     friend class OPNMIDIplay;
     uint32_t NumChannels;
     char ____padding[4];
-//#ifdef OPNMIDI_USE_LEGACY_EMULATOR
-//    std::vector<OPNMIDI_Ym2612_Emu*> cardsOP2;
-//#else
-//    std::vector<ym3438_t*> cardsOP2;
-//#endif
-    std::vector<AdlMIDI_CPtr<OPNChipBase > > cardsOP2;
+    std::vector<AdlMIDI_SPtr<OPNChipBase > > cardsOP2;
 private:
     std::vector<size_t>     ins; // index to adl[], cached, needed by Touch()
     std::vector<uint8_t>    pit;  // value poked to B0, cached, needed by NoteOff)(

@@ -291,7 +291,7 @@ void OPN2::Reset(int emulator, unsigned long PCM_RATE)
     ins.clear();
     pit.clear();
     regBD.clear();
-    cardsOP2.resize(NumCards, AdlMIDI_CPtr<OPNChipBase>());
+    cardsOP2.resize(NumCards, AdlMIDI_SPtr<OPNChipBase>());
 
     for(size_t i = 0; i < cardsOP2.size(); i++)
     {
