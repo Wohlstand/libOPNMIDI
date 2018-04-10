@@ -119,6 +119,7 @@ To remove XMI support, define `OPNMIDI_DISABLE_XMI_SUPPORT` macro and remove tho
  * Fixed blank instruments fallback in multi-bank support. When using non-zero bank, if instrument is blank, then, instrument will be taken from a root (I.e. zero bank).
  * Added support for real-time switching the emulator
  * Added support for MAME YM2612 Emulator
+ * Added support for CC-120 - "All sound off" on the MIDI channel
 
 ## 1.1.0   2018-01-21
 * First stable release
