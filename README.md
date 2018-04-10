@@ -120,6 +120,7 @@ To remove XMI support, define `OPNMIDI_DISABLE_XMI_SUPPORT` macro and remove tho
  * Added support for real-time switching the emulator
  * Added support for MAME YM2612 Emulator
  * Added support for CC-120 - "All sound off" on the MIDI channel
+ * Changed logic of CC-74 Brightness to affect sound only between 0 and 64 like real XG synthesizers. Ability to turn on a full-ranged brightness (to use full 0...127 range) is kept.
 
 ## 1.1.0   2018-01-21
 * First stable release

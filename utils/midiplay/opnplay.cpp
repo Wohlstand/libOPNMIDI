@@ -110,6 +110,7 @@ int main(int argc, char **argv)
             //" -t Enables tremolo amplification mode\n"
             //" -v Enables vibrato amplification mode\n"
             " -s Enables scaling of modulator volumes\n"
+            " -frb Enables full-ranged CC74 XG Brightness controller\n"
             " -nl Quit without looping\n"
             " -w Write WAV file rather than playing\n"
             " --emu-mame Use MAME YM2612 Emulator\n"
@@ -165,6 +166,8 @@ int main(int argc, char **argv)
     {
         if(!std::strcmp("-w", argv[arg]))
             recordWave = true;//Record library output into WAV file
+        else if(!std::strcmp("-frb", argv[arg]))
+            opn2_setFullRangeBrightness(myDevice, 1);//Turn on a full-ranged XG CC74 Brightness
         else if(!std::strcmp("-nl", argv[arg]))
             loopEnabled = 0; //Enable loop
         else if(!std::strcmp("--emu-nuked", argv[arg]))

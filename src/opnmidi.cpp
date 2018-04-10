@@ -132,6 +132,13 @@ OPNMIDI_EXPORT void opn2_setScaleModulators(OPN2_MIDIPlayer *device, int smod)
     play->opn.ScaleModulators = play->m_setup.ScaleModulators;
 }
 
+OPNMIDI_EXPORT void opn2_setFullRangeBrightness(struct OPN2_MIDIPlayer *device, int fr_brightness)
+{
+    if(!device) return;
+    OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    play->m_setup.fullRangeBrightnessCC74 = fr_brightness;
+}
+
 OPNMIDI_EXPORT void opn2_setLoopEnabled(OPN2_MIDIPlayer *device, int loopEn)
 {
     if(!device) return;
