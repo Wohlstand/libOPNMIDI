@@ -92,6 +92,10 @@ typedef __int32 ssize_t;
 
 #define ADL_UNUSED(x) (void)x
 
+#define OPN_PANNING_LEFT    0x80
+#define OPN_PANNING_RIGHT   0x40
+#define OPN_PANNING_BOTH    0xC0
+
 extern std::string OPN2MIDI_ErrorString;
 
 /*
@@ -517,26 +521,30 @@ public:
 
         void reset()
         {
-            portamento = 0;
+            resetAllControllers();
+            patch = 0;
+            vibpos = 0;
             bank_lsb = 0;
             bank_msb = 0;
-            patch = 0;
-            volume  = 100;
-            expression = 127;
-            panning = 0xC0;
-            vibrato = 0;
-            sustain = 0;
-            bend = 0.0;
-            bendsense = 2 / 8192.0;
-            vibpos = 0;
-            vibspeed = 2 * 3.141592653 * 5.0;
-            vibdepth = 0.5 / 127;
-            vibdelay = 0;
             lastlrpn = 0;
             lastmrpn = 0;
             nrpn = false;
-            brightness = 127;
             is_xg_percussion = false;
+        }
+        void resetAllControllers()
+        {
+            bend = 0.0;
+            bendsense = 2 / 8192.0;
+            volume  = 100;
+            expression = 127;
+            sustain = 0;
+            vibrato = 0;
+            vibspeed = 2 * 3.141592653 * 5.0;
+            vibdepth = 0.5 / 127;
+            vibdelay = 0;
+            panning = OPN_PANNING_BOTH;
+            portamento = 0;
+            brightness = 127;
         }
 
         MIDIchannel()
