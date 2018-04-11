@@ -56,6 +56,36 @@ int MameOPN2::generateAndMix(int16_t *output, size_t frames)
     return (int)frames;
 }
 
+int MameOPN2::generate(int32_t *output, size_t frames)
+{
+    enum { maxFramesAtOnce = 256 };
+    int16_t temp[2 * maxFramesAtOnce];
+    for(size_t left = frames; left > 0;) {
+        size_t count = (frames < maxFramesAtOnce) ? frames : maxFramesAtOnce;
+        ym2612_generate(chip, temp, count, 0);
+        for(size_t i = 0; i < count; ++i)
+            output[i] = temp[i];
+        left -= count;
+        output += 2 * count;
+    }
+    return (int)frames;
+}
+
+int MameOPN2::generateAndMix(int32_t *output, size_t frames)
+{
+    enum { maxFramesAtOnce = 256 };
+    int16_t temp[2 * maxFramesAtOnce];
+    for(size_t left = frames; left > 0;) {
+        size_t count = (frames < maxFramesAtOnce) ? frames : maxFramesAtOnce;
+        ym2612_generate(chip, temp, count, 0);
+        for(size_t i = 0; i < count; ++i)
+            output[i] += temp[i];
+        left -= count;
+        output += 2 * count;
+    }
+    return (int)frames;
+}
+
 const char *MameOPN2::emulatorName()
 {
     return "MAME YM2612";

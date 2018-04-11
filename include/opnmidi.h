@@ -64,6 +64,22 @@ enum OPNMIDI_VolumeModels
     OPNMIDI_VolumeModel_9X
 };
 
+enum OPNMIDI_SampleType
+{
+    OPNMIDI_SampleType_S16 = 0,  /* signed PCM 16-bit */
+    OPNMIDI_SampleType_S8,       /* signed PCM 8-bit */
+    OPNMIDI_SampleType_F32,      /* float 32-bit */
+    OPNMIDI_SampleType_F64,      /* float 64-bit */
+    OPNMIDI_SampleType_Count,
+};
+
+struct OPNMIDI_AudioFormat
+{
+    enum OPNMIDI_SampleType type;  /* type of sample */
+    unsigned containerSize;        /* size in bytes of the storage type */
+    unsigned sampleOffset;         /* distance in bytes between consecutive samples */
+};
+
 struct OPN2_MIDIPlayer
 {
     void *opn2_midiPlayer;
@@ -209,8 +225,14 @@ extern struct Opn2_MarkerEntry opn2_metaMarker(struct OPN2_MIDIPlayer *device, s
 /*Take a sample buffer and iterate MIDI timers */
 extern int  opn2_play(struct OPN2_MIDIPlayer *device, int sampleCount, short out[]);
 
+/*Take a sample buffer and iterate MIDI timers */
+extern int  opn2_playFormat(struct OPN2_MIDIPlayer *device, int sampleCount, OPN2_UInt8 left[], OPN2_UInt8 right[], const struct OPNMIDI_AudioFormat *format);
+
 /*Generate audio output from chip emulators without iteration of MIDI timers.*/
 extern int  opn2_generate(struct OPN2_MIDIPlayer *device, int sampleCount, short *out);
+
+/*Generate audio output from chip emulators without iteration of MIDI timers.*/
+extern int  opn2_generateFormat(struct OPN2_MIDIPlayer *device, int sampleCount, OPN2_UInt8 left[], OPN2_UInt8 right[], const struct OPNMIDI_AudioFormat *format);
 
 /**
  * @brief Periodic tick handler.

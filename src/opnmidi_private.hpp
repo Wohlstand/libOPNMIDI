@@ -99,6 +99,25 @@ typedef __int32 ssize_t;
 extern std::string OPN2MIDI_ErrorString;
 
 /*
+  Sample conversions to various formats
+*/
+template <class Real>
+inline Real opn2_cvtReal(int32_t x)
+{
+    return x * ((Real)1 / INT16_MAX);
+}
+inline int32_t opn2_cvtS16(int32_t x)
+{
+    x = (x < INT16_MIN) ? INT16_MIN : x;
+    x = (x > INT16_MAX) ? INT16_MAX : x;
+    return x;
+}
+inline int32_t opn2_cvtS8(int32_t x)
+{
+    return opn2_cvtS16(x) / 256;
+}
+
+/*
     Smart pointer for C heaps, created with malloc() call.
     FAQ: Why not std::shared_ptr? Because of Android NDK now doesn't supports it
 */
@@ -836,7 +855,7 @@ public:
 #endif
     OPN2 opn;
 
-    int16_t outBuf[1024];
+    int32_t outBuf[1024];
 
     Setup m_setup;
 
