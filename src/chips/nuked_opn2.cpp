@@ -62,6 +62,30 @@ int NukedOPN2::generateAndMix(int16_t *output, size_t frames)
     return (int)frames;
 }
 
+int NukedOPN2::generate32(int32_t *output, size_t frames)
+{
+    ym3438_t *chip_r = reinterpret_cast<ym3438_t*>(chip);
+    for(size_t i = 0; i < frames; ++i) {
+        int16_t frame[2];
+        OPN2_GenerateResampled(chip_r, frame);
+        output[2 * i] = frame[0];
+        output[2 * i + 1] = frame[1];
+    }
+    return (int)frames;
+}
+
+int NukedOPN2::generateAndMix32(int32_t *output, size_t frames)
+{
+    ym3438_t *chip_r = reinterpret_cast<ym3438_t*>(chip);
+    for(size_t i = 0; i < frames; ++i) {
+        int16_t frame[2];
+        OPN2_GenerateResampled(chip_r, frame);
+        output[2 * i] += frame[0];
+        output[2 * i + 1] += frame[1];
+    }
+    return (int)frames;
+}
+
 const char *NukedOPN2::emulatorName()
 {
     return "Nuked OPN2";
