@@ -50,6 +50,7 @@ endfunction()
 #===========================================================================================
 
 option(WITH_MIDIPLAY        "Build also demo MIDI player" OFF)
+option(WITH_VLC_PLUGIN      "Build also a plugin for VLC Media Player" OFF)
 
 option(USE_MAME_EMULATOR    "Use MAME YM2612 emulator (for most of hardware)" ON)
 option(USE_GENS_EMULATOR    "Use GENS 2.10 emulator (fastest, very outdated, inaccurate)" ON)
@@ -203,6 +204,40 @@ if(WITH_MIDIPLAY)
     list(APPEND libOPNMIDI_INSTALLS opnmidiplay)
 endif()
 
+
+if(WITH_VLC_PLUGIN)
+    include(cmake/FindLIBVLC.cmake)
+    message("Found ${LIBVLCCORE_LIBRARY} of version ${LIBVLC_VERSION} with includes ${LIBVLC_INCLUDE_DIR}")
+
+    set(opnmidi_vlc_src)
+    list(APPEND opnmidi_vlc_src
+        ${libOPNMIDI_SOURCE_DIR}/utils/vlc_codec/libopnmidi.c)
+
+    add_library(opnmidi_plugin MODULE ${opnmidi_vlc_src})
+    target_compile_options(opnmidi_plugin PUBLIC
+                "-DVLC_MODULE_COPYRIGHT=\"Copyright \(c\) Vitaly Novichkov\""
+                "-DVLC_MODULE_LICENSE=\"GPLv3\""
+                "-DMODULE_STRING=\"opnmidi\""
+                ${VLCPLUGIN_DEFINITIONS})
+    target_include_directories(opnmidi_plugin PRIVATE
+            ${LIBVLC_INCLUDE_DIR}/vlc/plugins
+            ${LIBVLC_INCLUDE_DIR}/vlc)
+    target_link_libraries(opnmidi_plugin OPNMIDI vlccore m stdc++)
+    # target_link_libraries(opnmidi_plugin INTERFACE "-export-symbol-regex ^vlc_entry")
+
+    if(libOPNMIDI_SHARED)
+        add_dependencies(opnmidi_plugin OPNMIDI_shared)
+        # ========= WIP =========
+        # set_target_properties(opnmidiplay PROPERTIES COMPILE_FLAGS "-Wl,-rpath='$$ORIGIN/../lib'")
+    else()
+        if(NOT libOPNMIDI_STATIC)
+            message(FATAL_ERROR "libOPNMIDI is required to be built!")
+        endif()
+        add_dependencies(opnmidi_plugin OPNMIDI_static)
+    endif()
+
+endif()
+
 install(TARGETS ${libOPNMIDI_INSTALLS}
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"
@@ -216,6 +251,7 @@ install(FILES
 
 message("==== libOPNMIDI options ====")
 message("WITH_MIDIPLAY            = ${WITH_MIDIPLAY}")
+message("WITH_VLC_PLUGIN          = ${WITH_VLC_PLUGIN}")
 message("USE_MAME_EMULATOR        = ${USE_MAME_EMULATOR}")
 message("USE_GENS_EMULATOR        = ${USE_GENS_EMULATOR}")
 message("USE_NUKED_EMULATOR       = ${USE_NUKED_EMULATOR}")
