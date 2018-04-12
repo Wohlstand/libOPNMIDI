@@ -568,6 +568,9 @@ static int SendStereoAudio(int         samples_requested,
     const unsigned containerSize = format->containerSize;
     const unsigned sampleOffset = format->sampleOffset;
 
+    left  += (outputOffset / 2) * sampleOffset;
+    right += (outputOffset / 2) * sampleOffset;
+
     switch(sampleType) {
     case OPNMIDI_SampleType_S8:
         switch(containerSize) {
