@@ -67,10 +67,10 @@ int GensOPN2::generate32(int32_t *output, size_t frames)
     enum { maxFramesAtOnce = 256 };
     int16_t temp[2 * maxFramesAtOnce];
     for(size_t left = frames; left > 0;) {
-        size_t count = (frames < maxFramesAtOnce) ? frames : maxFramesAtOnce;
+        size_t count = (left < maxFramesAtOnce) ? left : maxFramesAtOnce;
         std::memset(temp, 0, count * sizeof(int16_t) * 2);
         chip->run((int)count, temp);
-        for(size_t i = 0; i < count; ++i)
+        for(size_t i = 0; i < 2 * count; ++i)
             output[i] = temp[i];
         left -= count;
         output += 2 * count;
@@ -83,10 +83,10 @@ int GensOPN2::generateAndMix32(int32_t *output, size_t frames)
     enum { maxFramesAtOnce = 256 };
     int16_t temp[2 * maxFramesAtOnce];
     for(size_t left = frames; left > 0;) {
-        size_t count = (frames < maxFramesAtOnce) ? frames : maxFramesAtOnce;
+        size_t count = (left < maxFramesAtOnce) ? left : maxFramesAtOnce;
         std::memset(temp, 0, count * sizeof(int16_t) * 2);
         chip->run((int)count, temp);
-        for(size_t i = 0; i < count; ++i)
+        for(size_t i = 0; i < 2 * count; ++i)
             output[i] += temp[i];
         left -= count;
         output += 2 * count;
