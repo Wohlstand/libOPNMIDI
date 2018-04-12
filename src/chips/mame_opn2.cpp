@@ -56,7 +56,7 @@ int MameOPN2::generateAndMix(int16_t *output, size_t frames)
     return (int)frames;
 }
 
-int MameOPN2::generate(int32_t *output, size_t frames)
+int MameOPN2::generate32(int32_t *output, size_t frames)
 {
     enum { maxFramesAtOnce = 256 };
     int16_t temp[2 * maxFramesAtOnce];
@@ -71,7 +71,7 @@ int MameOPN2::generate(int32_t *output, size_t frames)
     return (int)frames;
 }
 
-int MameOPN2::generateAndMix(int32_t *output, size_t frames)
+int MameOPN2::generateAndMix32(int32_t *output, size_t frames)
 {
     enum { maxFramesAtOnce = 256 };
     int16_t temp[2 * maxFramesAtOnce];

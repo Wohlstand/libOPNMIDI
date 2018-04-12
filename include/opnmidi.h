@@ -223,16 +223,16 @@ extern struct Opn2_MarkerEntry opn2_metaMarker(struct OPN2_MIDIPlayer *device, s
 
 
 /*Take a sample buffer and iterate MIDI timers */
-extern int  opn2_play(struct OPN2_MIDIPlayer *device, int sampleCount, short out[]);
+extern int  opn2_play(struct OPN2_MIDIPlayer *device, int sampleCount, short *out);
 
 /*Take a sample buffer and iterate MIDI timers */
-extern int  opn2_playFormat(struct OPN2_MIDIPlayer *device, int sampleCount, OPN2_UInt8 left[], OPN2_UInt8 right[], const struct OPNMIDI_AudioFormat *format);
+extern int  opn2_playFormat(struct OPN2_MIDIPlayer *device, int sampleCount, OPN2_UInt8 *left, OPN2_UInt8 *right, const struct OPNMIDI_AudioFormat *format);
 
 /*Generate audio output from chip emulators without iteration of MIDI timers.*/
 extern int  opn2_generate(struct OPN2_MIDIPlayer *device, int sampleCount, short *out);
 
 /*Generate audio output from chip emulators without iteration of MIDI timers.*/
-extern int  opn2_generateFormat(struct OPN2_MIDIPlayer *device, int sampleCount, OPN2_UInt8 left[], OPN2_UInt8 right[], const struct OPNMIDI_AudioFormat *format);
+extern int  opn2_generateFormat(struct OPN2_MIDIPlayer *device, int sampleCount, OPN2_UInt8 *left, OPN2_UInt8 *right, const struct OPNMIDI_AudioFormat *format);
 
 /**
  * @brief Periodic tick handler.

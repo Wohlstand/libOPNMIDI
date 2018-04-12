@@ -62,7 +62,7 @@ int NukedOPN2::generateAndMix(int16_t *output, size_t frames)
     return (int)frames;
 }
 
-int NukedOPN2::generate(int32_t *output, size_t frames)
+int NukedOPN2::generate32(int32_t *output, size_t frames)
 {
     ym3438_t *chip_r = reinterpret_cast<ym3438_t*>(chip);
     for(size_t i = 0; i < frames; ++i) {
@@ -74,7 +74,7 @@ int NukedOPN2::generate(int32_t *output, size_t frames)
     return (int)frames;
 }
 
-int NukedOPN2::generateAndMix(int32_t *output, size_t frames)
+int NukedOPN2::generateAndMix32(int32_t *output, size_t frames)
 {
     ym3438_t *chip_r = reinterpret_cast<ym3438_t*>(chip);
     for(size_t i = 0; i < frames; ++i) {
