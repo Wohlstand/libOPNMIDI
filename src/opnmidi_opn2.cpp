@@ -56,6 +56,36 @@ static inline void getOpnChannel(uint32_t   in_channel,
     out_ch = ch4 % 3;
 }
 
+void OPN2::cleanInstrumentBanks()
+{
+    opnInstData emptyData;
+    opnInstMeta emptyMeta;
+    std::memset(&emptyMeta, 0, sizeof(opnInstMeta));
+    std::memset(&emptyData, 0, sizeof(opnInstData));
+    emptyMeta.flags = opnInstMeta::Flag_NoSound;
+    if(dynamic_metainstruments.empty())
+        dynamic_metainstruments.resize(256, emptyMeta);
+    else
+    {
+        if(dynamic_metainstruments.size() > 1024)
+            dynamic_metainstruments.resize(256);
+        for(size_t i = 0; i < dynamic_metainstruments.size(); i++)
+            dynamic_metainstruments[i] = emptyMeta;
+    }
+    if(dynamic_instruments.empty())
+        dynamic_instruments.resize(256, emptyData);
+    else
+    {
+        if(dynamic_instruments.size() > 1024)
+            dynamic_instruments.resize(256);
+        for(size_t i = 0; i < dynamic_instruments.size(); i++)
+            dynamic_instruments[i] = emptyData;
+    }
+    dynamic_percussion_offset = 128;
+    dynamic_melodic_banks.clear();
+    dynamic_percussion_banks.clear();
+}
+
 const opnInstMeta &OPN2::GetAdlMetaIns(size_t n)
 {
     return dynamic_metainstruments[n];
@@ -86,13 +116,14 @@ const opnInstData &OPN2::GetAdlIns(size_t insno)
 OPN2::OPN2() :
     regLFO(0),
     dynamic_percussion_offset(128),
-    DynamicInstrumentTag(0x8000u),
-    DynamicMetaInstrumentTag(0x4000000u),
     NumCards(1),
     LogarithmicVolumes(false),
     m_musicMode(MODE_MIDI),
     m_volumeScale(VOLUME_Generic)
-{}
+{
+    // Initialize blank instruments banks
+    cleanInstrumentBanks();
+}
 
 OPN2::~OPN2()
 {

@@ -194,8 +194,7 @@ bool OPNMIDIplay::LoadBank(OPNMIDIplay::fileReader &fr)
         }
     }
 
-    opn.dynamic_instruments.clear();
-    opn.dynamic_metainstruments.clear();
+    opn.cleanInstrumentBanks();
     if((readU16BE(fr, count_melodic_banks) != 2) || (readU16BE(fr, count_percusive_banks) != 2))
     {
         errorStringOut = "Can't load bank file: Can't read count of banks!";
@@ -214,8 +213,7 @@ bool OPNMIDIplay::LoadBank(OPNMIDIplay::fileReader &fr)
         return false;
     }
 
-    opn.dynamic_melodic_banks.clear();
-    opn.dynamic_percussion_banks.clear();
+    opn.cleanInstrumentBanks();
 
     if(version >= 2)//Read bank meta-entries
     {
@@ -224,7 +222,7 @@ bool OPNMIDIplay::LoadBank(OPNMIDIplay::fileReader &fr)
             uint8_t bank_meta[34];
             if(fr.read(bank_meta, 1, 34) != 34)
             {
-                opn.dynamic_melodic_banks.clear();
+                opn.cleanInstrumentBanks();
                 errorStringOut = "Custom bank: Fail to read melodic bank meta-data!";
                 return false;
             }
@@ -239,8 +237,7 @@ bool OPNMIDIplay::LoadBank(OPNMIDIplay::fileReader &fr)
             uint8_t bank_meta[34];
             if(fr.read(bank_meta, 1, 34) != 34)
             {
-                opn.dynamic_melodic_banks.clear();
-                opn.dynamic_percussion_banks.clear();
+                opn.cleanInstrumentBanks();
                 errorStringOut = "Custom bank: Fail to read percussion bank meta-data!";
                 return false;
             }
@@ -254,6 +251,12 @@ bool OPNMIDIplay::LoadBank(OPNMIDIplay::fileReader &fr)
     opn.dynamic_percussion_offset = count_melodic_banks * 128;
     uint16_t total = 128 * count_melodic_banks + 128 * count_percusive_banks;
 
+    /* Expand instruments array if necessary */
+    if(opn.dynamic_instruments.size() < total)
+        opn.dynamic_instruments.resize(total);
+    if(opn.dynamic_metainstruments.size() < total)
+        opn.dynamic_metainstruments.resize(total);
+
     for(uint16_t i = 0; i < total; i++)
     {
         opnInstData data;
@@ -263,10 +266,7 @@ bool OPNMIDIplay::LoadBank(OPNMIDIplay::fileReader &fr)
         size_t readSize = version >= 2 ? WOPL_INST_SIZE_V2 : WOPL_INST_SIZE_V1;
         if(fr.read(idata, 1, readSize) != readSize)
         {
-            opn.dynamic_instruments.clear();
-            opn.dynamic_metainstruments.clear();
-            opn.dynamic_melodic_banks.clear();
-            opn.dynamic_percussion_banks.clear();
+            opn.cleanInstrumentBanks();
             errorStringOut = "Can't load bank file: Failed to read instrument data";
             return false;
         }
@@ -295,15 +295,15 @@ bool OPNMIDIplay::LoadBank(OPNMIDIplay::fileReader &fr)
             meta.ms_sound_koff  = 500;
         }
 
-        meta.opnno1 = uint16_t(opn.dynamic_instruments.size());
-        meta.opnno2 = uint16_t(opn.dynamic_instruments.size());
+        meta.opnno1 = i;
+        meta.opnno2 = i;
 
         /* Junk, delete later */
         meta.fine_tune      = 0.0;
         /* Junk, delete later */
 
-        opn.dynamic_instruments.push_back(data);
-        opn.dynamic_metainstruments.push_back(meta);
+        opn.dynamic_instruments[i]      = data;
+        opn.dynamic_metainstruments[i]  = meta;
     }
 
     applySetup();

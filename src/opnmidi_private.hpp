@@ -242,6 +242,7 @@ private:
     std::vector<uint8_t>    regBD;
     uint8_t                 regLFO;
 
+    void cleanInstrumentBanks();
     //! Meta information about every instrument
     std::vector<opnInstMeta> dynamic_metainstruments;
     //! Raw instrument data ready to be sent to the chip
@@ -251,8 +252,7 @@ private:
     typedef std::map<uint16_t, size_t> BankMap;
     BankMap dynamic_melodic_banks;
     BankMap dynamic_percussion_banks;
-    const unsigned  DynamicInstrumentTag /* = 0x8000u*/,
-                    DynamicMetaInstrumentTag /* = 0x4000000u*/;
+
     const opnInstMeta       &GetAdlMetaIns(size_t n);
     size_t                  GetAdlMetaNumber(size_t midiins);
     const opnInstData       &GetAdlIns(size_t insno);
