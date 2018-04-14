@@ -1,4 +1,4 @@
-This bank (gm.wopn) is made by me. I have imported some instruments from various
+This bank (gm.wopn and xg.wopn) is made by me. I have imported some instruments from various
 VGM files, ported from OPN3 banks, or remixed them.
 
 This bank can be freely used, modified, shared with any purposes.
@@ -10,5 +10,5 @@ which I created for that: https://github.com/Wohlstand/OPN2BankEditor
 
 ==============================================================================
 
-Vitaliy Novichkov "Wohlstand", 2017
+Vitaliy Novichkov "Wohlstand", 2017-2018
 
