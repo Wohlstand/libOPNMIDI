@@ -116,6 +116,32 @@ inline int32_t opn2_cvtS8(int32_t x)
 {
     return opn2_cvtS16(x) / 256;
 }
+inline int32_t opn2_cvtS24(int32_t x)
+{
+    return opn2_cvtS16(x) * 256;
+}
+inline int32_t opn2_cvtS32(int32_t x)
+{
+    return opn2_cvtS16(x) * 65536;
+}
+inline int32_t opn2_cvtU16(int32_t x)
+{
+    return opn2_cvtS16(x) - INT16_MIN;
+}
+inline int32_t opn2_cvtU8(int32_t x)
+{
+    return opn2_cvtS8(x) - INT8_MIN;
+}
+inline int32_t opn2_cvtU24(int32_t x)
+{
+    enum { int24_min = -(1 << 23) };
+    return opn2_cvtS24(x) - int24_min;
+}
+inline int32_t opn2_cvtU32(int32_t x)
+{
+    // unsigned operation because overflow on signed integers is undefined
+    return (uint32_t)opn2_cvtS32(x) - (uint32_t)INT32_MIN;
+}
 
 /*
     Smart pointer for C heaps, created with malloc() call.
