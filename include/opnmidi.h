@@ -70,6 +70,12 @@ enum OPNMIDI_SampleType
     OPNMIDI_SampleType_S8,       /* signed PCM 8-bit */
     OPNMIDI_SampleType_F32,      /* float 32-bit */
     OPNMIDI_SampleType_F64,      /* float 64-bit */
+    OPNMIDI_SampleType_S24,      /* signed PCM 24-bit */
+    OPNMIDI_SampleType_S32,      /* signed PCM 32-bit */
+    OPNMIDI_SampleType_U8,       /* unsigned PCM 8-bit */
+    OPNMIDI_SampleType_U16,      /* unsigned PCM 16-bit */
+    OPNMIDI_SampleType_U24,      /* unsigned PCM 24-bit */
+    OPNMIDI_SampleType_U32,      /* unsigned PCM 32-bit */
     OPNMIDI_SampleType_Count,
 };
 

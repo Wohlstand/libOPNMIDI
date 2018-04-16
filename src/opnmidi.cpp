@@ -571,26 +571,35 @@ static int SendStereoAudio(int         samples_requested,
     left  += (outputOffset / 2) * sampleOffset;
     right += (outputOffset / 2) * sampleOffset;
 
+    typedef int32_t(&pfnConvert)(int32_t);
+
     switch(sampleType) {
     case OPNMIDI_SampleType_S8:
+    case OPNMIDI_SampleType_U8:
+    {
+        pfnConvert cvt = (sampleType == OPNMIDI_SampleType_S8) ? opn2_cvtS8 : opn2_cvtU8;
         switch(containerSize) {
         case sizeof(int8_t):
-            CopySamplesTransformed<int8_t>(left, right, _in, toCopy / 2, sampleOffset, opn2_cvtS8);
+            CopySamplesTransformed<int8_t>(left, right, _in, toCopy / 2, sampleOffset, cvt);
             break;
         case sizeof(int16_t):
-            CopySamplesTransformed<int16_t>(left, right, _in, toCopy / 2, sampleOffset, opn2_cvtS8);
+            CopySamplesTransformed<int16_t>(left, right, _in, toCopy / 2, sampleOffset, cvt);
             break;
         case sizeof(int32_t):
-            CopySamplesTransformed<int32_t>(left, right, _in, toCopy / 2, sampleOffset, opn2_cvtS8);
+            CopySamplesTransformed<int32_t>(left, right, _in, toCopy / 2, sampleOffset, cvt);
             break;
         default:
             return -1;
         }
         break;
+    }
     case OPNMIDI_SampleType_S16:
+    case OPNMIDI_SampleType_U16:
+    {
+        pfnConvert cvt = (sampleType == OPNMIDI_SampleType_S16) ? opn2_cvtS16 : opn2_cvtU16;
         switch(containerSize) {
         case sizeof(int16_t):
-            CopySamplesTransformed<int16_t>(left, right, _in, toCopy / 2, sampleOffset, opn2_cvtS16);
+            CopySamplesTransformed<int16_t>(left, right, _in, toCopy / 2, sampleOffset, cvt);
             break;
         case sizeof(int32_t):
             CopySamplesRaw<int32_t>(left, right, _in, toCopy / 2, sampleOffset);
@@ -599,6 +608,33 @@ static int SendStereoAudio(int         samples_requested,
             return -1;
         }
         break;
+    }
+    case OPNMIDI_SampleType_S24:
+    case OPNMIDI_SampleType_U24:
+    {
+        pfnConvert cvt = (sampleType == OPNMIDI_SampleType_S24) ? opn2_cvtS24 : opn2_cvtU24;
+        switch(containerSize) {
+        case sizeof(int32_t):
+            CopySamplesTransformed<int32_t>(left, right, _in, toCopy / 2, sampleOffset, cvt);
+            break;
+        default:
+            return -1;
+        }
+        break;
+    }
+    case OPNMIDI_SampleType_S32:
+    case OPNMIDI_SampleType_U32:
+    {
+        pfnConvert cvt = (sampleType == OPNMIDI_SampleType_S32) ? opn2_cvtS32 : opn2_cvtU32;
+        switch(containerSize) {
+        case sizeof(int32_t):
+            CopySamplesTransformed<int32_t>(left, right, _in, toCopy / 2, sampleOffset, cvt);
+            break;
+        default:
+            return -1;
+        }
+        break;
+    }
     case OPNMIDI_SampleType_F32:
         if(containerSize != sizeof(float))
             return -1;
