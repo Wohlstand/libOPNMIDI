@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.11)
+cmake_minimum_required (VERSION 3.2)
 project (libOPNMIDI)
 
 #===========================================================================================
@@ -167,6 +167,13 @@ endif()
 if(NOT libOPNMIDI_STATIC AND NOT libOPNMIDI_SHARED)
     message(FATAL_ERROR "Both static and shared libOPNMIDI builds are disabled!
 You must enable at least one of them!")
+endif()
+
+add_library(OPNMIDI INTERFACE)
+if(libOPNMIDI_SHARED)
+  target_link_libraries(OPNMIDI INTERFACE OPNMIDI_shared)
+else()
+  target_link_libraries(OPNMIDI INTERFACE OPNMIDI_static)
 endif()
 
 if(WITH_MIDIPLAY)
