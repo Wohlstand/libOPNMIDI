@@ -63,6 +63,7 @@ typedef __int32 ssize_t;
 #include <cmath>
 #include <cstdarg>
 #include <cstdio>
+#include <cassert>
 #include <vector> // vector
 #include <deque>  // deque
 #include <cmath>  // exp, log, ceil
@@ -558,10 +559,75 @@ public:
             size_t  midiins;
             // Index to physical adlib data structure, adlins[]
             size_t  insmeta;
-            typedef std::map<uint16_t, uint16_t> PhysMap;
-            typedef uint16_t Phys;
+            enum
+            {
+                MaxNumPhysChans = 2,
+                MaxNumPhysItemCount = MaxNumPhysChans,
+            };
+            struct Phys
+            {
+                //! Destination chip channel
+                uint16_t chip_chan;
+                //! ins, inde to adl[]
+                size_t  insId;
+
+                void assign(const Phys &oth)
+                {
+                    insId = oth.insId;
+                }
+                bool operator==(const Phys &oth) const
+                {
+                    return (insId == oth.insId);
+                }
+                bool operator!=(const Phys &oth) const
+                {
+                    return !operator==(oth);
+                }
+            };
             // List of OPN2 channels it is currently occupying.
-            std::map<uint16_t /*adlchn*/, Phys> phys;
+            Phys chip_channels[MaxNumPhysItemCount];
+            //! Count of used channels.
+            unsigned chip_channels_count;
+            //
+            Phys *phys_find(unsigned chip_chan)
+            {
+                Phys *ph = NULL;
+                for(unsigned i = 0; i < chip_channels_count && !ph; ++i)
+                    if(chip_channels[i].chip_chan == chip_chan)
+                        ph = &chip_channels[i];
+                return ph;
+            }
+            Phys *phys_find_or_create(unsigned chip_chan)
+            {
+                Phys *ph = phys_find(chip_chan);
+                if(!ph) {
+                    if(chip_channels_count < MaxNumPhysItemCount) {
+                        ph = &chip_channels[chip_channels_count++];
+                        ph->chip_chan = chip_chan;
+                    }
+                }
+                return ph;
+            }
+            Phys *phys_ensure_find_or_create(unsigned chip_chan)
+            {
+                Phys *ph = phys_find_or_create(chip_chan);
+                assert(ph);
+                return ph;
+            }
+            void phys_erase_at(const Phys *ph)
+            {
+                unsigned pos = ph - chip_channels;
+                assert(pos < chip_channels_count);
+                for(unsigned i = pos + 1; i < chip_channels_count; ++i)
+                    chip_channels[i - 1] = chip_channels[i];
+                --chip_channels_count;
+            }
+            void phys_erase(unsigned chip_chan)
+            {
+                Phys *ph = phys_find(chip_chan);
+                if(ph)
+                    phys_erase_at(ph);
+            }
         };
         char ____padding2[5];
         NoteInfo activenotes[128];
@@ -609,6 +675,13 @@ public:
         {
             return activenoteiterator(
                 activenotes[note].active ? &activenotes[note] : 0);
+        }
+
+        activenoteiterator activenotes_ensure_find(uint8_t note)
+        {
+            activenoteiterator it = activenotes_find(note);
+            assert(it);
+            return it;
         }
 
         std::pair<activenoteiterator, bool> activenotes_insert(uint8_t note)
@@ -1081,11 +1154,11 @@ private:
 
     // Determine how good a candidate this adlchannel
     // would be for playing a note from this instrument.
-    int64_t CalculateAdlChannelGoodness(size_t c, uint16_t ins, uint16_t /*MidCh*/) const;
+    int64_t CalculateAdlChannelGoodness(size_t c, const MIDIchannel::NoteInfo::Phys &ins, uint16_t /*MidCh*/) const;
 
     // A new note will be played on this channel using this instrument.
     // Kill existing notes on this channel (or don't, if we do arpeggio)
-    void PrepareAdlChannelForNewNote(size_t c, size_t ins);
+    void PrepareAdlChannelForNewNote(size_t c, const MIDIchannel::NoteInfo::Phys &ins);
 
     void KillOrEvacuate(
         size_t  from_channel,

@@ -1040,7 +1040,10 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
             tone -= ains->tone - 128;
     }
 
-    uint16_t voices[2] = { ains->opnno1, ains->opnno2 };
+    MIDIchannel::NoteInfo::Phys voices[MIDIchannel::NoteInfo::MaxNumPhysChans] = {
+        {0, ains->opnno1, /*false*/},
+        {0, ains->opnno2, /*pseudo_4op*/},
+    };
     //bool pseudo_4op = ains.flags & opnInstMeta::Flag_Pseudo8op;
     //if((opn.AdlPercussionMode == 1) && PercussionMap[midiins & 0xFF]) i[1] = i[0];
 
@@ -1054,9 +1057,9 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     }
 
     // Allocate AdLib channel (the physical sound channel for the note)
-    int32_t adlchannel[2] = { -1, -1 };
+    int32_t adlchannel[MIDIchannel::NoteInfo::MaxNumPhysChans] = { -1, -1 };
 
-    for(uint32_t ccount = 0; ccount < 2; ++ccount)
+    for(uint32_t ccount = 0; ccount < MIDIchannel::NoteInfo::MaxNumPhysChans; ++ccount)
     {
         if(ccount == 1)
         {
@@ -1125,14 +1128,15 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     ir.first->tone    = tone;
     ir.first->midiins = midiins;
     ir.first->insmeta = meta;
+    ir.first->chip_channels_count = 0;
 
-    for(unsigned ccount = 0; ccount < 2; ++ccount)
+    for(unsigned ccount = 0; ccount < MIDIchannel::NoteInfo::MaxNumPhysChans; ++ccount)
     {
         int32_t c = adlchannel[ccount];
         if(c < 0)
             continue;
         uint16_t chipChan = static_cast<uint16_t>(adlchannel[ccount]);
-        ir.first->phys[chipChan] = voices[ccount];
+        ir.first->phys_ensure_find_or_create(chipChan)->assign(voices[ccount]);
     }
     NoteUpdate(channel, ir.first, Upd_All | Upd_Patch);
     return true;
@@ -1367,20 +1371,16 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
     my_loc.MidCh = MidCh;
     my_loc.note  = info.note;
 
-    for(MIDIchannel::NoteInfo::PhysMap::iterator
-        jnext = info.phys.begin();
-        jnext != info.phys.end();
-       )
+    for(unsigned ccount = 0, ctotal = info.chip_channels_count; ccount < ctotal; ccount++)
     {
-        MIDIchannel::NoteInfo::PhysMap::iterator j(jnext++);
-        uint16_t c   = j->first;
-        const MIDIchannel::NoteInfo::Phys &ins = j->second;
+        const MIDIchannel::NoteInfo::Phys &ins = info.chip_channels[ccount];
+        uint16_t c   = ins.chip_chan;
 
         if(select_adlchn >= 0 && c != select_adlchn) continue;
 
         if(props_mask & Upd_Patch)
         {
-            opn.Patch(c, ins);
+            opn.Patch(c, ins.insId);
             OpnChannel::LocationData &d = ch[c].users[my_loc];
             d.sustained = false; // inserts if necessary
             d.vibdelay  = 0;
@@ -1389,14 +1389,10 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
         }
     }
 
-    for(MIDIchannel::NoteInfo::PhysMap::iterator
-        jnext = info.phys.begin();
-        jnext != info.phys.end();
-       )
+    for(unsigned ccount = 0; ccount < info.chip_channels_count; ccount++)
     {
-        MIDIchannel::NoteInfo::PhysMap::iterator j(jnext++);
-        uint16_t c   = j->first;
-        const MIDIchannel::NoteInfo::Phys &ins = j->second;
+        const MIDIchannel::NoteInfo::Phys &ins = info.chip_channels[ccount];
+        uint16_t c   = ins.chip_chan;
 
         if(select_adlchn >= 0 && c != select_adlchn)
             continue;
@@ -1435,7 +1431,8 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
                     hooks.onNote(hooks.onNote_userData, c, tone, (int)midiins, -1, 0.0);
             }
 
-            info.phys.erase(j);
+            info.phys_erase_at(&ins);  // decrements channel count
+            --ccount;  // adjusts index accordingly
             continue;
         }
 
@@ -1539,10 +1536,10 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
             // Don't bend a sustained note
             if(!d.sustained)
             {
-                double bend = Ch[MidCh].bend + opn.GetAdlIns(ins).finetune;
+                double bend = Ch[MidCh].bend + opn.GetAdlIns(ins.insId).finetune;
                 double phase = 0.0;
 
-                if((ains.flags & opnInstMeta::Flag_Pseudo8op) && ins == ains.opnno2)
+                if((ains.flags & opnInstMeta::Flag_Pseudo8op) && ins.insId == ains.opnno2)
                 {
                     phase = ains.fine_tune;//0.125; // Detune the note slightly (this is what Doom does)
                 }
@@ -1559,7 +1556,7 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
         }
     }
 
-    if(info.phys.empty())
+    if(info.chip_channels_count == 0)
         Ch[MidCh].activenotes_erase(i);
 }
 
@@ -2052,7 +2049,7 @@ void OPNMIDIplay::HandleEvent(size_t tk, const OPNMIDIplay::MidiEvent &evt, int 
 }
 #endif //OPNMIDI_DISABLE_MIDI_SEQUENCER
 
-int64_t OPNMIDIplay::CalculateAdlChannelGoodness(size_t c, uint16_t ins, uint16_t) const
+int64_t OPNMIDIplay::CalculateAdlChannelGoodness(size_t c, const MIDIchannel::NoteInfo::Phys &ins, uint16_t) const
 {
     int64_t s = -ch[c].koff_time_until_neglible;
 
@@ -2128,7 +2125,7 @@ int64_t OPNMIDIplay::CalculateAdlChannelGoodness(size_t c, uint16_t ins, uint16_
 }
 
 
-void OPNMIDIplay::PrepareAdlChannelForNewNote(size_t c, size_t ins)
+void OPNMIDIplay::PrepareAdlChannelForNewNote(size_t c, const MIDIchannel::NoteInfo::Phys &ins)
 {
     if(ch[c].users.empty()) return; // Nothing to do
 
@@ -2145,7 +2142,7 @@ void OPNMIDIplay::PrepareAdlChannelForNewNote(size_t c, size_t ins)
             // Collision: Kill old note,
             // UNLESS we're going to do arpeggio
             MIDIchannel::activenoteiterator i
-            (Ch[j->first.MidCh].activenotes_find(j->first.note));
+            (Ch[j->first.MidCh].activenotes_ensure_find(j->first.note));
 
             // Check if we can do arpeggio.
             if((j->second.vibdelay < 70
@@ -2213,8 +2210,8 @@ void OPNMIDIplay::KillOrEvacuate(size_t from_channel, OpnChannel::users_t::itera
                              i->vol, 0.0);
             }
 
-            i->phys.erase(static_cast<uint16_t>(from_channel));
-            i->phys[cs] = j->second.ins;
+            i->phys_erase(static_cast<uint16_t>(from_channel));
+            i->phys_ensure_find_or_create(cs)->assign(j->second.ins);
             ch[cs].users.insert(*j);
             ch[from_channel].users.erase(j);
             return;
@@ -2432,7 +2429,7 @@ retry_arpeggio:
                 {
                     NoteUpdate(
                         i->first.MidCh,
-                        Ch[ i->first.MidCh ].activenotes_find(i->first.note),
+                        Ch[ i->first.MidCh ].activenotes_ensure_find(i->first.note),
                         Upd_Off,
                         static_cast<int32_t>(c));
                     goto retry_arpeggio;
@@ -2440,7 +2437,7 @@ retry_arpeggio:
 
                 NoteUpdate(
                     i->first.MidCh,
-                    Ch[ i->first.MidCh ].activenotes_find(i->first.note),
+                    Ch[ i->first.MidCh ].activenotes_ensure_find(i->first.note),
                     Upd_Pitch | Upd_Volume | Upd_Pan,
                     static_cast<int32_t>(c));
             }
