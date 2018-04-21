@@ -841,7 +841,7 @@ public:
         }
 
         // For channel allocation:
-        OpnChannel(): koff_time_until_neglible(0), users_first(nullptr), users_size(0)
+        OpnChannel(): koff_time_until_neglible(0), users_first(NULL), users_size(0)
         {
             users_free_cells = users_cells;
             for(size_t i = 0; i < users_max; ++i)
