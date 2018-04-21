@@ -77,18 +77,18 @@ inline bool isXgPercChannel(uint8_t msb, uint8_t lsb)
 
 void OPNMIDIplay::OpnChannel::AddAge(int64_t ms)
 {
-    if(users.empty())
+    if(users_empty())
         koff_time_until_neglible =
             std::max(int64_t(koff_time_until_neglible - ms), static_cast<int64_t>(-0x1FFFFFFFl));
     else
     {
         koff_time_until_neglible = 0;
 
-        for(users_t::iterator i = users.begin(); i != users.end(); ++i)
+        for(LocationData *i = users_first; i; i = i->next)
         {
-            i->second.kon_time_until_neglible =
-                std::max(i->second.kon_time_until_neglible - ms, static_cast<int64_t>(-0x1FFFFFFFl));
-            i->second.vibdelay += ms;
+            i->kon_time_until_neglible =
+                std::max(i->kon_time_until_neglible - ms, static_cast<int64_t>(-0x1FFFFFFFl));
+            i->vibdelay += ms;
         }
     }
 }
@@ -1381,11 +1381,13 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
         if(props_mask & Upd_Patch)
         {
             opn.Patch(c, ins.insId);
-            OpnChannel::LocationData &d = ch[c].users[my_loc];
-            d.sustained = false; // inserts if necessary
-            d.vibdelay  = 0;
-            d.kon_time_until_neglible = ains.ms_sound_kon;
-            d.ins       = ins;
+            OpnChannel::LocationData *d = ch[c].users_find_or_create(my_loc);
+            if(d) {  // inserts if necessary
+                d->sustained = false;
+                d->vibdelay  = 0;
+                d->kon_time_until_neglible = ains.ms_sound_kon;
+                d->ins       = ins;
+            }
         }
     }
 
@@ -1401,15 +1403,15 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
         {
             if(Ch[MidCh].sustain == 0)
             {
-                OpnChannel::users_t::iterator k = ch[c].users.find(my_loc);
+                OpnChannel::LocationData *k = ch[c].users_find(my_loc);
 
-                if(k != ch[c].users.end())
-                    ch[c].users.erase(k);
+                if(k)
+                    ch[c].users_erase(k);
 
                 if(hooks.onNote)
                     hooks.onNote(hooks.onNote_userData, c, tone, (int)midiins, 0, 0.0);
 
-                if(ch[c].users.empty())
+                if(ch[c].users_empty())
                 {
                     opn.NoteOff(c);
                     if(props_mask & Upd_Mute) // Mute the note
@@ -1425,8 +1427,9 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
             {
                 // Sustain: Forget about the note, but don't key it off.
                 //          Also will avoid overwriting it very soon.
-                OpnChannel::LocationData &d = ch[c].users[my_loc];
-                d.sustained = true; // note: not erased!
+                OpnChannel::LocationData *d = ch[c].users_find_or_create(my_loc);
+                if(d)
+                    d->sustained = true; // note: not erased!
                 if(hooks.onNote)
                     hooks.onNote(hooks.onNote_userData, c, tone, (int)midiins, -1, 0.0);
             }
@@ -1531,10 +1534,10 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
 
         if(props_mask & Upd_Pitch)
         {
-            OpnChannel::LocationData &d = ch[c].users[my_loc];
+            OpnChannel::LocationData *d = ch[c].users_find(my_loc);
 
             // Don't bend a sustained note
-            if(!d.sustained)
+            if(!d || !d->sustained)
             {
                 double bend = Ch[MidCh].bend + opn.GetAdlIns(ins.insId).finetune;
                 double phase = 0.0;
@@ -1544,7 +1547,7 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
                     phase = ains.fine_tune;//0.125; // Detune the note slightly (this is what Doom does)
                 }
 
-                if(Ch[MidCh].vibrato && d.vibdelay >= Ch[MidCh].vibdelay)
+                if(Ch[MidCh].vibrato && d->vibdelay >= Ch[MidCh].vibdelay)
                     bend += Ch[MidCh].vibrato * Ch[MidCh].vibdepth * std::sin(Ch[MidCh].vibpos);
 
 #define BEND_COEFFICIENT 321.88557
@@ -2055,30 +2058,27 @@ int64_t OPNMIDIplay::CalculateAdlChannelGoodness(size_t c, const MIDIchannel::No
 
     // Same midi-instrument = some stability
     //if(c == MidCh) s += 4;
-    for(OpnChannel::users_t::const_iterator
-        j = ch[c].users.begin();
-        j != ch[c].users.end();
-        ++j)
+    for (OpnChannel::LocationData *j = ch[c].users_first; j; j = j->next)
     {
         s -= 4000;
 
-        if(!j->second.sustained)
-            s -= j->second.kon_time_until_neglible;
+        if(!j->sustained)
+            s -= j->kon_time_until_neglible;
         else
-            s -= (j->second.kon_time_until_neglible / 2);
+            s -= (j->kon_time_until_neglible / 2);
 
         MIDIchannel::activenoteiterator
-        k = const_cast<MIDIchannel &>(Ch[j->first.MidCh]).activenotes_find(j->first.note);
+        k = const_cast<MIDIchannel &>(Ch[j->loc.MidCh]).activenotes_find(j->loc.note);
 
         if(k)
         {
             // Same instrument = good
-            if(j->second.ins == ins)
+            if(j->ins == ins)
             {
                 s += 300;
                 // Arpeggio candidate = even better
-                if(j->second.vibdelay < 70
-                   || j->second.kon_time_until_neglible > 20000)
+                if(j->vibdelay < 70
+                   || j->kon_time_until_neglible > 20000)
                     s += 0;
             }
 
@@ -2106,14 +2106,11 @@ int64_t OPNMIDIplay::CalculateAdlChannelGoodness(size_t c, const MIDIchannel::No
 //            if(opn.four_op_category[c2]
 //               != opn.four_op_category[c]) continue;
 
-//            for(OpnChannel::users_t::const_iterator
-//                m = ch[c2].users.begin();
-//                m != ch[c2].users.end();
-//                ++m)
+//            for(OpnChannel::LocationData *m = ch[c2].users_first; m; m = m->next)
 //            {
-//                if(m->second.sustained)       continue;
-//                if(m->second.vibdelay >= 200) continue;
-//                if(m->second.ins != j->second.ins) continue;
+//                if(m->sustained)       continue;
+//                if(m->vibdelay >= 200) continue;
+//                if(m->ins != j->second.ins) continue;
 //                n_evacuation_stations += 1;
 //            }
 //        }
@@ -2127,27 +2124,25 @@ int64_t OPNMIDIplay::CalculateAdlChannelGoodness(size_t c, const MIDIchannel::No
 
 void OPNMIDIplay::PrepareAdlChannelForNewNote(size_t c, const MIDIchannel::NoteInfo::Phys &ins)
 {
-    if(ch[c].users.empty()) return; // Nothing to do
+    if(ch[c].users_empty()) return; // Nothing to do
 
     //bool doing_arpeggio = false;
-    for(OpnChannel::users_t::iterator
-        jnext = ch[c].users.begin();
-        jnext != ch[c].users.end();
-       )
+    for(OpnChannel::LocationData *jnext = ch[c].users_first; jnext;)
     {
-        OpnChannel::users_t::iterator j(jnext++);
+        OpnChannel::LocationData *j = jnext;
+        jnext = jnext->next;
 
-        if(!j->second.sustained)
+        if(!j->sustained)
         {
             // Collision: Kill old note,
             // UNLESS we're going to do arpeggio
             MIDIchannel::activenoteiterator i
-            (Ch[j->first.MidCh].activenotes_ensure_find(j->first.note));
+            (Ch[j->loc.MidCh].activenotes_ensure_find(j->loc.note));
 
             // Check if we can do arpeggio.
-            if((j->second.vibdelay < 70
-                || j->second.kon_time_until_neglible > 20000)
-               && j->second.ins == ins)
+            if((j->vibdelay < 70
+                || j->kon_time_until_neglible > 20000)
+               && j->ins == ins)
             {
                 // Do arpeggio together with this note.
                 //doing_arpeggio = true;
@@ -2166,11 +2161,13 @@ void OPNMIDIplay::PrepareAdlChannelForNewNote(size_t c, const MIDIchannel::NoteI
 
     // Keyoff the channel so that it can be retriggered,
     // unless the new note will be introduced as just an arpeggio.
-    if(ch[c].users.empty())
+    if(ch[c].users_empty())
         opn.NoteOff(c);
 }
 
-void OPNMIDIplay::KillOrEvacuate(size_t from_channel, OpnChannel::users_t::iterator j, OPNMIDIplay::MIDIchannel::activenoteiterator i)
+void OPNMIDIplay::KillOrEvacuate(size_t from_channel,
+                                 OpnChannel::LocationData *j,
+                                 OPNMIDIplay::MIDIchannel::activenoteiterator i)
 {
     // Before killing the note, check if it can be
     // evacuated to another channel as an arpeggio
@@ -2188,14 +2185,15 @@ void OPNMIDIplay::KillOrEvacuate(size_t from_channel, OpnChannel::users_t::itera
         //if(opn.four_op_category[c] != opn.four_op_category[from_channel])
         //    continue;
 
-        for(OpnChannel::users_t::iterator
-            m = ch[c].users.begin();
-            m != ch[c].users.end();
-            ++m)
+        OpnChannel &adlch = ch[c];
+        if(adlch.users_size == OpnChannel::users_max)
+            continue;  // no room for more arpeggio on channel
+
+        for(OpnChannel::LocationData *m = adlch.users_first; m; m = m->next)
         {
-            if(m->second.vibdelay >= 200
-               && m->second.kon_time_until_neglible < 10000) continue;
-            if(m->second.ins != j->second.ins)
+            if(m->vibdelay >= 200
+               && m->kon_time_until_neglible < 10000) continue;
+            if(m->ins != j->ins)
                 continue;
             if(hooks.onNote)
             {
@@ -2211,9 +2209,10 @@ void OPNMIDIplay::KillOrEvacuate(size_t from_channel, OpnChannel::users_t::itera
             }
 
             i->phys_erase(static_cast<uint16_t>(from_channel));
-            i->phys_ensure_find_or_create(cs)->assign(j->second.ins);
-            ch[cs].users.insert(*j);
-            ch[from_channel].users.erase(j);
+            i->phys_ensure_find_or_create(cs)->assign(j->ins);
+            if(!ch[cs].users_insert(*j))
+                assert(false);
+            ch[from_channel].users_erase(j);
             return;
         }
     }
@@ -2226,7 +2225,7 @@ void OPNMIDIplay::KillOrEvacuate(size_t from_channel, OpnChannel::users_t::itera
                 ins
                 );*/
     // Kill it
-    NoteUpdate(j->first.MidCh,
+    NoteUpdate(j->loc.MidCh,
                i,
                Upd_Off,
                static_cast<int32_t>(from_channel));
@@ -2253,27 +2252,25 @@ void OPNMIDIplay::KillSustainingNotes(int32_t MidCh, int32_t this_adlchn)
 
     for(unsigned c = first; c < last; ++c)
     {
-        if(ch[c].users.empty()) continue; // Nothing to do
+        if(ch[c].users_empty()) continue; // Nothing to do
 
-        for(OpnChannel::users_t::iterator
-            jnext = ch[c].users.begin();
-            jnext != ch[c].users.end();
-           )
+        for(OpnChannel::LocationData *jnext = ch[c].users_first; jnext;)
         {
-            OpnChannel::users_t::iterator j(jnext++);
+            OpnChannel::LocationData *j = jnext;
+            jnext = jnext->next;
 
-            if((MidCh < 0 || j->first.MidCh == MidCh)
-               && j->second.sustained)
+            if((MidCh < 0 || j->loc.MidCh == MidCh)
+               && j->sustained)
             {
                 int midiins = '?';
                 if(hooks.onNote)
-                    hooks.onNote(hooks.onNote_userData, (int)c, j->first.note, midiins, 0, 0.0);
-                ch[c].users.erase(j);
+                    hooks.onNote(hooks.onNote_userData, (int)c, j->loc.note, midiins, 0, 0.0);
+                ch[c].users_erase(j);
             }
         }
 
         // Keyoff the channel, if there are no users left.
-        if(ch[c].users.empty())
+        if(ch[c].users_empty())
             opn.NoteOff(c);
     }
 }
@@ -2408,11 +2405,11 @@ retry_arpeggio:
         if(c > uint32_t(std::numeric_limits<int32_t>::max()))
             break;
 
-        size_t n_users = ch[c].users.size();
+        size_t n_users = ch[c].users_size;
 
         if(n_users > 1)
         {
-            OpnChannel::users_t::const_iterator i = ch[c].users.begin();
+            OpnChannel::LocationData *i = ch[c].users_first;
             size_t rate_reduction = 3;
 
             if(n_users >= 3)
@@ -2421,23 +2418,25 @@ retry_arpeggio:
             if(n_users >= 4)
                 rate_reduction = 1;
 
-            std::advance(i, (arpeggio_counter / rate_reduction) % n_users);
+            for(unsigned count = (arpeggio_counter / rate_reduction) % n_users,
+                     n = 0; n < count; ++n)
+                i = i->next;
 
-            if(i->second.sustained == false)
+            if(i->sustained == false)
             {
-                if(i->second.kon_time_until_neglible <= 0l)
+                if(i->kon_time_until_neglible <= 0l)
                 {
                     NoteUpdate(
-                        i->first.MidCh,
-                        Ch[ i->first.MidCh ].activenotes_ensure_find(i->first.note),
+                        i->loc.MidCh,
+                        Ch[ i->loc.MidCh ].activenotes_ensure_find(i->loc.note),
                         Upd_Off,
                         static_cast<int32_t>(c));
                     goto retry_arpeggio;
                 }
 
                 NoteUpdate(
-                    i->first.MidCh,
-                    Ch[ i->first.MidCh ].activenotes_ensure_find(i->first.note),
+                    i->loc.MidCh,
+                    Ch[ i->loc.MidCh ].activenotes_ensure_find(i->loc.note),
                     Upd_Pitch | Upd_Volume | Upd_Pan,
                     static_cast<int32_t>(c));
             }
