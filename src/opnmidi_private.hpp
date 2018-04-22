@@ -674,7 +674,7 @@ public:
         activenoteiterator activenotes_find(uint8_t note)
         {
             return activenoteiterator(
-                activenotes[note].active ? &activenotes[note] : 0);
+                activenotes[note].active ? &activenotes[note] : NULL);
         }
 
         activenoteiterator activenotes_ensure_find(uint8_t note)
@@ -756,9 +756,8 @@ public:
             LocationData *prev, *next;
             Location loc;
             bool sustained;
-            char ____padding[1];
+            char ____padding[3];
             MIDIchannel::NoteInfo::Phys ins;  // a copy of that in phys[]
-            char ____padding2[4];
             int64_t kon_time_until_neglible;
             int64_t vibdelay;
         };
