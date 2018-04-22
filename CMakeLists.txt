@@ -256,6 +256,13 @@ install(FILES
         #include/opnmidi.hpp # WIP
         DESTINATION include/)
 
+option(WITH_UNIT_TESTS   "Enable unit testing" OFF)
+if(WITH_UNIT_TESTS)
+    enable_testing ()
+    add_subdirectory(test/activenotes)
+endif()
+
+
 message("==== libOPNMIDI options ====")
 message("WITH_MIDIPLAY            = ${WITH_MIDIPLAY}")
 message("WITH_VLC_PLUGIN          = ${WITH_VLC_PLUGIN}")
@@ -268,4 +275,5 @@ message("WITH_MUS_SUPPORT         = ${WITH_MUS_SUPPORT}")
 message("WITH_XMI_SUPPORT         = ${WITH_XMI_SUPPORT}")
 message("libOPNMIDI_STATIC        = ${libOPNMIDI_STATIC}")
 message("libOPNMIDI_SHARED        = ${libOPNMIDI_SHARED}")
+message("WITH_UNIT_TESTS          = ${WITH_UNIT_TESTS}")
 
