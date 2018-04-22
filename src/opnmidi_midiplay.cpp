@@ -2720,7 +2720,7 @@ void OPNMIDIplay::OpnChannel::users_clear()
 void OPNMIDIplay::OpnChannel::users_assign(const LocationData *users, size_t count)
 {
     assert(count <= users_max);
-    if(users == users_first) {
+    if(users == users_first && users) {
         // self assignment
         assert(users_size == count);
         return;
