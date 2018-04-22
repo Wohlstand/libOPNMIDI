@@ -73,7 +73,9 @@ TEST_CASE("[OPNMIDIplay::OpnChannel] User list: erasing at the front")
     LocationData *user3 = channel.users_find_or_create(Location{3, 3});
     LocationData *user2 = channel.users_find_or_create(Location{2, 2});
     LocationData *user1 = channel.users_find_or_create(Location{1, 1});
-    REQUIRE(user1 && user2 && user3);
+    REQUIRE(user1);
+    REQUIRE(user2);
+    REQUIRE(user3);
     REQUIRE(channel.users_first == user1);
     REQUIRE(channel.users_size == 3);
     REQUIRE(consistent_size(channel));
@@ -92,7 +94,9 @@ TEST_CASE("[OPNMIDIplay::OpnChannel] User list: erasing at the back")
     LocationData *user3 = channel.users_find_or_create(Location{3, 3});
     LocationData *user2 = channel.users_find_or_create(Location{2, 2});
     LocationData *user1 = channel.users_find_or_create(Location{1, 1});
-    REQUIRE(user1 && user2 && user3);
+    REQUIRE(user1);
+    REQUIRE(user2);
+    REQUIRE(user3);
     REQUIRE(channel.users_first == user1);
     REQUIRE(channel.users_size == 3);
     REQUIRE(consistent_size(channel));
@@ -111,7 +115,9 @@ TEST_CASE("[OPNMIDIplay::OpnChannel] User list: erasing in the middle")
     LocationData *user3 = channel.users_find_or_create(Location{3, 3});
     LocationData *user2 = channel.users_find_or_create(Location{2, 2});
     LocationData *user1 = channel.users_find_or_create(Location{1, 1});
-    REQUIRE(user1 && user2 && user3);
+    REQUIRE(user1);
+    REQUIRE(user2);
+    REQUIRE(user3);
     REQUIRE(channel.users_first == user1);
     REQUIRE(channel.users_size == 3);
     REQUIRE(consistent_size(channel));
@@ -130,7 +136,9 @@ TEST_CASE("[OPNMIDIplay::OpnChannel] User list: copy constructor")
     LocationData *user3 = channel1.users_find_or_create(Location{3, 3});
     LocationData *user2 = channel1.users_find_or_create(Location{2, 2});
     LocationData *user1 = channel1.users_find_or_create(Location{1, 1});
-    REQUIRE(user1 && user2 && user3);
+    REQUIRE(user1);
+    REQUIRE(user2);
+    REQUIRE(user3);
     REQUIRE(channel1.users_first == user1);
     REQUIRE(channel1.users_size == 3);
     REQUIRE(consistent_size(channel1));
@@ -157,7 +165,9 @@ TEST_CASE("[OPNMIDIplay::OpnChannel] User list: copy assignment")
     LocationData *user3 = channel1.users_find_or_create(Location{3, 3});
     LocationData *user2 = channel1.users_find_or_create(Location{2, 2});
     LocationData *user1 = channel1.users_find_or_create(Location{1, 1});
-    REQUIRE(user1 && user2 && user3);
+    REQUIRE(user1);
+    REQUIRE(user2);
+    REQUIRE(user3);
     REQUIRE(channel1.users_first == user1);
     REQUIRE(channel1.users_size == 3);
     REQUIRE(consistent_size(channel1));
