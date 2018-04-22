@@ -2635,3 +2635,121 @@ retry_arpeggio:
 //}
 
 //#endif//ADLMIDI_DISABLE_CPP_EXTRAS
+
+// Implement the user map data structure.
+
+bool OPNMIDIplay::OpnChannel::users_empty() const
+{
+    return !users_first;
+}
+
+OPNMIDIplay::OpnChannel::LocationData *OPNMIDIplay::OpnChannel::users_find(Location loc)
+{
+    LocationData *user = NULL;
+    for(LocationData *curr = users_first; !user && curr; curr = curr->next)
+        if(curr->loc == loc)
+            user = curr;
+    return user;
+}
+
+OPNMIDIplay::OpnChannel::LocationData *OPNMIDIplay::OpnChannel::users_allocate()
+{
+    // remove free cells front
+    LocationData *user = users_free_cells;
+    if(!user)
+        return NULL;
+    users_free_cells = user->next;
+    if(users_free_cells)
+        users_free_cells->prev = NULL;
+    // add to users front
+    if(users_first)
+        users_first->prev = user;
+    user->prev = NULL;
+    user->next = users_first;
+    users_first = user;
+    ++users_size;
+    return user;
+}
+
+OPNMIDIplay::OpnChannel::LocationData *OPNMIDIplay::OpnChannel::users_find_or_create(Location loc)
+{
+    LocationData *user = users_find(loc);
+    if(!user) {
+        user = users_allocate();
+        if(!user)
+            return NULL;
+        LocationData *prev = user->prev, *next = user->next;
+        *user = LocationData();
+        user->prev = prev; user->next = next;
+        user->loc = loc;
+    }
+    return user;
+}
+
+OPNMIDIplay::OpnChannel::LocationData *OPNMIDIplay::OpnChannel::users_insert(const LocationData &x)
+{
+    LocationData *user = users_find(x.loc);
+    if(!user)
+    {
+        user = users_allocate();
+        if(!user)
+            return NULL;
+        LocationData *prev = user->prev, *next = user->next;
+        *user = x;
+        user->prev = prev; user->next = next;
+    }
+    return user;
+}
+
+void OPNMIDIplay::OpnChannel::users_erase(LocationData *user)
+{
+    if(user->prev)
+        user->prev->next = user->next;
+    if(user->next)
+        user->next->prev = user->prev;
+    if(user == users_first)
+        users_first = user->next;
+    user->prev = NULL;
+    user->next = users_free_cells;
+    users_free_cells = user;
+    --users_size;
+}
+
+void OPNMIDIplay::OpnChannel::users_clear()
+{
+    users_first = NULL;
+    users_free_cells = users_cells;
+    users_size = 0;
+    for(size_t i = 0; i < users_max; ++i)
+    {
+        users_cells[i].prev = (i > 0) ? &users_cells[i - 1] : NULL;
+        users_cells[i].next = (i + 1 < users_max) ? &users_cells[i + 1] : NULL;
+    }
+}
+
+
+void OPNMIDIplay::OpnChannel::users_assign(const LocationData *users, size_t count)
+{
+    assert(count <= users_max);
+    if(users == users_first) {
+        // self assignment
+        assert(users_size == count);
+        return;
+    }
+    users_clear();
+    const LocationData *src_cell = users;
+    // move to the last
+    if(src_cell) {
+        while(src_cell->next)
+            src_cell = src_cell->next;
+    }
+    // push cell copies in reverse order
+    while(src_cell) {
+        LocationData *dst_cell = users_allocate();
+        assert(dst_cell);
+        LocationData *prev = dst_cell->prev, *next = dst_cell->next;
+        *dst_cell = *src_cell;
+        dst_cell->prev = prev; dst_cell->next = next;
+    }
+    assert(users_size == count);
+}
