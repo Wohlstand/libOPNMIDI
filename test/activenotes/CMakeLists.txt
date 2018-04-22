@@ -10,6 +10,6 @@ add_executable (ActiveNotesList
                 )
 
 set_target_properties(ActiveNotesList PROPERTIES COMPILE_DEFINITIONS "GSL_THROW_ON_CONTRACT_VIOLATION")
-target_link_libraries(ActiveNotesList INTERFACE OPNMIDI_static)
-add_test (NAME ActiveNotesList COMMAND PtrListValidator)
+target_link_libraries(ActiveNotesList PUBLIC OPNMIDI_static)
+add_test(NAME ActiveNotesList COMMAND ActiveNotesList)
 
