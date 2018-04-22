@@ -5,9 +5,68 @@
 
 #include "opnmidi_private.hpp"
 
-TEST_CASE( "vectors can be sized and resized", "[PtrList]" )
+TEST_CASE( "MIDI Channel manipulating", "[OPNMIDIplay::MIDIchannel]" )
 {
     OPNMIDIplay::MIDIchannel midi_ch;
-    OPNMIDIplay::OpnChannel  opn_ch;
+    //OPNMIDIplay::OpnChannel  opn_ch; //Must be tested separately, but togerther with MIDI Channel as there are in symbiosis
 
+    SECTION("Turning notes On!")
+    {
+        for(uint8_t noteq = 0; noteq < 128; noteq++)
+        {
+            uint8_t note = rand() % 128;
+            {//Call note off if note is already in work
+                OPNMIDIplay::MIDIchannel::activenoteiterator
+                i = midi_ch.activenotes_find(note);
+                if(i)
+                    midi_ch.activenotes_erase(i);
+            }
+
+            OPNMIDIplay::MIDIchannel::NoteInfo::Phys voices[OPNMIDIplay::MIDIchannel::NoteInfo::MaxNumPhysChans] = {
+                {0, static_cast<size_t>(rand() % 128), /*false*/},
+                {0, static_cast<size_t>(rand() % 128), /*pseudo_4op*/},
+            };
+
+            std::pair<OPNMIDIplay::MIDIchannel::activenoteiterator, bool>
+            ir = midi_ch.activenotes_insert(note);
+            ir.first->vol     = rand() % 127;
+            ir.first->tone    = rand() % 127;
+            ir.first->midiins = rand() % 127;
+            ir.first->insmeta = rand() % 127;
+            ir.first->chip_channels_count = 0;
+
+            for(unsigned ccount = 0; ccount < OPNMIDIplay::MIDIchannel::NoteInfo::MaxNumPhysChans; ++ccount)
+            {
+                int32_t c = rand() % 2;
+                if(c < 0)
+                    continue;
+                uint16_t chipChan = static_cast<uint16_t>(rand() % 256);
+                OPNMIDIplay::MIDIchannel::NoteInfo::Phys * p = ir.first->phys_ensure_find_or_create(chipChan);
+                REQUIRE( p != nullptr );
+                p->assign(voices[ccount]);
+            }
+        }
+    }
+
+    SECTION("Turning another random notes Off!")
+    {
+        for(uint8_t noteq = 0; noteq < 128; noteq++)
+        {
+            uint8_t note = rand() % 128;
+            OPNMIDIplay::MIDIchannel::activenoteiterator
+            i = midi_ch.activenotes_find(note);
+            if(i)
+                midi_ch.activenotes_erase(i);
+        }
+    }
+
+    SECTION("Iterating notes are left!")
+    {
+        for(OPNMIDIplay::MIDIchannel::activenoteiterator i = midi_ch.activenotes_begin(); i;)
+        {
+            OPNMIDIplay::MIDIchannel::activenoteiterator j(i++);
+            REQUIRE( j );
+        }
+    }
 }
+
