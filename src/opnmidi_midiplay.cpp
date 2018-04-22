@@ -2359,17 +2359,7 @@ uint64_t OPNMIDIplay::ChooseDevice(const std::string &name)
 
     size_t n = devices.size() * 16;
     devices.insert(std::make_pair(name, n));
-
-    size_t channelsBefore = Ch.size();
-    size_t channels = n + 16;
-    Ch.resize(channels);
-
-    for(size_t ch = channelsBefore; ch < channels; ++ch) {
-        for(unsigned i = 0; i < 128; ++i) {
-            Ch[ch].activenotes[i].note = i;
-            Ch[ch].activenotes[i].active = false;
-        }
-    }
+    Ch.resize(n + 16);
     return n;
 }
 
@@ -2727,7 +2717,6 @@ void OPNMIDIplay::OpnChannel::users_clear()
     }
 }
 
-
 void OPNMIDIplay::OpnChannel::users_assign(const LocationData *users, size_t count)
 {
     assert(count <= users_max);
@@ -2750,6 +2739,7 @@ void OPNMIDIplay::OpnChannel::users_assign(const LocationData *users, size_t cou
         LocationData *prev = dst_cell->prev, *next = dst_cell->next;
         *dst_cell = *src_cell;
         dst_cell->prev = prev; dst_cell->next = next;
+        src_cell = src_cell->prev;
     }
     assert(users_size == count);
 }

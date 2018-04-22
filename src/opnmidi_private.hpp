@@ -673,6 +673,7 @@ public:
 
         activenoteiterator activenotes_find(uint8_t note)
         {
+            assert(note < 128);
             return activenoteiterator(
                 activenotes[note].active ? &activenotes[note] : NULL);
         }
@@ -686,6 +687,7 @@ public:
 
         std::pair<activenoteiterator, bool> activenotes_insert(uint8_t note)
         {
+            assert(note < 128);
             NoteInfo &info = activenotes[note];
             bool inserted = !info.active;
             if(inserted) info.active = true;
@@ -701,6 +703,14 @@ public:
         bool activenotes_empty()
         {
             return !activenotes_begin();
+        }
+
+        void activenotes_clear()
+        {
+            for(unsigned i = 0; i < 128; ++i) {
+                activenotes[i].note = i;
+                activenotes[i].active = false;
+            }
         }
 
         void reset()
@@ -732,8 +742,8 @@ public:
         }
 
         MIDIchannel()
-            : activenotes()
         {
+            activenotes_clear();
             reset();
         }
     };
