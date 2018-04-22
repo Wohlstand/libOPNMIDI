@@ -708,7 +708,7 @@ void OPNMIDIplay::applySetup()
 
     opn.Reset(m_setup.emulator, m_setup.PCM_RATE);
     ch.clear();
-    ch.resize(opn.NumChannels);
+    ch.resize(opn.NumChannels, OpnChannel());
 }
 
 uint64_t OPNMIDIplay::ReadVarLen(uint8_t **ptr)

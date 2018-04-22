@@ -603,7 +603,7 @@ public:
                 if(!ph) {
                     if(chip_channels_count < MaxNumPhysItemCount) {
                         ph = &chip_channels[chip_channels_count++];
-                        ph->chip_chan = chip_chan;
+                        ph->chip_chan = (uint16_t)chip_chan;
                     }
                 }
                 return ph;
@@ -634,17 +634,17 @@ public:
 
         struct activenoteiterator
         {
-            explicit activenoteiterator(NoteInfo *info = 0)
+            explicit activenoteiterator(NoteInfo *info = NULL)
                 : ptr(info) {}
             activenoteiterator &operator++()
             {
                 if(ptr->note == 127)
-                    ptr = 0;
+                    ptr = NULL;
                 else
                     for(++ptr; ptr && !ptr->active;)
-                        ptr = (ptr->note == 127) ? 0 : (ptr + 1);
+                        ptr = (ptr->note == 127) ? NULL : (ptr + 1);
                 return *this;
-            };
+            }
             activenoteiterator operator++(int)
             {
                 activenoteiterator pos = *this;
