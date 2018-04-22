@@ -217,3 +217,18 @@ TEST_CASE("[OPNMIDIplay::OpnChannel] User list: appending full")
     REQUIRE(channel.users_size == Channel::users_max);
     REQUIRE(consistent_size(channel));
 }
+
+TEST_CASE("[OPNMIDIplay::OpnChannel] User list: assigning empty lists")
+{
+    Channel channel1;
+    REQUIRE(channel1.users_size == 0);
+    REQUIRE(consistent_size(channel1));
+
+    Channel channel2;
+    REQUIRE(channel2.users_size == 0);
+    REQUIRE(consistent_size(channel2));
+
+    channel1 = channel2;
+    REQUIRE(channel1.users_size == 0);
+    REQUIRE(consistent_size(channel1));
+}
