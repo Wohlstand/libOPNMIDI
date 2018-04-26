@@ -10,7 +10,6 @@ TARGET=opnplay
 # LIBS += -Wl,-Bstatic -lSDL2 -Wl,-Bdynamic -lpthread -ldl
 LIBS += -lSDL2 -lpthread -ldl
 
-# DEFINES += USE_LEGACY_EMULATOR
 # DEFINES += DEBUG_DUMP_RAW_STREAM
 
 QMAKE_CFLAGS    += -std=c90 -pedantic

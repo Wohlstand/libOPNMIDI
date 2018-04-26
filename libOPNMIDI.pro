@@ -11,8 +11,6 @@ INSTALLINCLUDES = $$PWD/include/*
 INSTALLINCLUDESTO = OPNMIDI
 include($$PWD/../audio_codec_common.pri)
 
-DEFINES += OPNMIDI_USE_LEGACY_EMULATOR
-
 macx: QMAKE_CXXFLAGS_WARN_ON += -Wno-absolute-value
 
 INCLUDEPATH += $$PWD $$PWD/include
