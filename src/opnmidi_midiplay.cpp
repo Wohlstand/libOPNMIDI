@@ -2724,6 +2724,7 @@ void OPNMIDIplay::OpnChannel::users_clear()
 
 void OPNMIDIplay::OpnChannel::users_assign(const LocationData *users, size_t count)
 {
+    ADL_UNUSED(count);//Avoid warning for release builds
     assert(count <= users_max);
     if(users == users_first && users) {
         // self assignment
