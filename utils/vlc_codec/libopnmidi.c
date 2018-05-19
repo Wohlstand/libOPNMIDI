@@ -28,6 +28,7 @@
 #include <vlc_plugin.h>
 #include <vlc_codec.h>
 #include <vlc_dialog.h>
+#include <libvlc_version.h>
 
 #include <unistd.h>
 
@@ -71,7 +72,11 @@ static void Close (vlc_object_t *);
 
 vlc_module_begin ()
     set_description (N_("OPNMIDI YM2612 Synth MIDI synthesizer"))
+#if (LIBVLC_VERSION_MAJOR >= 3)
+    set_capability ("audio decoder", 150)
+#else
     set_capability ("decoder", 150)
+#endif
     set_shortname (N_("OPNMIDI"))
     set_category (CAT_INPUT)
     set_subcategory (SUBCAT_INPUT_ACODEC)
@@ -108,9 +113,12 @@ static const struct OPNMIDI_AudioFormat g_output_format =
     2 * sizeof(float)
 };
 
-/*static int  DecodeBlock (decoder_t *p_dec, block_t *p_block); //For different version*/
+#if (LIBVLC_VERSION_MAJOR >= 3)
+static int DecodeBlock (decoder_t *p_dec, block_t *p_block);
+#else
 static block_t *DecodeBlock (decoder_t *p_dec, block_t **pp_block);
-/*static void Flush (decoder_t *);*/
+#endif
+static void Flush (decoder_t *);
 
 static int Open (vlc_object_t *p_this)
 {
@@ -141,7 +149,10 @@ static int Open (vlc_object_t *p_this)
         if (opn2_openBankData(p_sys->synth, g_gm_opn2_bank, sizeof(g_gm_opn2_bank)))
         {
             msg_Err (p_this, "cannot load default bank file: %s", opn2_errorInfo(p_sys->synth));
-            dialog_Fatal (p_this, _("MIDI synthesis not set up"),
+#if (LIBVLC_VERSION_MAJOR < 3)
+#define vlc_dialog_display_error dialog_Fatal
+#endif
+            vlc_dialog_display_error (p_this, _("MIDI synthesis not set up"),
                 _("A bank file (.WOPN) is required for MIDI synthesis.\n"
                   "Please install a custom bank and configure it "
                   "from the VLC preferences "
@@ -164,12 +175,13 @@ static int Open (vlc_object_t *p_this)
     date_Set (&p_sys->end_date, 0);
 
     p_dec->p_sys = p_sys;
-    /* //==For different version==
+#if (LIBVLC_VERSION_MAJOR >= 3)
     p_dec->pf_decode = DecodeBlock;
-    p_dec->pf_flush  = Flush;
-    */
+    p_dec->pf_flush = Flush;
+#else
     p_dec->pf_decode_audio = DecodeBlock;
-    return VLC_SUCCESS;//VLCDEC_SUCCESS
+#endif
+    return VLC_SUCCESS;
 }
 
 
@@ -181,7 +193,6 @@ static void Close (vlc_object_t *p_this)
     free (p_sys);
 }
 
-/*
 static void Flush (decoder_t *p_dec)
 {
     decoder_sys_t *p_sys = p_dec->p_sys;
@@ -189,28 +200,53 @@ static void Flush (decoder_t *p_dec)
     date_Set (&p_sys->end_date, VLC_TS_INVALID);
     opn2_panic(p_sys->synth);
 }
-*/
 
+#if (LIBVLC_VERSION_MAJOR >= 3)
+static int DecodeBlock (decoder_t *p_dec, block_t *p_block)
+{
+    decoder_sys_t *p_sys = p_dec->p_sys;
+    block_t *p_out = NULL;
+
+#else
 static block_t *DecodeBlock (decoder_t *p_dec, block_t **pp_block)
 {
     block_t *p_block;
     decoder_sys_t *p_sys = p_dec->p_sys;
     block_t *p_out = NULL;
-
     if (pp_block == NULL)
         return NULL;
     p_block = *pp_block;
+#endif
     if (p_block == NULL)
-        return NULL;
+    {
+#if (LIBVLC_VERSION_MAJOR >= 3)
+        return VLCDEC_SUCCESS;
+#else
+        return p_out;
+#endif
+    }
+
+#if (LIBVLC_VERSION_MAJOR < 3)
     *pp_block = NULL;
+#endif
 
     if (p_block->i_flags & (BLOCK_FLAG_DISCONTINUITY|BLOCK_FLAG_CORRUPTED))
     {
+#if (LIBVLC_VERSION_MAJOR >= 3)
+        Flush (p_dec);
+        if (p_block->i_flags & BLOCK_FLAG_CORRUPTED)
+        {
+            block_Release(p_block);
+            return VLCDEC_SUCCESS;
+        }
+#else
         date_Set (&p_sys->end_date, 0);
         opn2_panic(p_sys->synth);
+#endif
     }
 
-    if (p_block->i_pts > VLC_TS_INVALID && !date_Get (&p_sys->end_date))
+    if (p_block->i_pts > VLC_TS_INVALID
+        && !date_Get (&p_sys->end_date))
         date_Set (&p_sys->end_date, p_block->i_pts);
     else
     if (p_block->i_pts < date_Get (&p_sys->end_date))
@@ -274,6 +310,11 @@ static block_t *DecodeBlock (decoder_t *p_dec, block_t **pp_block)
         (p_block->i_pts - date_Get (&p_sys->end_date)) * 441 / 10000;
     if (samples == 0)
         goto drop;
+
+#if (LIBVLC_VERSION_MAJOR >= 3)
+    if (decoder_UpdateAudioFormat (p_dec))
+        goto drop;
+#endif
 
     p_out = decoder_NewAudioBuffer (p_dec, samples);
     if (p_out == NULL)
@@ -289,108 +330,12 @@ static block_t *DecodeBlock (decoder_t *p_dec, block_t **pp_block)
 
 drop:
     block_Release (p_block);
-    return p_out;
-}
-
-#if 0
-static int DecodeBlock (decoder_t *p_dec, block_t *p_block)
-{
-    decoder_sys_t *p_sys = p_dec->p_sys;
-    block_t *p_out = NULL;
-
-    if (p_block == NULL) /* No Drain */
-        return VLC_SUCCESS;//VLCDEC_SUCCESS
-
-    if (p_block->i_flags & (BLOCK_FLAG_DISCONTINUITY|BLOCK_FLAG_CORRUPTED))
-    {
-        Flush (p_dec);
-        if (p_block->i_flags & BLOCK_FLAG_CORRUPTED)
-        {
-            block_Release(p_block);
-            return VLC_SUCCESS;//VLCDEC_SUCCESS
-        }
-    }
-
-    if (p_block->i_pts > VLC_TS_INVALID && !date_Get (&p_sys->end_date))
-        date_Set (&p_sys->end_date, p_block->i_pts);
-    else
-    if (p_block->i_pts < date_Get (&p_sys->end_date))
-    {
-        msg_Warn (p_dec, "MIDI message in the past?");
-        goto drop;
-    }
-
-    if (p_block->i_buffer < 1)
-        goto drop;
-
-    uint8_t event = p_block->p_buffer[0];
-    uint8_t channel = p_block->p_buffer[0] & 0xf;
-    event &= 0xF0;
-
-    if (event == 0xF0)
-        switch (channel)
-        {
-            case 0:
-                if (p_block->p_buffer[p_block->i_buffer - 1] != 0xF7)
-                {
-            case 7:
-                    msg_Warn (p_dec, "fragmented SysEx not implemented");
-                    goto drop;
-                }
-                //fluid_synth_sysex (p_sys->synth, (char *)p_block->p_buffer + 1,
-                //                   p_block->i_buffer - 2, NULL, NULL, NULL, 0);
-                break;
-            case 0xF:
-                opn2_rt_resetState(p_sys->synth);
-                break;
-        }
-
-    uint8_t p1 = (p_block->i_buffer > 1) ? (p_block->p_buffer[1] & 0x7f) : 0;
-    uint8_t p2 = (p_block->i_buffer > 2) ? (p_block->p_buffer[2] & 0x7f) : 0;
-
-    switch (event & 0xF0)
-    {
-        case 0x80:
-            opn2_rt_noteOff(p_sys->synth, channel, p1);
-            break;
-        case 0x90:
-            opn2_rt_noteOn(p_sys->synth, channel, p1, p2);
-            break;
-        /*case 0xA0: note aftertouch not implemented */
-        case 0xB0:
-            opn2_rt_controllerChange(p_sys->synth, channel, p1, p2);
-            break;
-        case 0xC0:
-            opn2_rt_patchChange(p_sys->synth, channel, p1);
-            break;
-        case 0xD0:
-            opn2_rt_channelAfterTouch(p_sys->synth, channel, p1);
-            break;
-        case 0xE0:
-            opn2_rt_pitchBendML(p_sys->synth, channel, p2, p1);
-            break;
-    }
-
-    unsigned samples =
-        (p_block->i_pts - date_Get (&p_sys->end_date)) * 441 / 10000;
-    if (samples == 0)
-        goto drop;
-
-    if (decoder_UpdateAudioFormat (p_dec))
-        goto drop;
-    p_out = decoder_NewAudioBuffer (p_dec, samples);
-    if (p_out == NULL)
-        goto drop;
-
-    p_out->i_pts = date_Get (&p_sys->end_date );
-    p_out->i_length = date_Increment (&p_sys->end_date, samples)
-                      - p_out->i_pts;
-    opn2_generate(p_sys->synth, samples * 2, p_out->p_buffer);
-drop:
-    block_Release (p_block);
+#if (LIBVLC_VERSION_MAJOR >= 3)
     if (p_out != NULL)
         decoder_QueueAudio (p_dec, p_out);
-    return VLC_SUCCESS;//VLCDEC_SUCCESS
+    return VLCDEC_SUCCESS;
+#else
+    return p_out;
+#endif
 }
 
-#endif
