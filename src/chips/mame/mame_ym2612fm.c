@@ -2315,7 +2315,7 @@ void ym2612_generate(void *chip, FMSAMPLE *buffer, int frames, int mix)
 		}
 		F2612->OPN.ST.framecnt += 1 << RSM_FRAC;
 	}
-
+	/* ym2612_post_generate(chip, frames); */
 }
 
 void ym2612_pre_generate(void *chip)
@@ -2505,6 +2505,15 @@ void ym2612_generate_one_native(void *chip, FMSAMPLE buffer[])
 		OPN->SL3.key_csm = 0;
 	}
 }
+
+#if 0
+void ym2612_post_generate(void *chip, int length)
+{
+	YM2612 *F2612 = (YM2612 *)chip;
+	/* timer B control */
+	INTERNAL_TIMER_B(&F2612->OPN.ST, length);
+}
+#endif
 
 #ifdef __STATE_H__
 void ym2612_postload(void *chip)
