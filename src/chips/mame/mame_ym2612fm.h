@@ -102,11 +102,27 @@ typedef void (*FM_IRQHANDLER)(void *param,int irq);
 /* int irq     = IRQ level 0=OFF,1=ON            */
 
 #if (BUILD_YM2612||BUILD_YM3438)
-/*void * ym2612_init(void *param, const device_config *device, int baseclock, int rate,
-               FM_TIMERHANDLER TimerHandler,FM_IRQHANDLER IRQHandler); */
+
+/**
+ * @brief Initialize chip and return the instance
+ * @param param Unused, keep NULL
+ * @param baseclock YM2612 clock
+ * @param rate Output sample rate
+ * @param TimerHandler Keep NULL
+ * @param IRQHandler Keep NULL
+ * @return Chip instance or NULL on any error
+ */
 void * ym2612_init(void *param, int baseclock, int rate,
                FM_TIMERHANDLER TimerHandler,FM_IRQHANDLER IRQHandler);
+/**
+ * @brief Free chip instance
+ * @param chip Chip instance
+ */
 void ym2612_shutdown(void *chip);
+/**
+ * @brief Reset state of the chip
+ * @param chip Chip instance
+ */
 void ym2612_reset_chip(void *chip);
 /**
  * @brief Generate stereo output of specified length
@@ -117,6 +133,20 @@ void ym2612_reset_chip(void *chip);
  */
 void ym2612_generate(void *chip, FMSAMPLE *buffer, int frames, int mix);
 #define ym2612_update_one(chip, buffer, length) ym2612_generate(chip, buffer, length, 0)
+
+/**
+ * @brief Single-Sample generation prepare
+ * @param chip Chip instance
+ */
+void ym2612_pre_generate(void *chip);
+/**
+ * @brief Generate single stereo PCM frame. Will be used native sample rate of 53267 Hz
+ * @param chip Chip instance
+ * @param buffer One stereo PCM frame
+ */
+void ym2612_generate_one_native(void *chip, FMSAMPLE buffer[2]);
+
+/* void ym2612_post_generate(void *chip, int length); */
 
 int ym2612_write(void *chip, int a,unsigned char v);
 unsigned char ym2612_read(void *chip,int a);

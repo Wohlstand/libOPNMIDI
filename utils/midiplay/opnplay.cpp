@@ -132,10 +132,12 @@ int main(int argc, char **argv)
     const double OurHeadRoomLength = 0.1;
     // The lag between visual content and audio content equals
     // the sum of these two buffers.
+
+    int sampleRate = 44100;
+
     SDL_AudioSpec spec;
     SDL_AudioSpec obtained;
-
-    spec.freq     = 44100;
+    spec.freq     = sampleRate;
     spec.format   = AUDIO_S16SYS;
     spec.channels = 2;
     spec.samples  = Uint16((double)spec.freq * AudioBufferLength);
@@ -143,21 +145,12 @@ int main(int argc, char **argv)
 
     OPN2_MIDIPlayer *myDevice;
 
-    myDevice = opn2_init(44100);
-    if(myDevice == NULL)
-    {
-        std::fprintf(stderr, "Failed to init MIDI device!\n");
-        return 1;
-    }
-
-    //Set internal debug messages hook to print all libADLMIDI's internal debug messages
-    opn2_setDebugMessageHook(myDevice, debugPrint, NULL);
-
-
     /*
      * Set library options by parsing of command line arguments
      */
     bool recordWave = false;
+    bool scaleModulators = false;
+    bool fullRangedBrightness = false;
     int loopEnabled = 1;
     int emulator = OPNMIDI_EMU_MAME;
 
@@ -167,7 +160,7 @@ int main(int argc, char **argv)
         if(!std::strcmp("-w", argv[arg]))
             recordWave = true;//Record library output into WAV file
         else if(!std::strcmp("-frb", argv[arg]))
-            opn2_setFullRangeBrightness(myDevice, 1);//Turn on a full-ranged XG CC74 Brightness
+            fullRangedBrightness = true;
         else if(!std::strcmp("-nl", argv[arg]))
             loopEnabled = 0; //Enable loop
         else if(!std::strcmp("--emu-nuked", argv[arg]))
@@ -177,14 +170,52 @@ int main(int argc, char **argv)
         else if(!std::strcmp("--emu-mame", argv[arg]))
             emulator = OPNMIDI_EMU_MAME;
         else if(!std::strcmp("-s", argv[arg]))
-            opn2_setScaleModulators(myDevice, 1);//Turn on modulators scaling by volume
+            scaleModulators = true;
         else if(!std::strcmp("--", argv[arg]))
             break;
         else
             break;
     }
 
+    if(!recordWave)
+    {
+        // Set up SDL
+        if(SDL_OpenAudio(&spec, &obtained) < 0)
+        {
+            std::fprintf(stderr, "\nERROR: Couldn't open audio: %s\n\n", SDL_GetError());
+            //return 1;
+        }
+        if(spec.samples != obtained.samples || spec.freq != obtained.freq)
+        {
+            sampleRate = obtained.freq;
+            std::fprintf(stderr, " - Audio wanted (samples=%u,rate=%u,channels=%u);\n"
+                                 " - Audio obtained (samples=%u,rate=%u,channels=%u)\n",
+                         spec.samples,    spec.freq,    spec.channels,
+                         obtained.samples, obtained.freq, obtained.channels);
+        }
+    }
+
+    if(arg > argc - 2)
+    {
+        printError("Missing bank and/or music file paths!\n");
+        return 2;
+    }
+
+    myDevice = opn2_init(sampleRate);
+    if(myDevice == NULL)
+    {
+        std::fprintf(stderr, "Failed to init MIDI device!\n");
+        return 1;
+    }
+
+    //Set internal debug messages hook to print all libADLMIDI's internal debug messages
+    opn2_setDebugMessageHook(myDevice, debugPrint, NULL);
+
     //Turn loop on/off (for WAV recording loop must be disabled!)
+    if(scaleModulators)
+        opn2_setScaleModulators(myDevice, 1);//Turn on modulators scaling by volume
+    if(fullRangedBrightness)
+        opn2_setFullRangeBrightness(myDevice, 1);//Turn on a full-ranged XG CC74 Brightness
     opn2_setLoopEnabled(myDevice, recordWave ? 0 : loopEnabled);
     opn2_setVolumeRangeModel(myDevice, OPNMIDI_VolumeModel_Generic);
     #ifdef DEBUG_TRACE_ALL_EVENTS
@@ -192,12 +223,6 @@ int main(int argc, char **argv)
     if(!recordWave)
         opn2_setRawEventHook(myDevice, debugPrintEvent, NULL);
     #endif
-
-    if(arg > argc - 2)
-    {
-        printError("Missing bank and/or music file paths!\n");
-        return 2;
-    }
 
     std::string bankPath = argv[arg];
     std::string musPath = argv[arg + 1];
@@ -211,23 +236,6 @@ int main(int argc, char **argv)
     }
 
     std::fprintf(stdout, " - %s Emulator in use\n", opn2_chipEmulatorName(myDevice));
-
-    if(!recordWave)
-    {
-        // Set up SDL
-        if(SDL_OpenAudio(&spec, &obtained) < 0)
-        {
-            std::fprintf(stderr, "\nERROR: Couldn't open audio: %s\n\n", SDL_GetError());
-            //return 1;
-        }
-        if(spec.samples != obtained.samples)
-        {
-            std::fprintf(stderr, " - Audio wanted (samples=%u,rate=%u,channels=%u);\n"
-                                 " - Audio obtained (samples=%u,rate=%u,channels=%u)\n",
-                         spec.samples,    spec.freq,    spec.channels,
-                         obtained.samples, obtained.freq, obtained.channels);
-        }
-    }
 
     std::fprintf(stdout, " - Use bank [%s]...", bankPath.c_str());
     std::fflush(stdout);
@@ -327,7 +335,7 @@ int main(int argc, char **argv)
         std::fprintf(stdout, "\n==========================================\n");
         std::fflush(stdout);
 
-        if(wave_open(spec.freq, wave_out.c_str()) == 0)
+        if(wave_open(sampleRate, wave_out.c_str()) == 0)
         {
             wave_enable_stereo();
             while(!stop)
