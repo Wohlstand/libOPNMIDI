@@ -61,6 +61,7 @@ option(USE_NUKED_EMULATOR   "Use Nuked OPN2 emulator (most accurate, heavy)" ON)
 option(WITH_MIDI_SEQUENCER  "Build with embedded MIDI sequencer. Disable this if you want use library in real-time MIDI drivers or plugins.)" ON)
 option(WITH_MUS_SUPPORT     "Build with support for DMX MUS files)" ON)
 option(WITH_XMI_SUPPORT     "Build with support for AIL XMI files)" ON)
+option(WITH_HQ_RESAMPLER    "Build with support for high quality resampling" OFF)
 
 option(libOPNMIDI_STATIC   "Build static library of libOPNMIDI" ON)
 option(libOPNMIDI_SHARED   "Build shared library of libOPNMIDI" OFF)
@@ -245,6 +246,17 @@ if(WITH_VLC_PLUGIN)
 
 endif()
 
+if(WITH_HQ_RESAMPLER)
+  find_library(ZITA_RESAMPLER_LIBRARY "zita-resampler" REQUIRED)
+  add_definitions(-DOPNMIDI_ENABLE_HQ_RESAMPLER)
+  if(libOPNMIDI_SHARED)
+    target_link_libraries(OPNMIDI_shared PUBLIC "${ZITA_RESAMPLER_LIBRARY}")
+  endif()
+  if(libOPNMIDI_STATIC)
+    target_link_libraries(OPNMIDI_static PUBLIC "${ZITA_RESAMPLER_LIBRARY}")
+  endif()
+endif()
+
 install(TARGETS ${libOPNMIDI_INSTALLS}
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"
@@ -274,6 +286,7 @@ message("WITH_MIDI_SEQUENCER      = ${WITH_MIDI_SEQUENCER}")
 # message("WITH_CPP_EXTRAS          = ${WITH_CPP_EXTRAS}")
 message("WITH_MUS_SUPPORT         = ${WITH_MUS_SUPPORT}")
 message("WITH_XMI_SUPPORT         = ${WITH_XMI_SUPPORT}")
+message("WITH_HQ_RESAMPLER        = ${WITH_HQ_RESAMPLER}")
 message("libOPNMIDI_STATIC        = ${libOPNMIDI_STATIC}")
 message("libOPNMIDI_SHARED        = ${libOPNMIDI_SHARED}")
 message("WITH_UNIT_TESTS          = ${WITH_UNIT_TESTS}")
