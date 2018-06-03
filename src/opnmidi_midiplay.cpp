@@ -1329,14 +1329,16 @@ void OPNMIDIplay::realTime_PatchChange(uint8_t channel, uint8_t patch)
 void OPNMIDIplay::realTime_PitchBend(uint8_t channel, uint16_t pitch)
 {
     channel = channel % 16;
-    Ch[channel].bend = (int(pitch) - 8192) * Ch[channel].bendsense;
+    Ch[channel].bendSrc = (int(pitch) - 8192);
+    Ch[channel].bend = Ch[channel].bendSrc * Ch[channel].bendsense;
     NoteUpdate_All(channel, Upd_Pitch);
 }
 
 void OPNMIDIplay::realTime_PitchBend(uint8_t channel, uint8_t msb, uint8_t lsb)
 {
     channel = channel % 16;
-    Ch[channel].bend = (int(lsb) + int(msb) * 128 - 8192) * Ch[channel].bendsense;
+    Ch[channel].bendSrc = (int(lsb) + int(msb) * 128 - 8192);
+    Ch[channel].bend = Ch[channel].bendSrc * Ch[channel].bendsense;
     NoteUpdate_All(channel, Upd_Pitch);
 }
 
@@ -1563,7 +1565,7 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
                     bend += static_cast<double>(vibrato) * Ch[MidCh].vibdepth * std::sin(Ch[MidCh].vibpos);
 
 #define BEND_COEFFICIENT 321.88557
-                opn.NoteOn(c, BEND_COEFFICIENT * std::exp(0.057762265 * (tone + bend + phase)));
+                opn.NoteOn(c, BEND_COEFFICIENT * std::exp(0.057762265 * (static_cast<double>(tone) + bend + phase)));
 #undef BEND_COEFFICIENT
                 if(hooks.onNote)
                     hooks.onNote(hooks.onNote_userData, c, tone, (int)midiins, vol, Ch[MidCh].bend);
@@ -2305,10 +2307,12 @@ void OPNMIDIplay::SetRPN(unsigned MidCh, unsigned value, bool MSB)
     case 0x0000 + 0*0x10000 + 1*0x20000: // Pitch-bender sensitivity
         Ch[MidCh].bendsense_msb = value;
         Ch[MidCh].updateBendSensitivity();
+        NoteUpdate_All(MidCh, Upd_Pitch);
         break;
     case 0x0000 + 0*0x10000 + 0*0x20000: // Pitch-bender sensitivity LSB
         Ch[MidCh].bendsense_lsb = value;
         Ch[MidCh].updateBendSensitivity();
+        NoteUpdate_All(MidCh, Upd_Pitch);
         break;
     case 0x0108 + 1*0x10000 + 1*0x20000: // Vibrato speed
         if(value == 64)      Ch[MidCh].vibspeed = 1.0;

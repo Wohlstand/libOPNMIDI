@@ -556,6 +556,7 @@ public:
         //! Is note aftertouch has any non-zero value
         bool    noteAfterTouchInUse;
         char ____padding[6];
+        double bendSrc;
         double  bend, bendsense;
         int bendsense_lsb, bendsense_msb;
         double  vibpos, vibspeed, vibdepth;
@@ -748,6 +749,7 @@ public:
         }
         void resetAllControllers()
         {
+            bendSrc = 0.0;
             bend = 0.0;
             bendsense_msb = 2;
             bendsense_lsb = 0;
@@ -774,6 +776,7 @@ public:
         {
             int cent = bendsense_msb * 100 + bendsense_lsb;
             bendsense = cent * (0.01 / 8192.0);
+            bend = bendSrc * bendsense;
         }
         MIDIchannel()
         {
