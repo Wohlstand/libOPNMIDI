@@ -197,7 +197,11 @@ static void Flush (decoder_t *p_dec)
 {
     decoder_sys_t *p_sys = p_dec->p_sys;
 
+#if (LIBVLC_VERSION_MAJOR >= 3)
     date_Set (&p_sys->end_date, VLC_TS_INVALID);
+#else
+    date_Set (&p_sys->end_date, 0);
+#endif
     opn2_panic(p_sys->synth);
 }
 
@@ -232,16 +236,13 @@ static block_t *DecodeBlock (decoder_t *p_dec, block_t **pp_block)
 
     if (p_block->i_flags & (BLOCK_FLAG_DISCONTINUITY|BLOCK_FLAG_CORRUPTED))
     {
-#if (LIBVLC_VERSION_MAJOR >= 3)
         Flush (p_dec);
+#if (LIBVLC_VERSION_MAJOR >= 3)
         if (p_block->i_flags & BLOCK_FLAG_CORRUPTED)
         {
             block_Release(p_block);
             return VLCDEC_SUCCESS;
         }
-#else
-        date_Set (&p_sys->end_date, 0);
-        opn2_panic(p_sys->synth);
 #endif
     }
 

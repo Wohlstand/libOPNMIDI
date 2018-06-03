@@ -830,11 +830,11 @@ public:
         }
 
         OpnChannel &operator=(const OpnChannel &oth)
-         {
-             koff_time_until_neglible = oth.koff_time_until_neglible;
-             users_assign(oth.users_first, oth.users_size);
-             return *this;
-         }
+        {
+            koff_time_until_neglible = oth.koff_time_until_neglible;
+            users_assign(oth.users_first, oth.users_size);
+            return *this;
+        }
 
         void AddAge(int64_t ms);
     };
