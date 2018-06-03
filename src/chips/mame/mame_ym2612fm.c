@@ -146,6 +146,7 @@ static stream_sample_t *DUMMYBUF = NULL;
 #define BUILD_OPN (BUILD_YM2203||BUILD_YM2608||BUILD_YM2610||BUILD_YM2610B||BUILD_YM2612||BUILD_YM3438)
 #define BUILD_OPN_PRESCALER (BUILD_YM2203||BUILD_YM2608)
 
+#define RSM_FRAC 10
 
 /* globals */
 #define TYPE_SSG    0x01    /* SSG support          */
@@ -623,7 +624,9 @@ typedef struct
 	UINT32		clock;				/* master clock  (Hz)   */
 	UINT32		rate;				/* internal sampling rate (Hz) */
 	UINT32		out_rate;			/* output sampling rate (Hz) */
-	double		rate_ratio;			/* resampling ratio */
+	INT32		rateratio;			/* resampling ratio */
+	INT32		framecnt;			/* resampling frames count*/
+	FMSAMPLE	cur_sample[2];		/* previous sample */
 	FMSAMPLE	prev_sample[2];		/* previous sample */
 	UINT8		address;			/* address register     */
 	UINT8		status;				/* status flag          */
@@ -2274,21 +2277,11 @@ void ym2612_generate(void *chip, FMSAMPLE *buffer, int frames, int mix)
 	YM2612 *F2612 = (YM2612 *)chip;
 	FM_OPN *OPN   = &F2612->OPN;
 	INT32 *out_fm = OPN->out_fm;
-	int i, i_out;
+	int i;
 	FMSAMPLE  *bufOut;/* *bufL,*bufR; */
 	INT32 dacout;
 	FM_CH	*cch[6];
 	int lt,rt;
-	int resample_direction = 0;
-	int in_frames = (int)ceil((double)frames / F2612->OPN.ST.rate_ratio);
-	double r_ps     = 0.0;
-	double offset_down = F2612->OPN.ST.rate_ratio;
-	double offset_up = 1.0 / F2612->OPN.ST.rate_ratio;
-
-	if (F2612->OPN.ST.rate_ratio > 1.0)
-		resample_direction = +1;
-	else if (F2612->OPN.ST.rate_ratio < 1.0)
-		resample_direction = -1;
 
 	/* set bufer */
 	bufOut = buffer;
@@ -2335,205 +2328,178 @@ void ym2612_generate(void *chip, FMSAMPLE *buffer, int frames, int mix)
 
 
 	/* buffering */
-	for(i=0,i_out=0 ; i < in_frames && i_out < frames ; i++)
+	for(i=0 ; i < frames ; i++)
 	{
-		/* clear outputs */
-		out_fm[0] = 0;
-		out_fm[1] = 0;
-		out_fm[2] = 0;
-		out_fm[3] = 0;
-		out_fm[4] = 0;
-		out_fm[5] = 0;
-
-		/* update SSG-EG output */
-		update_ssg_eg_channel(&cch[0]->SLOT[SLOT1]);
-		update_ssg_eg_channel(&cch[1]->SLOT[SLOT1]);
-		update_ssg_eg_channel(&cch[2]->SLOT[SLOT1]);
-		update_ssg_eg_channel(&cch[3]->SLOT[SLOT1]);
-		update_ssg_eg_channel(&cch[4]->SLOT[SLOT1]);
-		update_ssg_eg_channel(&cch[5]->SLOT[SLOT1]);
-
-		/* calculate FM */
-		if (! F2612->dac_test)
+		while(F2612->OPN.ST.framecnt >= F2612->OPN.ST.rateratio)/* Copy-Pasta from Nuked */
 		{
-			chan_calc(F2612, OPN, cch[0]);
-			chan_calc(F2612, OPN, cch[1]);
-			chan_calc(F2612, OPN, cch[2]);
-			chan_calc(F2612, OPN, cch[3]);
-			chan_calc(F2612, OPN, cch[4]);
-			if( F2612->dacen )
-				*cch[5]->connect4 += dacout;
+			/* clear outputs */
+			out_fm[0] = 0;
+			out_fm[1] = 0;
+			out_fm[2] = 0;
+			out_fm[3] = 0;
+			out_fm[4] = 0;
+			out_fm[5] = 0;
+
+			/* update SSG-EG output */
+			update_ssg_eg_channel(&cch[0]->SLOT[SLOT1]);
+			update_ssg_eg_channel(&cch[1]->SLOT[SLOT1]);
+			update_ssg_eg_channel(&cch[2]->SLOT[SLOT1]);
+			update_ssg_eg_channel(&cch[3]->SLOT[SLOT1]);
+			update_ssg_eg_channel(&cch[4]->SLOT[SLOT1]);
+			update_ssg_eg_channel(&cch[5]->SLOT[SLOT1]);
+
+			/* calculate FM */
+			if (! F2612->dac_test)
+			{
+				chan_calc(F2612, OPN, cch[0]);
+				chan_calc(F2612, OPN, cch[1]);
+				chan_calc(F2612, OPN, cch[2]);
+				chan_calc(F2612, OPN, cch[3]);
+				chan_calc(F2612, OPN, cch[4]);
+				if( F2612->dacen )
+					*cch[5]->connect4 += dacout;
+				else
+					chan_calc(F2612, OPN, cch[5]);
+			}
 			else
-				chan_calc(F2612, OPN, cch[5]);
-		}
-		else
-		{
-			out_fm[0] = out_fm[1] = dacout;
-			out_fm[2] = out_fm[3] = dacout;
-			out_fm[5] = dacout;
-		}
+			{
+				out_fm[0] = out_fm[1] = dacout;
+				out_fm[2] = out_fm[3] = dacout;
+				out_fm[5] = dacout;
+			}
 
-		/* advance LFO */
-		advance_lfo(OPN);
-
-		/* advance envelope generator */
-		OPN->eg_timer += OPN->eg_timer_add;
-		while (OPN->eg_timer >= OPN->eg_timer_overflow)
-		{
-			/* reset EG timer */
-			OPN->eg_timer -= OPN->eg_timer_overflow;
-			/* increment EG counter */
-			OPN->eg_cnt++;
-			/* EG counter is 12-bit only and zero value is skipped (verified on real hardware) */
-			if (OPN->eg_cnt == 4096)
-				OPN->eg_cnt = 1;
+			/* advance LFO */
+			advance_lfo(OPN);
 
 			/* advance envelope generator */
-			advance_eg_channel(OPN, &cch[0]->SLOT[SLOT1]);
-			advance_eg_channel(OPN, &cch[1]->SLOT[SLOT1]);
-			advance_eg_channel(OPN, &cch[2]->SLOT[SLOT1]);
-			advance_eg_channel(OPN, &cch[3]->SLOT[SLOT1]);
-			advance_eg_channel(OPN, &cch[4]->SLOT[SLOT1]);
-			advance_eg_channel(OPN, &cch[5]->SLOT[SLOT1]);
-		}
-
-		/*fprintf(hFile, "%u", FileSample, out_fm[0]);
-		for (lt = 0; lt < 6; lt ++)
-			fprintf(hFile, "\t%d", out_fm[lt]);
-		fprintf(hFile, "\n");
-		FileSample ++;*/
-
-		if (out_fm[0] > 8192) out_fm[0] = 8192;
-		else if (out_fm[0] < -8192) out_fm[0] = -8192;
-		if (out_fm[1] > 8192) out_fm[1] = 8192;
-		else if (out_fm[1] < -8192) out_fm[1] = -8192;
-		if (out_fm[2] > 8192) out_fm[2] = 8192;
-		else if (out_fm[2] < -8192) out_fm[2] = -8192;
-		if (out_fm[3] > 8192) out_fm[3] = 8192;
-		else if (out_fm[3] < -8192) out_fm[3] = -8192;
-		if (out_fm[4] > 8192) out_fm[4] = 8192;
-		else if (out_fm[4] < -8192) out_fm[4] = -8192;
-		if (out_fm[5] > 8192) out_fm[5] = 8192;
-		else if (out_fm[5] < -8192) out_fm[5] = -8192;
-
-		/* 6-channels mixing  */
-		lt  = ((out_fm[0]>>0) & OPN->pan[0]);
-		rt  = ((out_fm[0]>>0) & OPN->pan[1]);
-		lt += ((out_fm[1]>>0) & OPN->pan[2]);
-		rt += ((out_fm[1]>>0) & OPN->pan[3]);
-		lt += ((out_fm[2]>>0) & OPN->pan[4]);
-		rt += ((out_fm[2]>>0) & OPN->pan[5]);
-		lt += ((out_fm[3]>>0) & OPN->pan[6]);
-		rt += ((out_fm[3]>>0) & OPN->pan[7]);
-		if (! F2612->dac_test)
-		{
-			lt += ((out_fm[4]>>0) & OPN->pan[8]);
-			rt += ((out_fm[4]>>0) & OPN->pan[9]);
-		}
-		else
-		{
-			lt += dacout;
-			lt += dacout;
-		}
-		lt += ((out_fm[5]>>0) & OPN->pan[10]);
-		rt += ((out_fm[5]>>0) & OPN->pan[11]);
-
-		/* Limit( lt, MAXOUT, MINOUT ); */
-		/* Limit( rt, MAXOUT, MINOUT ); */
-
-		#ifdef SAVE_SAMPLE
-			SAVE_ALL_CHANNELS
-		#endif
-
-		/* buffering */
-		if (F2612->WaveOutMode & 0x01)
-			F2612->WaveL = lt;
-		if (F2612->WaveOutMode & 0x02)
-			F2612->WaveR = rt;
-		if (F2612->WaveOutMode ^ 0x03)
-			F2612->WaveOutMode ^= 0x03;
-
-		if (resample_direction > 0)
-		{
-			r_ps += offset_down;
-			if (r_ps >= 1.0)
+			OPN->eg_timer += OPN->eg_timer_add;
+			while (OPN->eg_timer >= OPN->eg_timer_overflow)
 			{
-				F2612->OPN.ST.prev_sample[0] = (FMSAMPLE)(F2612->WaveL / 2);
-				F2612->OPN.ST.prev_sample[1] = (FMSAMPLE)(F2612->WaveR / 2);
-				if (mix)
-				{
-					*bufOut++ += F2612->OPN.ST.prev_sample[0];
-					*bufOut++ += F2612->OPN.ST.prev_sample[1];
-				} else {
-					*bufOut++ = F2612->OPN.ST.prev_sample[0];
-					*bufOut++ = F2612->OPN.ST.prev_sample[1];
-				}
-				i_out++;
-				r_ps -= 1.0;
+				/* reset EG timer */
+				OPN->eg_timer -= OPN->eg_timer_overflow;
+				/* increment EG counter */
+				OPN->eg_cnt++;
+				/* EG counter is 12-bit only and zero value is skipped (verified on real hardware) */
+				if (OPN->eg_cnt == 4096)
+					OPN->eg_cnt = 1;
+
+				/* advance envelope generator */
+				advance_eg_channel(OPN, &cch[0]->SLOT[SLOT1]);
+				advance_eg_channel(OPN, &cch[1]->SLOT[SLOT1]);
+				advance_eg_channel(OPN, &cch[2]->SLOT[SLOT1]);
+				advance_eg_channel(OPN, &cch[3]->SLOT[SLOT1]);
+				advance_eg_channel(OPN, &cch[4]->SLOT[SLOT1]);
+				advance_eg_channel(OPN, &cch[5]->SLOT[SLOT1]);
 			}
-		}
-		else if (resample_direction < 0)
-		{
-			while (r_ps <= 1.0)
+
+			/*fprintf(hFile, "%u", FileSample, out_fm[0]);
+			for (lt = 0; lt < 6; lt ++)
+				fprintf(hFile, "\t%d", out_fm[lt]);
+			fprintf(hFile, "\n");
+			FileSample ++;*/
+
+			if (out_fm[0] > 8192) out_fm[0] = 8192;
+			else if (out_fm[0] < -8192) out_fm[0] = -8192;
+			if (out_fm[1] > 8192) out_fm[1] = 8192;
+			else if (out_fm[1] < -8192) out_fm[1] = -8192;
+			if (out_fm[2] > 8192) out_fm[2] = 8192;
+			else if (out_fm[2] < -8192) out_fm[2] = -8192;
+			if (out_fm[3] > 8192) out_fm[3] = 8192;
+			else if (out_fm[3] < -8192) out_fm[3] = -8192;
+			if (out_fm[4] > 8192) out_fm[4] = 8192;
+			else if (out_fm[4] < -8192) out_fm[4] = -8192;
+			if (out_fm[5] > 8192) out_fm[5] = 8192;
+			else if (out_fm[5] < -8192) out_fm[5] = -8192;
+
+			/* 6-channels mixing  */
+			lt  = ((out_fm[0]>>0) & OPN->pan[0]);
+			rt  = ((out_fm[0]>>0) & OPN->pan[1]);
+			lt += ((out_fm[1]>>0) & OPN->pan[2]);
+			rt += ((out_fm[1]>>0) & OPN->pan[3]);
+			lt += ((out_fm[2]>>0) & OPN->pan[4]);
+			rt += ((out_fm[2]>>0) & OPN->pan[5]);
+			lt += ((out_fm[3]>>0) & OPN->pan[6]);
+			rt += ((out_fm[3]>>0) & OPN->pan[7]);
+			if (! F2612->dac_test)
 			{
-				F2612->OPN.ST.prev_sample[0] = (FMSAMPLE)(F2612->WaveL / 2);
-				F2612->OPN.ST.prev_sample[1] = (FMSAMPLE)(F2612->WaveR / 2);
-				if (mix)
-				{
-					*bufOut++ += F2612->OPN.ST.prev_sample[0];
-					*bufOut++ += F2612->OPN.ST.prev_sample[1];
-				} else {
-					*bufOut++ = F2612->OPN.ST.prev_sample[0];
-					*bufOut++ = F2612->OPN.ST.prev_sample[1];
-				}
-				i_out++;
-				r_ps += offset_up;
+				lt += ((out_fm[4]>>0) & OPN->pan[8]);
+				rt += ((out_fm[4]>>0) & OPN->pan[9]);
 			}
-			r_ps -= 1.0;
-		}
-		else
-		{
-			F2612->OPN.ST.prev_sample[0] = (FMSAMPLE)(F2612->WaveL / 2);
-			F2612->OPN.ST.prev_sample[1] = (FMSAMPLE)(F2612->WaveR / 2);
-			if (mix)
+			else
 			{
-				*bufOut++ += F2612->OPN.ST.prev_sample[0];
-				*bufOut++ += F2612->OPN.ST.prev_sample[1];
-			} else {
-				*bufOut++ = F2612->OPN.ST.prev_sample[0];
-				*bufOut++ = F2612->OPN.ST.prev_sample[1];
+				lt += dacout;
+				lt += dacout;
 			}
-			i_out++;
-		}
+			lt += ((out_fm[5]>>0) & OPN->pan[10]);
+			rt += ((out_fm[5]>>0) & OPN->pan[11]);
 
-		/* CSM mode: if CSM Key ON has occured, CSM Key OFF need to be sent       */
-		/* only if Timer A does not overflow again (i.e CSM Key ON not set again) */
-		OPN->SL3.key_csm <<= 1;
+			/* Limit( lt, MAXOUT, MINOUT ); */
+			/* Limit( rt, MAXOUT, MINOUT ); */
 
-		/* timer A control */
-		/* INTERNAL_TIMER_A( &OPN->ST , cch[2] ) */
+			#ifdef SAVE_SAMPLE
+				SAVE_ALL_CHANNELS
+			#endif
+
+			/* buffering */
+			if (F2612->WaveOutMode & 0x01)
+				F2612->WaveL = lt;
+			if (F2612->WaveOutMode & 0x02)
+				F2612->WaveR = rt;
+			if (F2612->WaveOutMode ^ 0x03)
+				F2612->WaveOutMode ^= 0x03;
+
+			/* Copy-Pasta from Nuked */
+			F2612->OPN.ST.prev_sample[0] = F2612->OPN.ST.cur_sample[0];
+			F2612->OPN.ST.prev_sample[1] = F2612->OPN.ST.cur_sample[1];
+
+			F2612->OPN.ST.cur_sample[0] = (FMSAMPLE)(F2612->WaveL / 2);
+			F2612->OPN.ST.cur_sample[1] = (FMSAMPLE)(F2612->WaveR / 2);
+			F2612->OPN.ST.framecnt -= F2612->OPN.ST.rateratio;
+			/* Copy-Pasta from Nuked */
+
+			/* CSM mode: if CSM Key ON has occured, CSM Key OFF need to be sent       */
+			/* only if Timer A does not overflow again (i.e CSM Key ON not set again) */
+			OPN->SL3.key_csm <<= 1;
+
+			/* timer A control */
+			/* INTERNAL_TIMER_A( &OPN->ST , cch[2] ) */
+			{
+				if( OPN->ST.TAC &&  (OPN->ST.timer_handler==0) )
+					if( (OPN->ST.TAC -= (int)(OPN->ST.freqbase*4096)) <= 0 )
+					{
+						TimerAOver( &OPN->ST );
+						/* CSM mode total level latch and auto key on */
+						if( OPN->ST.mode & 0x80 )
+							CSMKeyControll( OPN, cch[2] );
+					}
+			}
+
+			/* CSM Mode Key ON still disabled */
+			if (OPN->SL3.key_csm & 2)
+			{
+				/* CSM Mode Key OFF (verified by Nemesis on real hardware) */
+				FM_KEYOFF_CSM(cch[2],SLOT1);
+				FM_KEYOFF_CSM(cch[2],SLOT2);
+				FM_KEYOFF_CSM(cch[2],SLOT3);
+				FM_KEYOFF_CSM(cch[2],SLOT4);
+				OPN->SL3.key_csm = 0;
+			}
+		}/*while*/
+
+		if (mix)
 		{
-			if( OPN->ST.TAC &&  (OPN->ST.timer_handler==0) )
-				if( (OPN->ST.TAC -= (int)(OPN->ST.freqbase*4096)) <= 0 )
-				{
-					TimerAOver( &OPN->ST );
-					/* CSM mode total level latch and auto key on */
-					if( OPN->ST.mode & 0x80 )
-						CSMKeyControll( OPN, cch[2] );
-				}
+			*bufOut++ += (FMSAMPLE)((F2612->OPN.ST.prev_sample[0] * (F2612->OPN.ST.rateratio - F2612->OPN.ST.framecnt)
+								  + F2612->OPN.ST.cur_sample[0] * F2612->OPN.ST.framecnt) / F2612->OPN.ST.rateratio);
+			*bufOut++ += (FMSAMPLE)((F2612->OPN.ST.prev_sample[1] * (F2612->OPN.ST.rateratio - F2612->OPN.ST.framecnt)
+								  + F2612->OPN.ST.cur_sample[1] * F2612->OPN.ST.framecnt) / F2612->OPN.ST.rateratio);
+		} else {
+			*bufOut++ = (FMSAMPLE)((F2612->OPN.ST.prev_sample[0] * (F2612->OPN.ST.rateratio - F2612->OPN.ST.framecnt)
+								  + F2612->OPN.ST.cur_sample[0] * F2612->OPN.ST.framecnt) / F2612->OPN.ST.rateratio);
+			*bufOut++ = (FMSAMPLE)((F2612->OPN.ST.prev_sample[1] * (F2612->OPN.ST.rateratio - F2612->OPN.ST.framecnt)
+								  + F2612->OPN.ST.cur_sample[1] * F2612->OPN.ST.framecnt) / F2612->OPN.ST.rateratio);
 		}
-
-		/* CSM Mode Key ON still disabled */
-		if (OPN->SL3.key_csm & 2)
-		{
-			/* CSM Mode Key OFF (verified by Nemesis on real hardware) */
-			FM_KEYOFF_CSM(cch[2],SLOT1);
-			FM_KEYOFF_CSM(cch[2],SLOT2);
-			FM_KEYOFF_CSM(cch[2],SLOT3);
-			FM_KEYOFF_CSM(cch[2],SLOT4);
-			OPN->SL3.key_csm = 0;
-		}
-	}
+		F2612->OPN.ST.framecnt += 1 << RSM_FRAC;
+	}/*for*/
 
 	/* timer B control */
 /*	INTERNAL_TIMER_B(&OPN->ST,length) */
@@ -2611,7 +2577,9 @@ void * ym2612_init(void *param, int clock, int rate,
 	F2612->OPN.ST.clock = clock;
 	F2612->OPN.ST.rate = 53267;
 	F2612->OPN.ST.out_rate = rate;
-	F2612->OPN.ST.rate_ratio = (double)rate / 53267.0;
+	F2612->OPN.ST.rateratio = (INT32)(UINT32)((((UINT64)144 * rate) << RSM_FRAC) / clock);
+	F2612->OPN.ST.framecnt = 1 << RSM_FRAC;
+	memset(&(F2612->OPN.ST.cur_sample), 0x00, sizeof(FMSAMPLE) * 2);
 	memset(&(F2612->OPN.ST.prev_sample), 0x00, sizeof(FMSAMPLE) * 2);
 	/* F2612->OPN.ST.irq = 0; */
 	/* F2612->OPN.ST.status = 0; */
