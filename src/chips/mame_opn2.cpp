@@ -55,13 +55,13 @@ int MameOPN2::generate(int16_t *output, size_t frames)
 {
     void *chip = this->chip;
 #if defined(OPNMIDI_ENABLE_HQ_RESAMPLER)
-    ym2612_pregenerate(chip);
+    ym2612_pre_generate(chip);
     for(size_t i = 0; i < frames; ++i)
     {
         generateResampledHq(output);
         output += 2;
     }
-    ym2612_postgenerate(chip);
+    // ym2612_post_generate(chip);
 #else
     ym2612_generate(chip, output, (int)frames, 0);
 #endif
@@ -72,20 +72,20 @@ int MameOPN2::generateAndMix(int16_t *output, size_t frames)
 {
     void *chip = this->chip;
 #if defined(OPNMIDI_ENABLE_HQ_RESAMPLER)
-    ym2612_pregenerate(chip);
+    ym2612_pre_generate(chip);
     for(size_t i = 0; i < frames; ++i)
     {
         int32_t buf[2];
         generateResampledHq32(buf);
         for (unsigned c = 0; c < 2; ++c) {
-            int32_t temp = (int32_t)output[0] + buf[c];
+            int32_t temp = (int32_t)output[c] + buf[c];
             temp = (temp > -32768) ? temp : -32768;
             temp = (temp < 32767) ? temp : 32767;
             output[c] = temp;
         }
         output += 2;
     }
-    ym2612_postgenerate(chip);
+    // ym2612_post_generate(chip);
 #else
     ym2612_generate(chip, output, (int)frames, 1);
 #endif
@@ -119,7 +119,7 @@ void MameOPN2::generateResampledHq32(int32_t *out)
     while(rsm->process(), rsm->out_count != 0)
     {
         int16_t in[2];
-        ym2612_generate_one(chip, in);
+        ym2612_generate_one_native(chip, in);
         f_in[0] = (float)in[0], f_in[1] = (float)in[1];
         rsm->inp_count = 1;
         rsm->inp_data = f_in;
