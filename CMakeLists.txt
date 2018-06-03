@@ -13,8 +13,12 @@ ENDIF()
 
 # Global optimization flags
 IF(NOT MSVC AND NOT MSDOS)
+# Global optimization flags
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -fno-omit-frame-pointer")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-omit-frame-pointer")
+# Turn on all warnings
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS_RELEASE} -Wall -Wextra")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wextra")
 ENDIF()
 
 if (CMAKE_BUILD_TYPE EQUAL "RELEASE")
@@ -49,22 +53,21 @@ function(set_legacy_standard destTarget)
 endfunction()
 #===========================================================================================
 
-option(WITH_MIDIPLAY        "Build also demo MIDI player" OFF)
-option(WITH_VLC_PLUGIN      "Build also a plugin for VLC Media Player" OFF)
+option(libOPNMIDI_STATIC   "Build static library of libOPNMIDI" ON)
+option(libOPNMIDI_SHARED   "Build shared library of libOPNMIDI" OFF)
 
+option(WITH_MIDI_SEQUENCER  "Build with embedded MIDI sequencer. Disable this if you want use library in real-time MIDI drivers or plugins.)" ON)
+option(WITH_HQ_RESAMPLER    "Build with support for high quality resampling" OFF)
+option(WITH_MUS_SUPPORT     "Build with support for DMX MUS files)" ON)
+option(WITH_XMI_SUPPORT     "Build with support for AIL XMI files)" ON)
 option(USE_MAME_EMULATOR    "Use MAME YM2612 emulator (for most of hardware)" ON)
 option(USE_GENS_EMULATOR    "Use GENS 2.10 emulator (fastest, very outdated, inaccurate)" ON)
 option(USE_NUKED_EMULATOR   "Use Nuked OPN2 emulator (most accurate, heavy)" ON)
-
 # WIP FEATURES
 # option(WITH_CPP_EXTRAS      "Build with support for C++ extras (features are can be found in 'adlmidi.hpp' header)" OFF)
-option(WITH_MIDI_SEQUENCER  "Build with embedded MIDI sequencer. Disable this if you want use library in real-time MIDI drivers or plugins.)" ON)
-option(WITH_MUS_SUPPORT     "Build with support for DMX MUS files)" ON)
-option(WITH_XMI_SUPPORT     "Build with support for AIL XMI files)" ON)
-option(WITH_HQ_RESAMPLER    "Build with support for high quality resampling" OFF)
 
-option(libOPNMIDI_STATIC   "Build static library of libOPNMIDI" ON)
-option(libOPNMIDI_SHARED   "Build shared library of libOPNMIDI" OFF)
+option(WITH_MIDIPLAY        "Build also demo MIDI player" OFF)
+option(WITH_VLC_PLUGIN      "Build also a plugin for VLC Media Player" OFF)
 
 if(CMAKE_VERSION VERSION_EQUAL "3.1" OR CMAKE_VERSION VERSION_GREATER "3.1")
     set(CMAKE_CXX_STANDARD 11)
@@ -277,17 +280,19 @@ endif()
 
 
 message("==== libOPNMIDI options ====")
-message("WITH_MIDIPLAY            = ${WITH_MIDIPLAY}")
-message("WITH_VLC_PLUGIN          = ${WITH_VLC_PLUGIN}")
-message("USE_MAME_EMULATOR        = ${USE_MAME_EMULATOR}")
-message("USE_GENS_EMULATOR        = ${USE_GENS_EMULATOR}")
-message("USE_NUKED_EMULATOR       = ${USE_NUKED_EMULATOR}")
-message("WITH_MIDI_SEQUENCER      = ${WITH_MIDI_SEQUENCER}")
-# message("WITH_CPP_EXTRAS          = ${WITH_CPP_EXTRAS}")
-message("WITH_MUS_SUPPORT         = ${WITH_MUS_SUPPORT}")
-message("WITH_XMI_SUPPORT         = ${WITH_XMI_SUPPORT}")
-message("WITH_HQ_RESAMPLER        = ${WITH_HQ_RESAMPLER}")
 message("libOPNMIDI_STATIC        = ${libOPNMIDI_STATIC}")
 message("libOPNMIDI_SHARED        = ${libOPNMIDI_SHARED}")
 message("WITH_UNIT_TESTS          = ${WITH_UNIT_TESTS}")
 
+# message("WITH_CPP_EXTRAS          = ${WITH_CPP_EXTRAS}")
+message("WITH_MIDI_SEQUENCER      = ${WITH_MIDI_SEQUENCER}")
+message("WITH_HQ_RESAMPLER        = ${WITH_HQ_RESAMPLER}")
+message("WITH_MUS_SUPPORT         = ${WITH_MUS_SUPPORT}")
+message("WITH_XMI_SUPPORT         = ${WITH_XMI_SUPPORT}")
+message("USE_MAME_EMULATOR        = ${USE_MAME_EMULATOR}")
+message("USE_GENS_EMULATOR        = ${USE_GENS_EMULATOR}")
+message("USE_NUKED_EMULATOR       = ${USE_NUKED_EMULATOR}")
+
+message("===== Utils and extras =====")
+message("WITH_MIDIPLAY            = ${WITH_MIDIPLAY}")
+message("WITH_VLC_PLUGIN          = ${WITH_VLC_PLUGIN}")
