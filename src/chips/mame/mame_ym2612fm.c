@@ -621,7 +621,10 @@ typedef struct
 	TIME_TYPE	busy_expiry_time;	/* expiry time of the busy status */
 #endif
 	UINT32		clock;				/* master clock  (Hz)   */
-	UINT32		rate;				/* sampling rate (Hz)   */
+	UINT32		rate;				/* internal sampling rate (Hz) */
+	UINT32		out_rate;			/* output sampling rate (Hz) */
+	double		rate_ratio;			/* resampling ratio */
+	FMSAMPLE	prev_sample[2];		/* previous sample */
 	UINT8		address;			/* address register     */
 	UINT8		status;				/* status flag          */
 	UINT32		mode;				/* mode  CSM / 3SLOT    */
@@ -2271,11 +2274,21 @@ void ym2612_generate(void *chip, FMSAMPLE *buffer, int frames, int mix)
 	YM2612 *F2612 = (YM2612 *)chip;
 	FM_OPN *OPN   = &F2612->OPN;
 	INT32 *out_fm = OPN->out_fm;
-	int i;
+	int i, i_out;
 	FMSAMPLE  *bufOut;/* *bufL,*bufR; */
 	INT32 dacout;
 	FM_CH	*cch[6];
 	int lt,rt;
+	int resample_direction = 0;
+	int in_frames = (int)ceil((double)frames / F2612->OPN.ST.rate_ratio);
+	double r_ps     = 0.0;
+	double offset_down = F2612->OPN.ST.rate_ratio;
+	double offset_up = 1.0 / F2612->OPN.ST.rate_ratio;
+
+	if (F2612->OPN.ST.rate_ratio > 1.0)
+		resample_direction = +1;
+	else if (F2612->OPN.ST.rate_ratio < 1.0)
+		resample_direction = -1;
 
 	/* set bufer */
 	bufOut = buffer;
@@ -2322,7 +2335,7 @@ void ym2612_generate(void *chip, FMSAMPLE *buffer, int frames, int mix)
 
 
 	/* buffering */
-	for(i=0; i < frames ; i++)
+	for(i=0,i_out=0 ; i < in_frames && i_out < frames ; i++)
 	{
 		/* clear outputs */
 		out_fm[0] = 0;
@@ -2439,13 +2452,58 @@ void ym2612_generate(void *chip, FMSAMPLE *buffer, int frames, int mix)
 			F2612->WaveR = rt;
 		if (F2612->WaveOutMode ^ 0x03)
 			F2612->WaveOutMode ^= 0x03;
-		if(mix)
+
+		if (resample_direction > 0)
 		{
-			*bufOut++ += (FMSAMPLE)(F2612->WaveL / 2);
-			*bufOut++ += (FMSAMPLE)(F2612->WaveR / 2);
-		} else {
-			*bufOut++ = (FMSAMPLE)(F2612->WaveL / 2);
-			*bufOut++ = (FMSAMPLE)(F2612->WaveR / 2);
+			r_ps += offset_down;
+			if (r_ps >= 1.0)
+			{
+				F2612->OPN.ST.prev_sample[0] = (FMSAMPLE)(F2612->WaveL / 2);
+				F2612->OPN.ST.prev_sample[1] = (FMSAMPLE)(F2612->WaveR / 2);
+				if (mix)
+				{
+					*bufOut++ += F2612->OPN.ST.prev_sample[0];
+					*bufOut++ += F2612->OPN.ST.prev_sample[1];
+				} else {
+					*bufOut++ = F2612->OPN.ST.prev_sample[0];
+					*bufOut++ = F2612->OPN.ST.prev_sample[1];
+				}
+				i_out++;
+				r_ps -= 1.0;
+			}
+		}
+		else if (resample_direction < 0)
+		{
+			while (r_ps <= 1.0)
+			{
+				F2612->OPN.ST.prev_sample[0] = (FMSAMPLE)(F2612->WaveL / 2);
+				F2612->OPN.ST.prev_sample[1] = (FMSAMPLE)(F2612->WaveR / 2);
+				if (mix)
+				{
+					*bufOut++ += F2612->OPN.ST.prev_sample[0];
+					*bufOut++ += F2612->OPN.ST.prev_sample[1];
+				} else {
+					*bufOut++ = F2612->OPN.ST.prev_sample[0];
+					*bufOut++ = F2612->OPN.ST.prev_sample[1];
+				}
+				i_out++;
+				r_ps += offset_up;
+			}
+			r_ps -= 1.0;
+		}
+		else
+		{
+			F2612->OPN.ST.prev_sample[0] = (FMSAMPLE)(F2612->WaveL / 2);
+			F2612->OPN.ST.prev_sample[1] = (FMSAMPLE)(F2612->WaveR / 2);
+			if (mix)
+			{
+				*bufOut++ += F2612->OPN.ST.prev_sample[0];
+				*bufOut++ += F2612->OPN.ST.prev_sample[1];
+			} else {
+				*bufOut++ = F2612->OPN.ST.prev_sample[0];
+				*bufOut++ = F2612->OPN.ST.prev_sample[1];
+			}
+			i_out++;
 		}
 
 		/* CSM mode: if CSM Key ON has occured, CSM Key OFF need to be sent       */
@@ -2534,6 +2592,9 @@ void * ym2612_init(void *param, int clock, int rate,
 {
 	YM2612 *F2612;
 
+	if (clock <= 0 || rate <= 0)
+		return NULL; /* Forbid zero clock and sample rate */
+
 	/* allocate extend state space */
 	/* F2612 = auto_alloc_clear(device->machine, YM2612); */
 	F2612 = (YM2612 *)malloc(sizeof(YM2612));
@@ -2548,7 +2609,10 @@ void * ym2612_init(void *param, int clock, int rate,
 	F2612->OPN.P_CH = F2612->CH;
 	/* F2612->OPN.ST.device = device; */
 	F2612->OPN.ST.clock = clock;
-	F2612->OPN.ST.rate = rate;
+	F2612->OPN.ST.rate = 53267;
+	F2612->OPN.ST.out_rate = rate;
+	F2612->OPN.ST.rate_ratio = (double)rate / 53267.0;
+	memset(&(F2612->OPN.ST.prev_sample), 0x00, sizeof(FMSAMPLE) * 2);
 	/* F2612->OPN.ST.irq = 0; */
 	/* F2612->OPN.ST.status = 0; */
 	/* Extend handler */
