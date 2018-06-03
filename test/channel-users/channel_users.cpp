@@ -37,7 +37,7 @@ TEST_CASE("[OPNMIDIplay::OpnChannel] User list: appending")
     Channel channel;
 
     // insert
-    LocationData *user1 = channel.users_find_or_create(Location{0, 1});
+    LocationData *user1 = channel.users_find_or_create(Location{0, 1, {0}});
     REQUIRE(user1);
     REQUIRE(channel.users_first == user1);
     REQUIRE(channel.users_size == 1);

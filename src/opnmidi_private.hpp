@@ -550,7 +550,11 @@ public:
         uint8_t bank_lsb, bank_msb;
         uint8_t patch;
         uint8_t volume, expression;
-        uint8_t panning, vibrato, sustain;
+        uint8_t panning, vibrato, aftertouch, sustain;
+        //! Per note Aftertouch values
+        uint8_t noteAftertouch[128];
+        //! Is note aftertouch has any non-zero value
+        bool    noteAfterTouchInUse;
         char ____padding[6];
         double  bend, bendsense;
         int bendsense_lsb, bendsense_msb;
@@ -566,6 +570,8 @@ public:
             bool active;
             // Current pressure
             uint8_t vol;
+            // Note vibrato (a part of Note Aftertouch feature)
+            uint8_t vibrato;
             char ____padding[1];
             // Tone selected on noteon:
             int16_t tone;
@@ -750,12 +756,19 @@ public:
             expression = 127;
             sustain = 0;
             vibrato = 0;
+            aftertouch = 0;
+            std::memset(noteAftertouch, 0, 128);
+            noteAfterTouchInUse = false;
             vibspeed = 2 * 3.141592653 * 5.0;
             vibdepth = 0.5 / 127;
             vibdelay = 0;
             panning = OPN_PANNING_BOTH;
             portamento = 0;
             brightness = 127;
+        }
+        bool hasVibrato()
+        {
+            return (vibrato > 0) || (aftertouch > 0) || noteAfterTouchInUse;
         }
         void updateBendSensitivity()
         {
