@@ -577,7 +577,7 @@ public:
             char ____padding[1];
             // Tone selected on noteon:
             int16_t tone;
-            char ____padding2[4];
+            char ____padding2[10];
             // Patch selected on noteon; index to banks[AdlBank][]
             size_t  midiins;
             // Index to physical adlib data structure, adlins[]
@@ -639,9 +639,9 @@ public:
             }
             void phys_erase_at(const Phys *ph)
             {
-                unsigned pos = ph - chip_channels;
+                intptr_t pos = ph - chip_channels;
                 assert(pos < chip_channels_count);
-                for(unsigned i = pos + 1; i < chip_channels_count; ++i)
+                for(intptr_t i = pos + 1; i < static_cast<intptr_t>(chip_channels_count); ++i)
                     chip_channels[i - 1] = chip_channels[i];
                 --chip_channels_count;
             }
@@ -730,7 +730,7 @@ public:
 
         void activenotes_clear()
         {
-            for(unsigned i = 0; i < 128; ++i) {
+            for(uint8_t i = 0; i < 128; ++i) {
                 activenotes[i].note = i;
                 activenotes[i].active = false;
             }
