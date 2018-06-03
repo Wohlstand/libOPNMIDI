@@ -119,6 +119,14 @@ To remove XMI support, define `OPNMIDI_DISABLE_XMI_SUPPORT` macro and remove tho
 * [OPNMIDI Player for Android](https://github.com/Wohlstand/OPNMIDI-Player-Java/) - a little MIDI-player for Android which uses libOPNMIDI to play MIDI files and provides flexible GUI with ability to change bank, flags, number of emulated chips, etc.
 
 # Changelog
+## 1.3.0   dev
+ * Optimizing the MIDI banks management system for MultiBanks (Thanks to [Jean Pierre Cimalando](https://github.com/jpcima) for a work!)
+ * Fixed incorrect initial MIDI tempo when MIDI file doesn't includes the tempo event
+ * Fixed an incorrect processing of auto-flags
+ * MAME YM2612 now results a more accurate sound as internal using of native sample rate makes more correct sound generation
+ * Channel and Note Aftertouch features are now supported correctly! Aftertouch is the tremolo / vibrato, NOT A VOLUME!
+ * Added optional HQ resampler for Nuked OPL3 emulators which does usage of Zita-Resampler library (Thanks to [Jean Pierre Cimalando](https://github.com/jpcima) for a work!)
+
 ## 1.2.0   2018-04-24
  * Added ability to disable MUS and XMI converters
  * Added ability to disable embedded MIDI sequencer to use library as RealTime synthesizer only or use any custom MIDI sequencer plugins.
