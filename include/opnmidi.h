@@ -112,7 +112,7 @@ extern void opn2_setFullRangeBrightness(struct OPN2_MIDIPlayer *device, int fr_b
 /*Enable or disable built-in loop (built-in loop supports 'loopStart' and 'loopEnd' tags to loop specific part)*/
 extern void opn2_setLoopEnabled(struct OPN2_MIDIPlayer *device, int loopEn);
 
-/*Enable or disable Logariphmic volume changer (-1 sets default per bank, 0 disable, 1 enable) */
+/* !!!DEPRECATED!!! */
 extern void opn2_setLogarithmicVolumes(struct OPN2_MIDIPlayer *device, int logvol);
 
 /*Set different volume range model */

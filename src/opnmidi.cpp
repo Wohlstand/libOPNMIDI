@@ -153,6 +153,7 @@ OPNMIDI_EXPORT void opn2_setLoopEnabled(OPN2_MIDIPlayer *device, int loopEn)
     play->m_setup.loopingIsEnabled = (loopEn != 0);
 }
 
+/* !!!DEPRECATED!!! */
 OPNMIDI_EXPORT void opn2_setLogarithmicVolumes(struct OPN2_MIDIPlayer *device, int logvol)
 {
     if(!device) return;
