@@ -470,7 +470,6 @@ riffskip:
                 fr.seek(0x7D, SEEK_SET);
                 TrackCount = 1;
                 DeltaTicks = 60;
-                opn.LogarithmicVolumes = true;
                 //opl.CartoonersVolumes = true;
                 opn.m_musicMode = OPN2::MODE_RSXX;
                 opn.m_volumeScale = OPN2::VOLUME_CMF;

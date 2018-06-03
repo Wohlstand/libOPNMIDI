@@ -100,13 +100,6 @@ typedef __int32 ssize_t;
 #define INT32_MAX   0x7fffffff
 #endif
 
-#ifdef _MSC_VER
-#pragma warning(disable:4244)
-#pragma warning(disable:4267)
-#pragma warning(disable:4146)
-#endif
-
-
 #include "fraction.hpp"
 #include "chips/opn_chip_base.h"
 
@@ -312,7 +305,6 @@ public:
     //! Carriers-only are scaled by default by volume level. This flag will tell to scale modulators too.
     bool ScaleModulators;
     //! Required to play CMF files. Can be turned on by using of "CMF" volume model
-    bool LogarithmicVolumes;
     char ___padding2[3];
 
     enum MusicMode
@@ -540,7 +532,7 @@ public:
         bool eof()
         {
             if(fp)
-                return std::feof(fp);
+                return (std::feof(fp) != 0);
             else
                 return mp_tell >= mp_size;
         }
@@ -640,7 +632,7 @@ public:
             void phys_erase_at(const Phys *ph)
             {
                 intptr_t pos = ph - chip_channels;
-                assert(pos < chip_channels_count);
+                assert(pos < static_cast<intptr_t>(chip_channels_count));
                 for(intptr_t i = pos + 1; i < static_cast<intptr_t>(chip_channels_count); ++i)
                     chip_channels[i - 1] = chip_channels[i];
                 --chip_channels_count;
@@ -1010,6 +1002,8 @@ private:
     std::map<uint64_t /*track*/, uint64_t /*channel begin index*/> current_device;
 
     std::vector<OpnChannel> ch;
+    //! Counter of arpeggio processing
+    size_t m_arpeggioCounter;
 
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
     std::vector<std::vector<uint8_t> > TrackData;

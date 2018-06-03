@@ -136,14 +136,14 @@ OPNMIDI_EXPORT void opn2_setScaleModulators(OPN2_MIDIPlayer *device, int smod)
     if(!device) return;
     OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
     play->m_setup.ScaleModulators = smod;
-    play->opn.ScaleModulators = play->m_setup.ScaleModulators;
+    play->opn.ScaleModulators = (play->m_setup.ScaleModulators != 0);
 }
 
 OPNMIDI_EXPORT void opn2_setFullRangeBrightness(struct OPN2_MIDIPlayer *device, int fr_brightness)
 {
     if(!device) return;
     OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
-    play->m_setup.fullRangeBrightnessCC74 = fr_brightness;
+    play->m_setup.fullRangeBrightnessCC74 = (fr_brightness != 0);
 }
 
 OPNMIDI_EXPORT void opn2_setLoopEnabled(OPN2_MIDIPlayer *device, int loopEn)
@@ -158,7 +158,10 @@ OPNMIDI_EXPORT void opn2_setLogarithmicVolumes(struct OPN2_MIDIPlayer *device, i
     if(!device) return;
     OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
     play->m_setup.LogarithmicVolumes = static_cast<unsigned int>(logvol);
-    play->opn.LogarithmicVolumes = play->m_setup.LogarithmicVolumes;
+    if(play->m_setup.LogarithmicVolumes != 0)
+        play->opn.ChangeVolumeRangesModel(OPNMIDI_VolumeModel_CMF);
+    else
+        play->opn.ChangeVolumeRangesModel(static_cast<OPNMIDI_VolumeModels>(play->m_setup.VolumeModel));
 }
 
 OPNMIDI_EXPORT void opn2_setVolumeRangeModel(OPN2_MIDIPlayer *device, int volumeModel)

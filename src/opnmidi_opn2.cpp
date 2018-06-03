@@ -117,7 +117,6 @@ OPN2::OPN2() :
     regLFO(0),
     dynamic_percussion_offset(128),
     NumCards(1),
-    LogarithmicVolumes(false),
     m_musicMode(MODE_MIDI),
     m_volumeScale(VOLUME_Generic)
 {
@@ -291,7 +290,6 @@ void OPN2::ChangeVolumeRangesModel(OPNMIDI_VolumeModels volumeModel)
         break;
 
     case OPNMIDI_VolumeModel_CMF:
-        LogarithmicVolumes = true;
         m_volumeScale = OPN2::VOLUME_CMF;
         break;
 

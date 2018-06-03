@@ -655,9 +655,10 @@ bool OPNMIDIplay::buildTrackData()
 #endif //OPNMIDI_DISABLE_MIDI_SEQUENCER
 
 
-OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate)
+OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
+    m_arpeggioCounter(0)
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
-    : fullSongTimeLength(0.0),
+    , fullSongTimeLength(0.0),
     postSongWaitDelay(1.0),
     loopStartTime(-1.0),
     loopEndTime(-1.0),
@@ -697,10 +698,12 @@ void OPNMIDIplay::applySetup()
 {
     m_setup.tick_skip_samples_delay = 0;
 
-    opn.ScaleModulators         = m_setup.ScaleModulators;
-    opn.LogarithmicVolumes      = m_setup.LogarithmicVolumes;
+    opn.ScaleModulators         = (m_setup.ScaleModulators != 0);
     opn.m_musicMode             = OPN2::MODE_MIDI;
-    opn.ChangeVolumeRangesModel(static_cast<OPNMIDI_VolumeModels>(m_setup.VolumeModel));
+    if(m_setup.LogarithmicVolumes != 0)
+        opn.ChangeVolumeRangesModel(OPNMIDI_VolumeModel_CMF);
+    else
+        opn.ChangeVolumeRangesModel(static_cast<OPNMIDI_VolumeModels>(m_setup.VolumeModel));
     if(m_setup.VolumeModel == OPNMIDI_VolumeModel_AUTO)
         opn.m_volumeScale = OPN2::VOLUME_Generic;
 
@@ -709,6 +712,9 @@ void OPNMIDIplay::applySetup()
     opn.Reset(m_setup.emulator, m_setup.PCM_RATE);
     ch.clear();
     ch.resize(opn.NumChannels, OpnChannel());
+
+    // Reset the arpeggio counter
+    m_arpeggioCounter = 0;
 }
 
 uint64_t OPNMIDIplay::ReadVarLen(uint8_t **ptr)
@@ -1460,10 +1466,8 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
             switch(opn.m_volumeScale)
             {
             case OPN2::VOLUME_Generic:
-            case OPN2::VOLUME_CMF:
             {
                 volume = vol * Ch[MidCh].volume * Ch[MidCh].expression;
-
                 /* If the channel has arpeggio, the effective volume of
                      * *this* instrument is actually lower due to timesharing.
                      * To compensate, add extra volume that corresponds to the
@@ -1473,18 +1477,20 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
                      */
                 //volume = (int)(volume * std::sqrt( (double) ch[c].users.size() ));
 
-                if(opn.LogarithmicVolumes)
-                    volume = volume * 127 / (2048383/*127 * 127 * 127*/);
-                else
-                {
-                    // The formula below: SOLVE(V=127^3 * 2^( (A-63.49999) / 8), A)
-                    volume = volume > 8725 ? static_cast<uint32_t>((std::log(static_cast<double>(volume)) * (11.541561) + (0.5 - 104.22845)) * 2.0) : 0;
-                    // The incorrect formula below: SOLVE(V=127^3 * (2^(A/63)-1), A)
-                    //opl.Touch_Real(c, volume>11210 ? 91.61112 * std::log(4.8819E-7*volume + 1.0)+0.5 : 0);
-                }
+                // The formula below: SOLVE(V=127^3 * 2^( (A-63.49999) / 8), A)
+                volume = volume > 8725 ? static_cast<uint32_t>((std::log(static_cast<double>(volume)) * (11.541561) + (0.5 - 104.22845)) * 2.0) : 0;
+                // The incorrect formula below: SOLVE(V=127^3 * (2^(A/63)-1), A)
+                //opl.Touch_Real(c, volume>11210 ? 91.61112 * std::log(4.8819E-7*volume + 1.0)+0.5 : 0);
 
                 opn.Touch_Real(c, volume, brightness);
-                //opl.Touch(c, volume);
+            }
+            break;
+
+            case OPN2::VOLUME_CMF:
+            {
+                volume = vol * Ch[MidCh].volume * Ch[MidCh].expression;
+                volume = volume * 127 / (2048383/*127 * 127 * 127*/);
+                opn.Touch_Real(c, volume, brightness);
             }
             break;
 
@@ -2399,8 +2405,8 @@ void OPNMIDIplay::UpdateArpeggio(double) // amount = amount of time passed
     arpeggio_cache = 0.0;
     #endif
     #endif
-    static unsigned arpeggio_counter = 0;
-    ++arpeggio_counter;
+
+    ++m_arpeggioCounter;
 
     for(uint32_t c = 0; c < opn.NumChannels; ++c)
     {
@@ -2421,7 +2427,7 @@ retry_arpeggio:
             if(n_users >= 4)
                 rate_reduction = 1;
 
-            for(unsigned count = (arpeggio_counter / rate_reduction) % n_users,
+            for(size_t count = (m_arpeggioCounter / rate_reduction) % n_users,
                      n = 0; n < count; ++n)
                 i = i->next;
 
