@@ -7,7 +7,7 @@
 class VResampler;
 #endif
 
-class MameOPN2 final : public OPNChipBase
+class MameOPN2 final : public OPNChipBaseT<MameOPN2>
 {
     void *chip;
 #if defined(OPNMIDI_ENABLE_HQ_RESAMPLER)

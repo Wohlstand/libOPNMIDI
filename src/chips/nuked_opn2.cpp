@@ -2,19 +2,10 @@
 #include "nuked/ym3438.h"
 #include <cstring>
 
-NukedOPN2::NukedOPN2() :
-    OPNChipBase()
+NukedOPN2::NukedOPN2()
 {
     OPN2_SetChipType(ym3438_type_asic);
     chip = new ym3438_t;
-}
-
-NukedOPN2::NukedOPN2(const NukedOPN2 &c):
-    OPNChipBase(c)
-{
-    chip = new ym3438_t;
-    std::memset(chip, 0, sizeof(ym3438_t));
-    reset(c.m_rate, c.m_clock);
 }
 
 NukedOPN2::~NukedOPN2()

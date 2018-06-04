@@ -3,12 +3,11 @@
 
 #include "opn_chip_base.h"
 
-class NukedOPN2 final : public OPNChipBase
+class NukedOPN2 final : public OPNChipBaseT<NukedOPN2>
 {
     void *chip;
 public:
     NukedOPN2();
-    NukedOPN2(const NukedOPN2 &c);
     ~NukedOPN2() override;
 
     void setRate(uint32_t rate, uint32_t clock) override;

@@ -4,12 +4,11 @@
 #include "opn_chip_base.h"
 
 class Ym2612_Emu;
-class GensOPN2 final : public OPNChipBase
+class GensOPN2 final : public OPNChipBaseT<GensOPN2>
 {
     Ym2612_Emu *chip;
 public:
     GensOPN2();
-    GensOPN2(const GensOPN2 &c);
     ~GensOPN2() override;
 
     void setRate(uint32_t rate, uint32_t clock) override;

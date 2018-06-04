@@ -8,8 +8,7 @@
 #include <zita-resampler/vresampler.h>
 #endif
 
-MameOPN2::MameOPN2() :
-    OPNChipBase()
+MameOPN2::MameOPN2()
 {
     chip = NULL;
 #if defined(OPNMIDI_ENABLE_HQ_RESAMPLER)
