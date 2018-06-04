@@ -774,8 +774,8 @@ public:
         }
         void updateBendSensitivity()
         {
-            int cent = bendsense_msb * 100 + bendsense_lsb;
-            bendsense = cent * (0.01 / 8192.0);
+            int cent = bendsense_msb + static_cast<int>(static_cast<double>(bendsense_lsb) * (1.0 / 128.0));
+            bendsense = static_cast<double>(cent) / 8192.0;
             bend = bendSrc * bendsense;
         }
         MIDIchannel()
