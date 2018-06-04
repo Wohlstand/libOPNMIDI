@@ -15,15 +15,15 @@ class MameOPN2 final : public OPNChipBase
 #endif
 public:
     MameOPN2();
-    virtual ~MameOPN2() override;
+    ~MameOPN2() override;
 
-    virtual void setRate(uint32_t rate, uint32_t clock) override;
-    virtual void reset() override;
-    virtual void reset(uint32_t rate, uint32_t clock) override;
-    virtual void writeReg(uint32_t port, uint16_t addr, uint8_t data) override;
-    virtual int generate(int16_t *output, size_t frames) override;
-    virtual int generateAndMix(int16_t *output, size_t frames) override;
-    virtual const char *emulatorName() override;
+    void setRate(uint32_t rate, uint32_t clock) override;
+    void reset() override;
+    void reset(uint32_t rate, uint32_t clock) override;
+    void writeReg(uint32_t port, uint16_t addr, uint8_t data) override;
+    int generate(int16_t *output, size_t frames) override;
+    int generateAndMix(int16_t *output, size_t frames) override;
+    const char *emulatorName() override;
 private:
 #if defined(OPNMIDI_ENABLE_HQ_RESAMPLER)
     void generateResampledHq(int16_t *out);
