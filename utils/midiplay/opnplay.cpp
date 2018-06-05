@@ -235,6 +235,7 @@ int main(int argc, char **argv)
         return 2;
     }
 
+    std::fprintf(stdout, " - Library version %s\n", opn2_linkedLibraryVersion());
     std::fprintf(stdout, " - %s Emulator in use\n", opn2_chipEmulatorName(myDevice));
 
     std::fprintf(stdout, " - Use bank [%s]...", bankPath.c_str());

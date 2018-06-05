@@ -12,13 +12,13 @@ public:
 
     void setRate(uint32_t rate, uint32_t clock) override;
     void reset() override;
-    void reset(uint32_t rate, uint32_t clock) override;
     void writeReg(uint32_t port, uint16_t addr, uint8_t data) override;
-    int generate(int16_t *output, size_t frames) override;
-    int generateAndMix(int16_t *output, size_t frames) override;
-    int generate32(int32_t *output, size_t frames) override;
-    int generateAndMix32(int32_t *output, size_t frames) override;
+    void nativePreGenerate() override {}
+    void nativePostGenerate() override {}
+    void nativeGenerate(int16_t *frame) override;
     const char *emulatorName() override;
+    // amplitude scale factors to use in resampling
+    enum { resamplerPreAmplify = 11, resamplerPostAttenuate = 2 };
 };
 
 #endif // NUKED_OPN2_H

@@ -14,18 +14,13 @@ GensOPN2::~GensOPN2()
 
 void GensOPN2::setRate(uint32_t rate, uint32_t clock)
 {
-    OPNChipBase::setRate(rate, clock);
-    chip->set_rate(rate, clock);
+    OPNChipBaseBufferedT::setRate(rate, clock);
+    chip->set_rate(53267, clock);  // implies reset()
 }
 
 void GensOPN2::reset()
 {
-    chip->reset();
-}
-
-void GensOPN2::reset(uint32_t rate, uint32_t clock)
-{
-    chip->set_rate(rate, clock);
+    OPNChipBaseBufferedT::reset();
     chip->reset();
 }
 
@@ -42,17 +37,10 @@ void GensOPN2::writeReg(uint32_t port, uint16_t addr, uint8_t data)
     }
 }
 
-int GensOPN2::generate(int16_t *output, size_t frames)
+void GensOPN2::nativeGenerateN(int16_t *output, size_t frames)
 {
     std::memset(output, 0, frames * sizeof(int16_t) * 2);
     chip->run((int)frames, output);
-    return (int)frames;
-}
-
-int GensOPN2::generateAndMix(int16_t *output, size_t frames)
-{
-    chip->run((int)frames, output);
-    return (int)frames;
 }
 
 const char *GensOPN2::emulatorName()

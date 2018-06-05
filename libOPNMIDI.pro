@@ -25,6 +25,7 @@ HEADERS += \
     src/chips/nuked_opn2.h \
     src/chips/nuked/ym3438.h \
     src/chips/opn_chip_base.h \
+    src/chips/opn_chip_base.tcc \
     src/fraction.hpp \
     src/opnbank.h \
     src/opnmidi_mus2mid.h \
@@ -38,7 +39,6 @@ SOURCES += \
     src/chips/mame_opn2.cpp \
     src/chips/nuked_opn2.cpp \
     src/chips/nuked/ym3438.c \
-    src/chips/opn_chip_base.cpp \
     src/opnmidi.cpp \
     src/opnmidi_load.cpp \
     src/opnmidi_midiplay.cpp \

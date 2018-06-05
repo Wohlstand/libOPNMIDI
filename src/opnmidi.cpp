@@ -259,7 +259,11 @@ OPNMIDI_EXPORT int opn2_switchEmulator(struct OPN2_MIDIPlayer *device, int emula
 
 OPNMIDI_EXPORT const char *opn2_linkedLibraryVersion()
 {
+#if !defined(OPNMIDI_ENABLE_HQ_RESAMPLER)
     return OPNMIDI_VERSION;
+#else
+    return OPNMIDI_VERSION " (HQ)";
+#endif
 }
 
 OPNMIDI_EXPORT const OPN2_Version *opn2_linkedVersion()

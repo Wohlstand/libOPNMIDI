@@ -105,10 +105,6 @@ else()
     add_definitions(-DOPNMIDI_DISABLE_XMI_SUPPORT)
 endif()
 
-list(APPEND libOPNMIDI_SOURCES
-    ${libOPNMIDI_SOURCE_DIR}/src/chips/opn_chip_base.cpp
-)
-
 if(USE_GENS_EMULATOR)
     list(APPEND libOPNMIDI_SOURCES
         ${libOPNMIDI_SOURCE_DIR}/src/chips/gens_opn2.cpp

@@ -4,7 +4,7 @@
 #include "opn_chip_base.h"
 
 class Ym2612_Emu;
-class GensOPN2 final : public OPNChipBaseT<GensOPN2>
+class GensOPN2 final : public OPNChipBaseBufferedT<GensOPN2>
 {
     Ym2612_Emu *chip;
 public:
@@ -13,10 +13,10 @@ public:
 
     void setRate(uint32_t rate, uint32_t clock) override;
     void reset() override;
-    void reset(uint32_t rate, uint32_t clock) override;
     void writeReg(uint32_t port, uint16_t addr, uint8_t data) override;
-    int generate(int16_t *output, size_t frames) override;
-    int generateAndMix(int16_t *output, size_t frames) override;
+    void nativePreGenerate() override {}
+    void nativePostGenerate() override {}
+    void nativeGenerateN(int16_t *output, size_t frames) override;
     const char *emulatorName() override;
 };
 
