@@ -3,16 +3,9 @@
 
 #include "gens/Ym2612_Emu.h"
 
-GensOPN2::GensOPN2() : OPNChipBase(),
-    chip(new Ym2612_Emu())
+GensOPN2::GensOPN2()
+    : chip(new Ym2612_Emu())
 {}
-
-GensOPN2::GensOPN2(const GensOPN2 &c) :
-    OPNChipBase(c),
-    chip(new Ym2612_Emu())
-{
-    reset(m_rate, m_clock);
-}
 
 GensOPN2::~GensOPN2()
 {

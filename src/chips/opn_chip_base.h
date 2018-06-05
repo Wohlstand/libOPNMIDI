@@ -16,7 +16,6 @@ protected:
     uint32_t m_clock;
 public:
     OPNChipBase();
-    OPNChipBase(const OPNChipBase &c);
     virtual ~OPNChipBase();
 
     virtual void setRate(uint32_t rate, uint32_t clock);
@@ -25,9 +24,26 @@ public:
     virtual void writeReg(uint32_t port, uint16_t addr, uint8_t data) = 0;
     virtual int generate(int16_t *output, size_t frames) = 0;
     virtual int generateAndMix(int16_t *output, size_t frames) = 0;
-    virtual int generate32(int32_t *output, size_t frames);
-    virtual int generateAndMix32(int32_t *output, size_t frames);
+    virtual int generate32(int32_t *output, size_t frames) = 0;
+    virtual int generateAndMix32(int32_t *output, size_t frames) = 0;
     virtual const char* emulatorName() = 0;
+private:
+    OPNChipBase(const OPNChipBase &c);
+    OPNChipBase &operator=(const OPNChipBase &c);
 };
+
+template <class T>
+class OPNChipBaseT : public OPNChipBase
+{
+public:
+    OPNChipBaseT()
+        : OPNChipBase() {}
+    virtual ~OPNChipBaseT()
+        {}
+    virtual int generate32(int32_t *output, size_t frames) override;
+    virtual int generateAndMix32(int32_t *output, size_t frames) override;
+};
+
+#include "opn_chip_base.tcc"
 
 #endif // ONP_CHIP_BASE_H
