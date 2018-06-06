@@ -1136,6 +1136,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     std::pair<MIDIchannel::activenoteiterator, bool>
     ir = midiChan.activenotes_insert(note);
     ir.first->vol     = velocity;
+    ir.first->vibrato = midiChan.noteAftertouch[note];
     ir.first->tone    = tone;
     ir.first->midiins = midiins;
     ir.first->insmeta = meta;
