@@ -962,7 +962,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
             //Let XG SFX1/SFX2 bank will have LSB==1 (128...255 range in WOPN file)
             //Let XG Percussion bank will use (0...127 range in WOPN file)
             bank = (uint16_t)midiins + ((bank == 0x7E00) ? 128 : 0); // MIDI instrument defines the patch
-            midiins = opn.dynamic_percussion_offset + note; // Percussion instrument
+            midiins = note; // Percussion instrument
             isXgPercussion = true;
             isPercussion = false;
         }
@@ -971,42 +971,42 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     if(isPercussion)
     {
         bank = (uint16_t)midiins; // MIDI instrument defines the patch
-        midiins = opn.dynamic_percussion_offset + note; // Percussion instrument
+        midiins = note; // Percussion instrument
     }
+    if(isPercussion || isXgPercussion)
+        bank += OPN2::PercussionTag;
+
+    const opnInstMeta2 *ains = &OPN2::emptyInstrument;
 
     //Set bank bank
-    if(bank > 0)
+    const OPN2::Bank *bnk = NULL;
+    if((bank & ~(uint16_t)OPN2::PercussionTag) > 0)
     {
-        if(isPercussion || isXgPercussion)
+        OPN2::BankMap::iterator b = opn.dynamic_banks.find(bank);
+        if(b != opn.dynamic_banks.end())
+            bnk = &b->second;
+
+        if(bnk)
+            ains = &bnk->ins[midiins];
+        else if(hooks.onDebugMessage)
         {
-            OPN2::BankMap::iterator b = opn.dynamic_percussion_banks.find(bank);
-            if(b != opn.dynamic_percussion_banks.end())
-                midiins += b->second * 128;
-            else
-            if(hooks.onDebugMessage)
-            {
-                if(!caugh_missing_banks_melodic.count(bank))
-                {
-                    hooks.onDebugMessage(hooks.onDebugMessage_userData, "[%i] Playing missing percussion MIDI bank %i (patch %i)", channel, bank, midiins);
-                    caugh_missing_banks_melodic.insert(bank);
-                }
-            }
+            std::set<uint16_t> &missing = (isPercussion || isXgPercussion) ?
+                                          caugh_missing_banks_percussion : caugh_missing_banks_melodic;
+            const char *text = (isPercussion || isXgPercussion) ?
+                               "percussion" : "melodic";
+            if(missing.insert(bank).second)
+                hooks.onDebugMessage(hooks.onDebugMessage_userData, "[%i] Playing missing %s MIDI bank %i (patch %i)", channel, text, bank, midiins);
         }
-        else
-        {
-            OPN2::BankMap::iterator b = opn.dynamic_melodic_banks.find(bank);
-            if(b != opn.dynamic_melodic_banks.end())
-                midiins += b->second * 128;
-            else
-            if(hooks.onDebugMessage)
-            {
-                if(!caugh_missing_banks_melodic.count(bank))
-                {
-                    hooks.onDebugMessage(hooks.onDebugMessage_userData, "[%i] Playing missing melodic MIDI bank %i (patch %i)", channel, bank, midiins);
-                    caugh_missing_banks_melodic.insert(bank);
-                }
-            }
-        }
+    }
+    //Or fall back to first bank
+    if(ains->flags & opnInstMeta::Flag_NoSound)
+    {
+        OPN2::BankMap::iterator b = opn.dynamic_banks.find(bank & OPN2::PercussionTag);
+        if(b != opn.dynamic_banks.end())
+            bnk = &b->second;
+
+        if(bnk)
+            ains = &bnk->ins[midiins];
     }
 
     /*
@@ -1017,8 +1017,6 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
         */
     //if(midiins == 56) vol = vol*6/10; // HACK
 
-    size_t              meta    = opn.GetAdlMetaNumber(midiins);
-    const opnInstMeta  *ains    = &opn.GetAdlMetaIns(meta);
     int16_t tone = note;
 
     if(!isPercussion && !isXgPercussion && (bank > 0)) // For non-zero banks
@@ -1035,8 +1033,6 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
             }
             bank = 0;
             midiins = midiChan.patch;
-            meta    = opn.GetAdlMetaNumber(midiins);
-            ains    = &opn.GetAdlMetaIns(meta);
         }
     }
 
@@ -1052,8 +1048,8 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     }
 
     MIDIchannel::NoteInfo::Phys voices[MIDIchannel::NoteInfo::MaxNumPhysChans] = {
-        {0, ains->opnno1, /*false*/},
-        {0, ains->opnno2, /*pseudo_4op*/},
+        {0, ains->opn[0], /*false*/},
+        {0, ains->opn[1], /*pseudo_4op*/},
     };
     //bool pseudo_4op = ains.flags & opnInstMeta::Flag_Pseudo8op;
     //if((opn.AdlPercussionMode == 1) && PercussionMap[midiins & 0xFF]) i[1] = i[0];
@@ -1139,7 +1135,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     ir.first->vibrato = midiChan.noteAftertouch[note];
     ir.first->tone    = tone;
     ir.first->midiins = midiins;
-    ir.first->insmeta = meta;
+    ir.first->ains = ains;
     ir.first->chip_channels_count = 0;
 
     for(unsigned ccount = 0; ccount < MIDIchannel::NoteInfo::MaxNumPhysChans; ++ccount)
@@ -1376,8 +1372,7 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
     const int16_t tone    = info.tone;
     const uint8_t vol     = info.vol;
     const size_t midiins = info.midiins;
-    const size_t insmeta = info.insmeta;
-    const opnInstMeta &ains = opn.GetAdlMetaIns(insmeta);
+    const opnInstMeta2 &ains = *info.ains;
     OpnChannel::Location my_loc;
     my_loc.MidCh = MidCh;
     my_loc.note  = info.note;
@@ -1391,7 +1386,7 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
 
         if(props_mask & Upd_Patch)
         {
-            opn.Patch(c, ins.insId);
+            opn.Patch(c, ins.ains);
             OpnChannel::LocationData *d = ch[c].users_find_or_create(my_loc);
             if(d) {  // inserts if necessary
                 d->sustained = false;
@@ -1551,12 +1546,12 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
             if(!d || !d->sustained)
             {
                 double midibend = Ch[MidCh].bend * Ch[MidCh].bendsense;
-                double bend = midibend + opn.GetAdlIns(ins.insId).finetune;
+                double bend = midibend + ins.ains.finetune;
                 double phase = 0.0;
                 uint8_t vibrato = std::max(Ch[MidCh].vibrato, Ch[MidCh].aftertouch);
                 vibrato = std::max(vibrato, i->vibrato);
 
-                if((ains.flags & opnInstMeta::Flag_Pseudo8op) && ins.insId == ains.opnno2)
+                if((ains.flags & opnInstMeta::Flag_Pseudo8op) && ins.ains == ains.opn[1])
                 {
                     phase = ains.fine_tune;//0.125; // Detune the note slightly (this is what Doom does)
                 }

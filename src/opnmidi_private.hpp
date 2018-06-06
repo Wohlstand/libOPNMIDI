@@ -105,6 +105,8 @@ typedef __int32 ssize_t;
 
 #include "opnbank.h"
 #include "opnmidi.h"
+#include "opnmidi_ptr.hpp"
+#include "opnmidi_bankmap.h"
 
 #define ADL_UNUSED(x) (void)x
 
@@ -159,117 +161,6 @@ inline int32_t opn2_cvtU32(int32_t x)
     return (uint32_t)opn2_cvtS32(x) - (uint32_t)INT32_MIN;
 }
 
-/*
-    Smart pointer for C heaps, created with malloc() call.
-    FAQ: Why not std::shared_ptr? Because of Android NDK now doesn't supports it
-*/
-template<class PTR>
-class AdlMIDI_CPtr
-{
-    PTR *m_p;
-public:
-    AdlMIDI_CPtr() : m_p(NULL) {}
-    ~AdlMIDI_CPtr()
-    {
-        reset(NULL);
-    }
-
-    void reset(PTR *p = NULL)
-    {
-        if(p != m_p) {
-            if(m_p)
-                free(m_p);
-            m_p = p;
-        }
-    }
-
-    PTR *get()
-    {
-        return m_p;
-    }
-    PTR &operator*()
-    {
-        return *m_p;
-    }
-    PTR *operator->()
-    {
-        return m_p;
-    }
-private:
-    AdlMIDI_CPtr(const AdlMIDI_CPtr &);
-    AdlMIDI_CPtr &operator=(const AdlMIDI_CPtr &);
-};
-
-/*
-    Shared pointer with non-atomic counter
-    FAQ: Why not std::shared_ptr? Because of Android NDK now doesn't supports it
-*/
-template<class VALUE>
-class AdlMIDI_SPtr
-{
-    VALUE *m_p;
-    size_t *m_counter;
-public:
-    AdlMIDI_SPtr() : m_p(NULL), m_counter(NULL) {}
-    ~AdlMIDI_SPtr()
-    {
-        reset(NULL);
-    }
-
-    AdlMIDI_SPtr(const AdlMIDI_SPtr &other)
-        : m_p(other.m_p), m_counter(other.m_counter)
-    {
-        if(m_counter)
-            ++*m_counter;
-    }
-
-    AdlMIDI_SPtr &operator=(const AdlMIDI_SPtr &other)
-    {
-        if(this == &other)
-            return *this;
-        reset();
-        m_p = other.m_p;
-        m_counter = other.m_counter;
-        if(m_counter)
-            ++*m_counter;
-        return *this;
-    }
-
-    void reset(VALUE *p = NULL)
-    {
-        if(p != m_p) {
-            if(m_p && --*m_counter == 0)
-                delete m_p;
-            m_p = p;
-            if(!p) {
-                if(m_counter) {
-                    delete m_counter;
-                    m_counter = NULL;
-                }
-            }
-            else
-            {
-                if(!m_counter)
-                    m_counter = new size_t;
-                *m_counter = 1;
-            }
-        }
-    }
-
-    VALUE *get()
-    {
-        return m_p;
-    }
-    VALUE &operator*()
-    {
-        return *m_p;
-    }
-    VALUE *operator->()
-    {
-        return m_p;
-    }
-};
-
 class OPNMIDIplay;
 class OPN2
 {
@@ -279,27 +170,23 @@ public:
     char ____padding[4];
     std::vector<AdlMIDI_SPtr<OPNChipBase > > cardsOP2;
 private:
-    std::vector<size_t>     ins; // index to adl[], cached, needed by Touch()
+    std::vector<opnInstData> ins;  // patch data, cached, needed by Touch()
     std::vector<uint8_t>    pit;  // value poked to B0, cached, needed by NoteOff)(
     std::vector<uint8_t>    regBD;
     uint8_t                 regLFO;
 
     void cleanInstrumentBanks();
-    //! Meta information about every instrument
-    std::vector<opnInstMeta> dynamic_metainstruments;
-    //! Raw instrument data ready to be sent to the chip
-    std::vector<opnInstData>    dynamic_instruments;
-    size_t                      dynamic_percussion_offset;
-
-    typedef std::map<uint16_t, size_t> BankMap;
-    BankMap dynamic_melodic_banks;
-    BankMap dynamic_percussion_banks;
-
-    const opnInstMeta       &GetAdlMetaIns(size_t n);
-    size_t                  GetAdlMetaNumber(size_t midiins);
-    const opnInstData       &GetAdlIns(size_t insno);
-
 public:
+    struct Bank
+    {
+        opnInstMeta2 ins[128];
+    };
+    typedef BasicBankMap<Bank> BankMap;
+    BankMap dynamic_banks;
+public:
+    static const opnInstMeta2 emptyInstrument;
+    enum { PercussionTag = 1 << 15 };
+
     //! Total number of running concurrent emulated chips
     unsigned int NumCards;
     //! Carriers-only are scaled by default by volume level. This flag will tell to scale modulators too.
@@ -341,7 +228,7 @@ public:
     void NoteOn(unsigned c, double hertz);
     void Touch_Real(unsigned c, unsigned volume, uint8_t brightness = 127);
 
-    void Patch(uint16_t c, size_t i);
+    void Patch(uint16_t c, const opnInstData &adli);
     void Pan(unsigned c, unsigned value);
     void Silence();
     void ChangeVolumeRangesModel(OPNMIDI_VolumeModels volumeModel);
@@ -579,8 +466,8 @@ public:
             char ____padding2[10];
             // Patch selected on noteon; index to banks[AdlBank][]
             size_t  midiins;
-            // Index to physical adlib data structure, adlins[]
-            size_t  insmeta;
+            // Patch selected
+            const opnInstMeta2 *ains;
             enum
             {
                 MaxNumPhysChans = 2,
@@ -591,15 +478,15 @@ public:
                 //! Destination chip channel
                 uint16_t chip_chan;
                 //! ins, inde to adl[]
-                size_t  insId;
+                opnInstData ains;
 
                 void assign(const Phys &oth)
                 {
-                    insId = oth.insId;
+                    ains = oth.ains;
                 }
                 bool operator==(const Phys &oth) const
                 {
-                    return (insId == oth.insId);
+                    return (ains == oth.ains);
                 }
                 bool operator!=(const Phys &oth) const
                 {

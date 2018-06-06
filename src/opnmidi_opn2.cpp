@@ -64,64 +64,21 @@ static inline void getOpnChannel(uint32_t   in_channel,
 
 void OPN2::cleanInstrumentBanks()
 {
-    opnInstData emptyData;
-    opnInstMeta emptyMeta;
-    std::memset(&emptyMeta, 0, sizeof(opnInstMeta));
-    std::memset(&emptyData, 0, sizeof(opnInstData));
-    emptyMeta.flags = opnInstMeta::Flag_NoSound;
-    if(dynamic_metainstruments.empty())
-        dynamic_metainstruments.resize(256, emptyMeta);
-    else
-    {
-        if(dynamic_metainstruments.size() > 1024)
-            dynamic_metainstruments.resize(256);
-        for(size_t i = 0; i < dynamic_metainstruments.size(); i++)
-            dynamic_metainstruments[i] = emptyMeta;
-    }
-    if(dynamic_instruments.empty())
-        dynamic_instruments.resize(256, emptyData);
-    else
-    {
-        if(dynamic_instruments.size() > 1024)
-            dynamic_instruments.resize(256);
-        for(size_t i = 0; i < dynamic_instruments.size(); i++)
-            dynamic_instruments[i] = emptyData;
-    }
-    dynamic_percussion_offset = 128;
-    dynamic_melodic_banks.clear();
-    dynamic_percussion_banks.clear();
+    dynamic_banks.clear();
 }
 
-const opnInstMeta &OPN2::GetAdlMetaIns(size_t n)
+static opnInstMeta2 makeEmptyInstrument()
 {
-    return dynamic_metainstruments[n];
+    opnInstMeta2 ins;
+    memset(&ins, 0, sizeof(opnInstMeta2));
+    ins.flags = opnInstMeta::Flag_NoSound;
+    return ins;
 }
 
-size_t OPN2::GetAdlMetaNumber(size_t midiins)
-{
-    return midiins;
-}
-
-static const opnInstData opn2_emptyInstrument = {
-    {
-        {{0, 0, 0, 0, 0, 0, 0}},
-        {{0, 0, 0, 0, 0, 0, 0}},
-        {{0, 0, 0, 0, 0, 0, 0}},
-        {{0, 0, 0, 0, 0, 0, 0}}
-    },
-    0, 0, 0
-};
-
-const opnInstData &OPN2::GetAdlIns(size_t insno)
-{
-    if(insno >= dynamic_instruments.size())
-        return opn2_emptyInstrument;
-    return dynamic_instruments[insno];
-}
+const opnInstMeta2 OPN2::emptyInstrument = makeEmptyInstrument();
 
 OPN2::OPN2() :
     regLFO(0),
-    dynamic_percussion_offset(128),
     NumCards(1),
     m_musicMode(MODE_MIDI),
     m_volumeScale(VOLUME_Generic)
@@ -182,8 +139,7 @@ void OPN2::Touch_Real(unsigned c, unsigned volume, uint8_t brightness)
     uint8_t     port, cc;
     getOpnChannel(c, card, port, cc);
 
-    size_t i = ins[c];
-    const opnInstData &adli = GetAdlIns(i);
+    const opnInstData &adli = ins[c];
 
     uint8_t op_vol[4] =
     {
@@ -233,13 +189,12 @@ void OPN2::Touch_Real(unsigned c, unsigned volume, uint8_t brightness)
     //   63 + chanvol * (instrvol / 63.0 - 1)
 }
 
-void OPN2::Patch(uint16_t c, size_t i)
+void OPN2::Patch(uint16_t c, const opnInstData &adli)
 {
     unsigned    card;
     uint8_t     port, cc;
     getOpnChannel(uint16_t(c), card, port, cc);
-    ins[c] = i;
-    const opnInstData &adli = GetAdlIns(i);
+    ins[c] = adli;
     #if 1 //Reg1-Op1, Reg1-Op2, Reg1-Op3, Reg1-Op4,....
     for(uint8_t d = 0; d < 7; d++)
     {
@@ -269,7 +224,7 @@ void OPN2::Pan(unsigned c, unsigned value)
     unsigned    card;
     uint8_t     port, cc;
     getOpnChannel(uint16_t(c), card, port, cc);
-    const opnInstData &adli = GetAdlIns(ins[c]);
+    const opnInstData &adli = ins[c];
     uint8_t val = (value & 0xC0) | (adli.lfosens & 0x3F);
     regBD[c] = val;
     PokeO(card, port, 0xB4 + cc, val);
@@ -358,7 +313,7 @@ void OPN2::Reset(int emulator, unsigned long PCM_RATE)
     }
 
     NumChannels = NumCards * 6;
-    ins.resize(NumChannels,   189);
+    ins.resize(NumChannels,   emptyInstrument.opn[0]);
     pit.resize(NumChannels,   0);
     regBD.resize(NumChannels,    0);
 
