@@ -832,7 +832,13 @@ public:
 
         OpnChannel(const OpnChannel &oth): koff_time_until_neglible(oth.koff_time_until_neglible)
         {
-            users_assign(oth.users_first, oth.users_size);
+            if(oth.users_first)
+            {
+                users_first = NULL;
+                users_assign(oth.users_first, oth.users_size);
+            }
+            else
+                users_clear();
         }
 
         OpnChannel &operator=(const OpnChannel &oth)
