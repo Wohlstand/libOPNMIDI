@@ -86,6 +86,7 @@ public:
     virtual ~OPNChipBaseBufferedT()
         {}
 public:
+    void reset() override;
     void nativeGenerate(int16_t *frame) override;
 protected:
     virtual void nativeGenerateN(int16_t *output, size_t frames) = 0;
