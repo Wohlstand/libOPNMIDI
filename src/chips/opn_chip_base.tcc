@@ -197,6 +197,13 @@ void OPNChipBaseT<T>::resampledGenerate(int32_t *output)
 /* OPNChipBaseBufferedT */
 
 template <class T, unsigned Buffer>
+void OPNChipBaseBufferedT<T, Buffer>::reset()
+{
+    OPNChipBaseT<T>::reset();
+    m_bufferIndex = 0;
+}
+
+template <class T, unsigned Buffer>
 void OPNChipBaseBufferedT<T, Buffer>::nativeGenerate(int16_t *frame)
 {
     unsigned bufferIndex = m_bufferIndex;
