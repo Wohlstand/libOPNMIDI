@@ -1461,65 +1461,74 @@ void OPN2_WriteBuffered(ym3438_t *chip, Bit32u port, Bit8u data)
     chip->writebuf_last = (chip->writebuf_last + 1) % OPN_WRITEBUF_SIZE;
 }
 
-void OPN2_GenerateResampled(ym3438_t *chip, Bit16s *buf)
+void OPN2_Generate(ym3438_t *chip, Bit16s *buf)
 {
     Bit32u i;
     Bit16s buffer[2];
     Bit32u mute;
 
+    buf[0] = 0;
+    buf[1] = 0;
+
+    for (i = 0; i < 24; i++)
+    {
+        switch (chip->cycles >> 2)
+        {
+        case 0: /* Ch 2 */
+            mute = chip->mute[1];
+            break;
+        case 1: /* Ch 6, DAC */
+            mute = chip->mute[5 + chip->dacen];
+            break;
+        case 2: /* Ch 4 */
+            mute = chip->mute[3];
+            break;
+        case 3: /* Ch 1 */
+            mute = chip->mute[0];
+            break;
+        case 4: /* Ch 5 */
+            mute = chip->mute[4];
+            break;
+        case 5: /* Ch 3 */
+            mute = chip->mute[2];
+            break;
+        default:
+            mute = 0;
+            break;
+        }
+        OPN2_Clock(chip, buffer);
+        if (!mute)
+        {
+            buf[0] += buffer[0];
+            buf[1] += buffer[1];
+        }
+
+        while (chip->writebuf[chip->writebuf_cur].time <= chip->writebuf_samplecnt)
+        {
+            if (!(chip->writebuf[chip->writebuf_cur].port & 0x04))
+            {
+                break;
+            }
+            chip->writebuf[chip->writebuf_cur].port &= 0x03;
+            OPN2_Write(chip, chip->writebuf[chip->writebuf_cur].port,
+                       chip->writebuf[chip->writebuf_cur].data);
+            chip->writebuf_cur = (chip->writebuf_cur + 1) % OPN_WRITEBUF_SIZE;
+        }
+        chip->writebuf_samplecnt++;
+    }
+}
+
+void OPN2_GenerateResampled(ym3438_t *chip, Bit16s *buf)
+{
+    Bit16s buffer[2];
+
     while (chip->samplecnt >= chip->rateratio)
     {
         chip->oldsamples[0] = chip->samples[0];
         chip->oldsamples[1] = chip->samples[1];
-        chip->samples[0] = chip->samples[1] = 0;
-        for (i = 0; i < 24; i++)
-        {
-            switch (chip->cycles >> 2)
-            {
-            case 0: /* Ch 2 */
-                mute = chip->mute[1];
-                break;
-            case 1: /* Ch 6, DAC */
-                mute = chip->mute[5 + chip->dacen];
-                break;
-            case 2: /* Ch 4 */
-                mute = chip->mute[3];
-                break;
-            case 3: /* Ch 1 */
-                mute = chip->mute[0];
-                break;
-            case 4: /* Ch 5 */
-                mute = chip->mute[4];
-                break;
-            case 5: /* Ch 3 */
-                mute = chip->mute[2];
-                break;
-            default:
-                mute = 0;
-                break;
-            }
-            OPN2_Clock(chip, buffer);
-            if (!mute)
-            {
-                chip->samples[0] += buffer[0];
-                chip->samples[1] += buffer[1];
-            }
-
-            while (chip->writebuf[chip->writebuf_cur].time <= chip->writebuf_samplecnt)
-            {
-                if (!(chip->writebuf[chip->writebuf_cur].port & 0x04))
-                {
-                    break;
-                }
-                chip->writebuf[chip->writebuf_cur].port &= 0x03;
-                OPN2_Write(chip, chip->writebuf[chip->writebuf_cur].port,
-                              chip->writebuf[chip->writebuf_cur].data);
-                chip->writebuf_cur = (chip->writebuf_cur + 1) % OPN_WRITEBUF_SIZE;
-            }
-            chip->writebuf_samplecnt++;
-        }
-        chip->samples[0] *= 11;
-        chip->samples[1] *= 11;
+        OPN2_Generate(chip, buffer);
+        chip->samples[0] = buffer[0] * 11;
+        chip->samples[1] = buffer[1] * 11;
         chip->samplecnt -= chip->rateratio;
     }
     buf[0] = (Bit16s)(((chip->oldsamples[0] * (chip->rateratio - chip->samplecnt)
