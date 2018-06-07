@@ -232,6 +232,7 @@ Bit8u OPN2_Read(ym3438_t *chip, Bit32u port);
 
 /*EXTRA*/
 void OPN2_WriteBuffered(ym3438_t *chip, Bit32u port, Bit8u data);
+void OPN2_Generate(ym3438_t *chip, Bit16s *buf);
 void OPN2_GenerateResampled(ym3438_t *chip, Bit16s *buf);
 void OPN2_GenerateStream(ym3438_t *chip, Bit16s *output, Bit32u numsamples);
 void OPN2_GenerateStreamMix(ym3438_t *chip, Bit16s *output, Bit32u numsamples);
