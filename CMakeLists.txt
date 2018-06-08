@@ -63,6 +63,7 @@ option(WITH_XMI_SUPPORT     "Build with support for AIL XMI files)" ON)
 option(USE_MAME_EMULATOR    "Use MAME YM2612 emulator (for most of hardware)" ON)
 option(USE_GENS_EMULATOR    "Use GENS 2.10 emulator (fastest, very outdated, inaccurate)" ON)
 option(USE_NUKED_EMULATOR   "Use Nuked OPN2 emulator (most accurate, heavy)" ON)
+option(USE_GX_EMULATOR      "Use Genesis Plus GX emulator" ON)
 # WIP FEATURES
 # option(WITH_CPP_EXTRAS      "Build with support for C++ extras (features are can be found in 'adlmidi.hpp' header)" OFF)
 
@@ -134,6 +135,16 @@ if(USE_NUKED_EMULATOR)
     set(HAS_EMULATOR TRUE)
 else()
     add_definitions(-DOPNMIDI_DISABLE_NUKED_EMULATOR)
+endif()
+
+if(USE_GX_EMULATOR)
+    list(APPEND libOPNMIDI_SOURCES
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/gx_opn2.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/gx/gx_ym2612.c
+    )
+    set(HAS_EMULATOR TRUE)
+else()
+    add_definitions(-DOPNMIDI_DISABLE_GX_EMULATOR)
 endif()
 
 if(NOT HAS_EMULATOR)
@@ -309,6 +320,7 @@ message("WITH_XMI_SUPPORT         = ${WITH_XMI_SUPPORT}")
 message("USE_MAME_EMULATOR        = ${USE_MAME_EMULATOR}")
 message("USE_GENS_EMULATOR        = ${USE_GENS_EMULATOR}")
 message("USE_NUKED_EMULATOR       = ${USE_NUKED_EMULATOR}")
+message("USE_GX_EMULATOR          = ${USE_GX_EMULATOR}")
 
 message("===== Utils and extras =====")
 message("WITH_MIDIPLAY            = ${WITH_MIDIPLAY}")

@@ -136,6 +136,7 @@ enum Opn2_Emulator
     OPNMIDI_EMU_MAME = 0,
     OPNMIDI_EMU_NUKED,
     OPNMIDI_EMU_GENS,
+    OPNMIDI_EMU_GX,
     OPNMIDI_EMU_end
 };
 

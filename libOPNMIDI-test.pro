@@ -26,6 +26,8 @@ HEADERS += \
     src/chips/mame_opn2.h \
     src/chips/nuked_opn2.h \
     src/chips/nuked/ym3438.h \
+    src/chips/gx_opn2.h \
+    src/chips/gx/gx_ym2612.h \
     src/chips/opn_chip_base.h \
     src/chips/opn_chip_base.tcc \
     src/fraction.hpp \
@@ -41,6 +43,8 @@ SOURCES += \
     src/chips/mame_opn2.cpp \
     src/chips/nuked_opn2.cpp \
     src/chips/nuked/ym3438.c \
+    src/chips/gx_opn2.cpp \
+    src/chips/gx/gx_ym2612.c \
     src/opnmidi.cpp \
     src/opnmidi_load.cpp \
     src/opnmidi_midiplay.cpp \
