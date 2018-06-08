@@ -2151,8 +2151,8 @@ void YM2612GXGenerateOneNative(YM2612GX *ym2612, FMSAMPLE *frame)
   }
 
   /* buffering */
-  frame[0] = lt;
-  frame[1] = rt;
+  frame[0] = lt / 2;
+  frame[1] = rt / 2;
 
   /* CSM mode: if CSM Key ON has occurred, CSM Key OFF need to be sent      */
   /* only if Timer A does not overflow again (i.e CSM Key ON not set again) */
