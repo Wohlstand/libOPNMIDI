@@ -20,6 +20,9 @@
 /*
 **  CHANGELOG:
 **
+** 08-06-2018 JPCima (OPNMIDI)
+** - repaired the multichip support back
+**
 ** 03-12-2017 Eke-Eke (Genesis Plus GX):
 **  - improved 9-bit DAC emulation accuracy
 **  - added discrete YM2612 DAC distortion emulation ("ladder effect")
