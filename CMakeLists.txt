@@ -139,7 +139,7 @@ endif()
 if(USE_GX_EMULATOR)
     list(APPEND libOPNMIDI_SOURCES
         ${libOPNMIDI_SOURCE_DIR}/src/chips/gx_opn2.cpp
-        ${libOPNMIDI_SOURCE_DIR}/src/chips/gx/ym2612.c
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/gx/gx_ym2612.c
     )
     set(HAS_EMULATOR TRUE)
 else()
