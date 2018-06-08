@@ -68,6 +68,7 @@ option(USE_NUKED_EMULATOR   "Use Nuked OPN2 emulator (most accurate, heavy)" ON)
 
 option(WITH_MIDIPLAY        "Build also demo MIDI player" OFF)
 option(WITH_VLC_PLUGIN      "Build also a plugin for VLC Media Player" OFF)
+option(WITH_DAC_UTIL        "Build also OPN2 DAC testing utility" OFF)
 
 if(CMAKE_VERSION VERSION_EQUAL "3.1" OR CMAKE_VERSION VERSION_GREATER "3.1")
     set(CMAKE_CXX_STANDARD 11)
@@ -176,26 +177,31 @@ else()
   target_link_libraries(OPNMIDI INTERFACE OPNMIDI_static)
 endif()
 
-if(WITH_MIDIPLAY)
+if(WITH_MIDIPLAY OR WITH_DAC_UTIL)
     find_library(SDL2_LIBRARY SDL2 REQUIRED)
     include_directories(${SDL2_INCLUDE_DIR})
     message("Found ${SDL2_LIBRARY}")
 
+    set(SDL2_NEEDED_LIBRARIES)
+    if(WIN32)
+        if(MSVC)
+            list(APPEND SDL2_NEEDED_LIBRARIES ${SDL2_LIBRARY})
+        else()
+            list(APPEND SDL2_NEEDED_LIBRARIES ${SDL2_LIBRARY} pthread)
+        endif()
+    else()
+        list(APPEND SDL2_NEEDED_LIBRARIES ${SDL2_LIBRARY} pthread dl m stdc++)
+    endif()
+
+endif()
+
+if(WITH_MIDIPLAY)
     add_executable(opnmidiplay
         ${libOPNMIDI_SOURCE_DIR}/utils/midiplay/opnplay.cpp
         ${libOPNMIDI_SOURCE_DIR}/utils/midiplay/wave_writer.c
         # ${libOPNMIDI_SOURCE_DIR}/utils/midiplay/wave_writer.c # WIP
     )
-
-    if(WIN32)
-        if(MSVC)
-            target_link_libraries(opnmidiplay OPNMIDI ${SDL2_LIBRARY})
-        else()
-            target_link_libraries(opnmidiplay OPNMIDI ${SDL2_LIBRARY} pthread)
-        endif()
-    else()
-        target_link_libraries(opnmidiplay OPNMIDI ${SDL2_LIBRARY} pthread dl m stdc++)
-    endif()
+    target_link_libraries(opnmidiplay OPNMIDI ${SDL2_NEEDED_LIBRARIES})
 
     if(libOPNMIDI_SHARED)
         add_dependencies(opnmidiplay OPNMIDI_shared)
@@ -245,6 +251,18 @@ if(WITH_VLC_PLUGIN)
 
 endif()
 
+if(WITH_DAC_UTIL)
+    add_executable(dac_test
+        ${libOPNMIDI_SOURCE_DIR}/utils/dac_test/dac_test.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_opn2.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked/ym3438.c
+    )
+    target_include_directories(dac_test PRIVATE
+            ${libOPNMIDI_SOURCE_DIR}/src/chips/
+    )
+    target_link_libraries(dac_test ${SDL2_NEEDED_LIBRARIES})
+endif()
+
 if(WITH_HQ_RESAMPLER)
     find_library(ZITA_RESAMPLER_LIBRARY "zita-resampler" REQUIRED)
     add_definitions(-DOPNMIDI_ENABLE_HQ_RESAMPLER)
@@ -253,6 +271,9 @@ if(WITH_HQ_RESAMPLER)
     endif()
     if(libOPNMIDI_STATIC)
         target_link_libraries(OPNMIDI_static PUBLIC "${ZITA_RESAMPLER_LIBRARY}")
+    endif()
+    if(WITH_DAC_UTIL)
+        target_link_libraries(dac_test "${ZITA_RESAMPLER_LIBRARY}")
     endif()
 endif()
 
@@ -292,3 +313,4 @@ message("USE_NUKED_EMULATOR       = ${USE_NUKED_EMULATOR}")
 message("===== Utils and extras =====")
 message("WITH_MIDIPLAY            = ${WITH_MIDIPLAY}")
 message("WITH_VLC_PLUGIN          = ${WITH_VLC_PLUGIN}")
+message("WITH_DAC_UTIL            = ${WITH_DAC_UTIL}")
