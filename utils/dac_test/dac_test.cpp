@@ -3,6 +3,8 @@
 #include <cstdio>
 #include <cstdio>
 #include <cstring>
+
+#define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
 #include <nuked_opn2.h>
