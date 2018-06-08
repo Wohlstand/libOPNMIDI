@@ -126,28 +126,30 @@ int main(int argc, char **argv)
 
     SDL_PauseAudio(0);
 
+    uint8_t buffIn[2048];
     int16_t buff[4096];
     size_t pos = 0;
     std::memset(buff, 0, sizeof(buff));
     while(!stop)
     {
-        size_t got = 4096;
-        for(size_t i = 0; i < 4096; i += 2)
+        size_t got_mono = std::fread(buffIn, 1, 2048, stream);
+        size_t got = got_mono * 2;
+
+        for(size_t i = 0; i < got_mono; i++)
         {
             int16_t frame[2];
-            int sample = std::fgetc(stream);
             pos++;
-            if(sample == EOF)
-            {
-                std::fseek(stream, 0, SEEK_SET);
-                sample = std::fgetc(stream);
-                pos = 1;
-            }
-            opn.writeReg(0, 0x2A, uint8_t(sample));
+            opn.writeReg(0, 0x2A, buffIn[i]);
             opn.nativeGenerate(frame);
-            buff[i + 0] = frame[0];
-            buff[i + 1] = frame[1];
+            buff[(i * 2) + 0] = frame[0];
+            buff[(i * 2) + 1] = frame[1];
             std::printf("Sample position: %zu           \r", pos);
+        }
+
+        if(got_mono < 2048)
+        {
+            std::fseek(stream, 0, SEEK_SET);
+            pos = 0;
         }
 
         g_audioBuffer_lock.Lock();
