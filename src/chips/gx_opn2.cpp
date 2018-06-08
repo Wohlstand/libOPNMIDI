@@ -8,7 +8,7 @@ GXOPN2::GXOPN2()
       m_framecount(0)
 {
     YM2612GXInit(m_chip);
-    YM2612GXConfig(m_chip, YM2612_ENHANCED);
+    YM2612GXConfig(m_chip, YM2612_DISCRETE);
 }
 
 GXOPN2::~GXOPN2()
