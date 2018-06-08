@@ -23,7 +23,8 @@
 
 #include "opnmidi_private.hpp"
 
-#if defined(OPNMIDI_DISABLE_NUKED_EMULATOR) && defined(OPNMIDI_DISABLE_MAME_EMULATOR) && defined(OPNMIDI_DISABLE_GENS_EMULATOR)
+#if defined(OPNMIDI_DISABLE_NUKED_EMULATOR) && defined(OPNMIDI_DISABLE_MAME_EMULATOR) && \
+    defined(OPNMIDI_DISABLE_GENS_EMULATOR) && defined(OPNMIDI_DISABLE_GX_EMULATOR)
 #error "No emulators enabled. You must enable at least one emulator to use this library!"
 #endif
 
@@ -40,6 +41,11 @@
 // GENS 2.10 emulator, very outdated and inaccurate, but gives the best performance
 #ifndef OPNMIDI_DISABLE_GENS_EMULATOR
 #include "chips/gens_opn2.h"
+#endif
+
+// Genesis Plus GX emulator, Variant of MAME with enhancements
+#ifndef OPNMIDI_DISABLE_GX_EMULATOR
+#include "chips/gx_opn2.h"
 #endif
 
 
@@ -340,6 +346,11 @@ void OPN2::Reset(int emulator, unsigned long PCM_RATE)
 #ifndef OPNMIDI_DISABLE_GENS_EMULATOR
         case OPNMIDI_EMU_GENS:
             cardsOP2[i].reset(new GensOPN2());
+            break;
+#endif
+#ifndef OPNMIDI_DISABLE_GX_EMULATOR
+        case OPNMIDI_EMU_GX:
+            cardsOP2[i].reset(new GXOPN2());
             break;
 #endif
         }

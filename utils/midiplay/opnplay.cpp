@@ -105,7 +105,7 @@ int main(int argc, char **argv)
     if(argc < 3 || std::string(argv[1]) == "--help" || std::string(argv[1]) == "-h")
     {
         std::printf(
-            "Usage: opnmidi [-s] [-w] [-nl] [--emu-mame|--emu-nuked|--emu-gens] <bankfile>.wopn <midifilename>\n"
+            "Usage: opnmidi [-s] [-w] [-nl] [--emu-mame|--emu-nuked|--emu-gens|--emu-gx] <bankfile>.wopn <midifilename>\n"
             //" -p Enables adlib percussion instrument mode\n"
             //" -t Enables tremolo amplification mode\n"
             //" -v Enables vibrato amplification mode\n"
@@ -116,6 +116,7 @@ int main(int argc, char **argv)
             " --emu-mame Use MAME YM2612 Emulator\n"
             " --emu-gens Use GENS 2.10 Emulator\n"
             " --emu-nuked Use Nuked OPN2 Emulator\n"
+            " --emu-gx Use Genesis Plus GX Emulator\n"
         );
         std::fflush(stdout);
 
@@ -169,6 +170,8 @@ int main(int argc, char **argv)
             emulator = OPNMIDI_EMU_GENS;
         else if(!std::strcmp("--emu-mame", argv[arg]))
             emulator = OPNMIDI_EMU_MAME;
+        else if(!std::strcmp("--emu-gx", argv[arg]))
+            emulator = OPNMIDI_EMU_GX;
         else if(!std::strcmp("-s", argv[arg]))
             scaleModulators = true;
         else if(!std::strcmp("--", argv[arg]))
