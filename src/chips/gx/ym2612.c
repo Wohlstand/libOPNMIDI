@@ -147,7 +147,6 @@
 #include "ym2612.h"
 #include "../mame/mamedef.h"
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 #include <math.h>
 
