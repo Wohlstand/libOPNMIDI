@@ -6,6 +6,7 @@ NukedOPN2::NukedOPN2()
 {
     OPN2_SetChipType(ym3438_type_asic);
     chip = new ym3438_t;
+    setRate(m_rate, m_clock);
 }
 
 NukedOPN2::~NukedOPN2()

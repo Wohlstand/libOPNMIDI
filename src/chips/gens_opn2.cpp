@@ -5,7 +5,9 @@
 
 GensOPN2::GensOPN2()
     : chip(new Ym2612_Emu())
-{}
+{
+    setRate(m_rate, m_clock);
+}
 
 GensOPN2::~GensOPN2()
 {
