@@ -124,16 +124,19 @@ int main(int argc, char **argv)
     signal(SIGHUP, sighandler);
     #endif
 
-    SDL_PauseAudio(0);
-
     uint8_t buffIn[2048];
     int16_t buff[4096];
     size_t pos = 0;
     std::memset(buff, 0, sizeof(buff));
+
+    SDL_PauseAudio(0);
     while(!stop)
     {
-        size_t got_mono = std::fread(buffIn, 1, 2048, stream);
-        size_t got = got_mono * 2;
+        size_t got_mono;
+        size_t got;
+
+        got_mono = std::fread(buffIn, 1, 2048, stream);
+        got = got_mono * 2;
 
         for(size_t i = 0; i < got_mono; i++)
         {
@@ -143,8 +146,10 @@ int main(int argc, char **argv)
             opn.nativeGenerate(frame);
             buff[(i * 2) + 0] = frame[0];
             buff[(i * 2) + 1] = frame[1];
-            std::printf("Sample position: %zu           \r", pos);
         }
+
+        std::printf("Sample position: %lu           \r", (unsigned long)pos);
+        std::fflush(stdout);
 
         if(got_mono < 2048)
         {
