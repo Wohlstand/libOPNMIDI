@@ -2017,13 +2017,8 @@ unsigned int YM2612GXRead(YM2612 *ym2612)
   return ym2612->OPN.ST.status;
 }
 
-/* Generate samples for ym2612 */
-void YM2612GXUpdate(YM2612 *ym2612, FMSAMPLE *buffer, int length)
+void YM2612GXPreGenerate(YM2612GX *ym2612)
 {
-  int i;
-  int lt,rt;
-  INT32 *out_fm = ym2612->out_fm;
-
   /* refresh PG increments and EG rates if required */
   refresh_fc_eg_chan(&ym2612->CH[0]);
   refresh_fc_eg_chan(&ym2612->CH[1]);
@@ -2047,130 +2042,135 @@ void YM2612GXUpdate(YM2612 *ym2612, FMSAMPLE *buffer, int length)
   refresh_fc_eg_chan(&ym2612->CH[3]);
   refresh_fc_eg_chan(&ym2612->CH[4]);
   refresh_fc_eg_chan(&ym2612->CH[5]);
+}
 
-  /* buffering */
-  for(i=0; i<length; i++)
+void YM2612GXPostGenerate(YM2612GX *ym2612, unsigned int count)
+{
+  /* timer B control */
+  INTERNAL_TIMER_B(ym2612, count);
+}
+
+void YM2612GXGenerateOneNative(YM2612GX *ym2612, FMSAMPLE *frame)
+{
+  int lt,rt;
+  INT32 *out_fm = ym2612->out_fm;
+
+  /* clear outputs */
+  out_fm[0] = 0;
+  out_fm[1] = 0;
+  out_fm[2] = 0;
+  out_fm[3] = 0;
+  out_fm[4] = 0;
+  out_fm[5] = 0;
+
+  /* update SSG-EG output */
+  update_ssg_eg_channels(&ym2612->CH[0]);
+
+  /* calculate FM */
+  if (!ym2612->dacen)
   {
-    /* clear outputs */
-    out_fm[0] = 0;
-    out_fm[1] = 0;
-    out_fm[2] = 0;
-    out_fm[3] = 0;
-    out_fm[4] = 0;
-    out_fm[5] = 0;
+    chan_calc(ym2612, &ym2612->CH[0],6);
+  }
+  else
+  {
+    /* DAC Mode */
+    out_fm[5] = ym2612->dacout;
+    chan_calc(ym2612,&ym2612->CH[0],5);
+  }
 
-    /* update SSG-EG output */
-    update_ssg_eg_channels(&ym2612->CH[0]);
+  /* advance LFO */
+  advance_lfo(ym2612);
 
-    /* calculate FM */
-    if (!ym2612->dacen)
+  /* EG is updated every 3 samples */
+  ym2612->OPN.eg_timer++;
+  if (ym2612->OPN.eg_timer >= 3)
+  {
+    /* reset EG timer */
+    ym2612->OPN.eg_timer = 0;
+
+    /* increment EG counter */
+    ym2612->OPN.eg_cnt++;
+
+    /* EG counter is 12-bit only and zero value is skipped (verified on real hardware) */
+    if (ym2612->OPN.eg_cnt == 4096)
+      ym2612->OPN.eg_cnt = 1;
+
+    /* advance envelope generator */
+    advance_eg_channels(&ym2612->CH[0], ym2612->OPN.eg_cnt);
+  }
+
+  /* channels accumulator output clipping (14-bit max) */
+  if (out_fm[0] > 8191) out_fm[0] = 8191;
+  else if (out_fm[0] < -8192) out_fm[0] = -8192;
+  if (out_fm[1] > 8191) out_fm[1] = 8191;
+  else if (out_fm[1] < -8192) out_fm[1] = -8192;
+  if (out_fm[2] > 8191) out_fm[2] = 8191;
+  else if (out_fm[2] < -8192) out_fm[2] = -8192;
+  if (out_fm[3] > 8191) out_fm[3] = 8191;
+  else if (out_fm[3] < -8192) out_fm[3] = -8192;
+  if (out_fm[4] > 8191) out_fm[4] = 8191;
+  else if (out_fm[4] < -8192) out_fm[4] = -8192;
+  if (out_fm[5] > 8191) out_fm[5] = 8191;
+  else if (out_fm[5] < -8192) out_fm[5] = -8192;
+
+  /* stereo DAC output panning & mixing  */
+  lt  = ((out_fm[0]) & ym2612->OPN.pan[0]);
+  rt  = ((out_fm[0]) & ym2612->OPN.pan[1]);
+  lt += ((out_fm[1]) & ym2612->OPN.pan[2]);
+  rt += ((out_fm[1]) & ym2612->OPN.pan[3]);
+  lt += ((out_fm[2]) & ym2612->OPN.pan[4]);
+  rt += ((out_fm[2]) & ym2612->OPN.pan[5]);
+  lt += ((out_fm[3]) & ym2612->OPN.pan[6]);
+  rt += ((out_fm[3]) & ym2612->OPN.pan[7]);
+  lt += ((out_fm[4]) & ym2612->OPN.pan[8]);
+  rt += ((out_fm[4]) & ym2612->OPN.pan[9]);
+  lt += ((out_fm[5]) & ym2612->OPN.pan[10]);
+  rt += ((out_fm[5]) & ym2612->OPN.pan[11]);
+
+  /* discrete YM2612 DAC */
+  if (ym2612->chip_type == YM2612_DISCRETE)
+  {
+    int i;
+
+    /* DAC 'ladder effect' */
+    for (i=0; i<6; i++)
     {
-      chan_calc(ym2612, &ym2612->CH[0],6);
-    }
-    else
-    {
-      /* DAC Mode */
-      out_fm[5] = ym2612->dacout;
-      chan_calc(ym2612,&ym2612->CH[0],5);
-    }
-
-    /* advance LFO */
-    advance_lfo(ym2612);
-
-    /* EG is updated every 3 samples */
-    ym2612->OPN.eg_timer++;
-    if (ym2612->OPN.eg_timer >= 3)
-    {
-      /* reset EG timer */
-      ym2612->OPN.eg_timer = 0;
-
-      /* increment EG counter */
-      ym2612->OPN.eg_cnt++;
-
-      /* EG counter is 12-bit only and zero value is skipped (verified on real hardware) */
-      if (ym2612->OPN.eg_cnt == 4096)
-        ym2612->OPN.eg_cnt = 1;
-
-      /* advance envelope generator */
-      advance_eg_channels(&ym2612->CH[0], ym2612->OPN.eg_cnt);
-    }
-
-    /* channels accumulator output clipping (14-bit max) */
-    if (out_fm[0] > 8191) out_fm[0] = 8191;
-    else if (out_fm[0] < -8192) out_fm[0] = -8192;
-    if (out_fm[1] > 8191) out_fm[1] = 8191;
-    else if (out_fm[1] < -8192) out_fm[1] = -8192;
-    if (out_fm[2] > 8191) out_fm[2] = 8191;
-    else if (out_fm[2] < -8192) out_fm[2] = -8192;
-    if (out_fm[3] > 8191) out_fm[3] = 8191;
-    else if (out_fm[3] < -8192) out_fm[3] = -8192;
-    if (out_fm[4] > 8191) out_fm[4] = 8191;
-    else if (out_fm[4] < -8192) out_fm[4] = -8192;
-    if (out_fm[5] > 8191) out_fm[5] = 8191;
-    else if (out_fm[5] < -8192) out_fm[5] = -8192;
-
-    /* stereo DAC output panning & mixing  */
-    lt  = ((out_fm[0]) & ym2612->OPN.pan[0]);
-    rt  = ((out_fm[0]) & ym2612->OPN.pan[1]);
-    lt += ((out_fm[1]) & ym2612->OPN.pan[2]);
-    rt += ((out_fm[1]) & ym2612->OPN.pan[3]);
-    lt += ((out_fm[2]) & ym2612->OPN.pan[4]);
-    rt += ((out_fm[2]) & ym2612->OPN.pan[5]);
-    lt += ((out_fm[3]) & ym2612->OPN.pan[6]);
-    rt += ((out_fm[3]) & ym2612->OPN.pan[7]);
-    lt += ((out_fm[4]) & ym2612->OPN.pan[8]);
-    rt += ((out_fm[4]) & ym2612->OPN.pan[9]);
-    lt += ((out_fm[5]) & ym2612->OPN.pan[10]);
-    rt += ((out_fm[5]) & ym2612->OPN.pan[11]);
-
-    /* discrete YM2612 DAC */
-    if (ym2612->chip_type == YM2612_DISCRETE)
-    {
-      int i;
-
-      /* DAC 'ladder effect' */
-      for (i=0; i<6; i++)
+      if (out_fm[i] < 0)
       {
-        if (out_fm[i] < 0)
-        {
-          /* -4 offset (-3 when not muted) on negative channel output (9-bit) */
-          lt -= ((4 - (ym2612->OPN.pan[(2*i)+0] & 1)) << 5);
-          rt -= ((4 - (ym2612->OPN.pan[(2*i)+1] & 1)) << 5);
-        }
-        else
-        {
-          /* +4 offset (when muted or not) on positive channel output (9-bit) */
-          lt += (4 << 5);
-          rt += (4 << 5);
-        }
+        /* -4 offset (-3 when not muted) on negative channel output (9-bit) */
+        lt -= ((4 - (ym2612->OPN.pan[(2*i)+0] & 1)) << 5);
+        rt -= ((4 - (ym2612->OPN.pan[(2*i)+1] & 1)) << 5);
       }
-    }
-
-    /* buffering */
-    *buffer++ = lt;
-    *buffer++ = rt;
-
-    /* CSM mode: if CSM Key ON has occurred, CSM Key OFF need to be sent      */
-    /* only if Timer A does not overflow again (i.e CSM Key ON not set again) */
-    ym2612->OPN.SL3.key_csm <<= 1;
-
-    /* timer A control */
-    INTERNAL_TIMER_A(ym2612);
-
-    /* CSM Mode Key ON still disabled */
-    if (ym2612->OPN.SL3.key_csm & 2)
-    {
-      /* CSM Mode Key OFF (verified by Nemesis on real hardware) */
-      FM_KEYOFF_CSM(&ym2612->CH[2],SLOT1);
-      FM_KEYOFF_CSM(&ym2612->CH[2],SLOT2);
-      FM_KEYOFF_CSM(&ym2612->CH[2],SLOT3);
-      FM_KEYOFF_CSM(&ym2612->CH[2],SLOT4);
-      ym2612->OPN.SL3.key_csm = 0;
+      else
+      {
+        /* +4 offset (when muted or not) on positive channel output (9-bit) */
+        lt += (4 << 5);
+        rt += (4 << 5);
+      }
     }
   }
 
-  /* timer B control */
-  INTERNAL_TIMER_B(ym2612, length);
+  /* buffering */
+  frame[0] = lt;
+  frame[1] = rt;
+
+  /* CSM mode: if CSM Key ON has occurred, CSM Key OFF need to be sent      */
+  /* only if Timer A does not overflow again (i.e CSM Key ON not set again) */
+  ym2612->OPN.SL3.key_csm <<= 1;
+
+  /* timer A control */
+  INTERNAL_TIMER_A(ym2612);
+
+  /* CSM Mode Key ON still disabled */
+  if (ym2612->OPN.SL3.key_csm & 2)
+  {
+    /* CSM Mode Key OFF (verified by Nemesis on real hardware) */
+    FM_KEYOFF_CSM(&ym2612->CH[2],SLOT1);
+    FM_KEYOFF_CSM(&ym2612->CH[2],SLOT2);
+    FM_KEYOFF_CSM(&ym2612->CH[2],SLOT3);
+    FM_KEYOFF_CSM(&ym2612->CH[2],SLOT4);
+    ym2612->OPN.SL3.key_csm = 0;
+  }
 }
 
 void YM2612GXConfig(YM2612 *ym2612, int type)
