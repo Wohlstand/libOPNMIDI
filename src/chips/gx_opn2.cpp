@@ -1,7 +1,7 @@
 #include "gx_opn2.h"
 #include <cstring>
 
-#include "gx/ym2612.h"
+#include "gx/gx_ym2612.h"
 
 GXOPN2::GXOPN2()
     : m_chip(YM2612GXAlloc()),
