@@ -9,6 +9,7 @@ GXOPN2::GXOPN2()
 {
     YM2612GXInit(m_chip);
     YM2612GXConfig(m_chip, YM2612_DISCRETE);
+    setRate(m_rate, m_clock);
 }
 
 GXOPN2::~GXOPN2()
