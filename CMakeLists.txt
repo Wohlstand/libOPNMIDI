@@ -302,8 +302,7 @@ install(FILES
 option(WITH_UNIT_TESTS   "Enable unit testing" OFF)
 if(WITH_UNIT_TESTS)
     enable_testing ()
-    add_subdirectory(test/activenotes)
-    add_subdirectory(test/channel-users)
+    add_subdirectory(test)
 endif()
 
 

@@ -7,7 +7,7 @@ include_directories (${CMAKE_CURRENT_SOURCE_DIR}/../common
 
 add_executable (ActiveNotesList
                 active_notes.cpp
-                )
+                $<TARGET_OBJECTS:Catch-objects>)
 
 set_target_properties(ActiveNotesList PROPERTIES COMPILE_DEFINITIONS "GSL_THROW_ON_CONTRACT_VIOLATION")
 target_link_libraries(ActiveNotesList PUBLIC OPNMIDI_static)

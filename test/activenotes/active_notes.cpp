@@ -1,4 +1,3 @@
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
 #include <catch.hpp>
 #include <string>
 #include <vector>
@@ -22,9 +21,11 @@ TEST_CASE( "MIDI Channel manipulating", "[OPNMIDIplay::MIDIchannel]" )
                     midi_ch.activenotes_erase(i);
             }
 
+            const opnInstMeta2 &ains = OPN2::emptyInstrument;
+
             OPNMIDIplay::MIDIchannel::NoteInfo::Phys voices[OPNMIDIplay::MIDIchannel::NoteInfo::MaxNumPhysChans] = {
-                {0, static_cast<size_t>(rand() % 128), /*false*/},
-                {0, static_cast<size_t>(rand() % 128), /*pseudo_4op*/},
+                {0, ains.opn[0], /*false*/},
+                {0, ains.opn[1], /*pseudo_4op*/},
             };
 
             std::pair<OPNMIDIplay::MIDIchannel::activenoteiterator, bool>
@@ -32,7 +33,7 @@ TEST_CASE( "MIDI Channel manipulating", "[OPNMIDIplay::MIDIchannel]" )
             ir.first->vol     = rand() % 127;
             ir.first->tone    = rand() % 127;
             ir.first->midiins = rand() % 127;
-            ir.first->insmeta = rand() % 127;
+            ir.first->ains = &ains;
             ir.first->chip_channels_count = 0;
 
             for(unsigned ccount = 0; ccount < OPNMIDIplay::MIDIchannel::NoteInfo::MaxNumPhysChans; ++ccount)
