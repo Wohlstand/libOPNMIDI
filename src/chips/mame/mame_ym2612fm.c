@@ -2280,7 +2280,7 @@ void ym2612_generate(void *chip, FMSAMPLE *buffer, int frames, int mix)
 	FMSAMPLE  *bufOut = buffer;
 	int i;
 #if !RSM_ENABLE
-        FMSAMPLE bufTmp[2];
+	FMSAMPLE bufTmp[2];
 #endif
 
 	ym2612_pre_generate(chip);
