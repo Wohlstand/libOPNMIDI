@@ -17,7 +17,7 @@ GensOPN2::~GensOPN2()
 void GensOPN2::setRate(uint32_t rate, uint32_t clock)
 {
     OPNChipBaseBufferedT::setRate(rate, clock);
-    uint32_t chipRate = isRunningAtPcmRate() ? rate : nativeRate;
+    uint32_t chipRate = isRunningAtPcmRate() ? rate : static_cast<uint32_t>(nativeRate);
     chip->set_rate(chipRate, clock);  // implies reset()
 }
 
