@@ -191,7 +191,9 @@ public:
     unsigned int NumCards;
     //! Carriers-only are scaled by default by volume level. This flag will tell to scale modulators too.
     bool ScaleModulators;
-    //! Required to play CMF files. Can be turned on by using of "CMF" volume model
+    //! Run emulator at PCM rate if that possible. Reduces sounding accuracy, but decreases CPU usage on lower rates.
+    bool runAtPcmRate;
+
     char ___padding2[3];
 
     enum MusicMode
@@ -868,6 +870,7 @@ public:
     struct Setup
     {
         int     emulator;
+        bool    runAtPcmRate;
         unsigned int OpnBank;
         unsigned int NumCards;
         unsigned int LogarithmicVolumes;

@@ -310,6 +310,8 @@ void OPN2::Reset(int emulator, unsigned long PCM_RATE)
 #endif
         }
         cardsOP2[i]->setRate((uint32_t)PCM_RATE, 7670454);
+        if(runAtPcmRate)
+            cardsOP2[i]->setRunningAtPcmRate(true);
     }
 
     NumChannels = NumCards * 6;

@@ -257,6 +257,23 @@ OPNMIDI_EXPORT int opn2_switchEmulator(struct OPN2_MIDIPlayer *device, int emula
     return -1;
 }
 
+
+OPNMIDI_EXPORT int opn2_setRunAtPcmRate(OPN2_MIDIPlayer *device, int enabled)
+{
+    if(device)
+    {
+        OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+        if(play)
+        {
+            play->m_setup.runAtPcmRate = (enabled != 0);
+            opn2_reset(device);
+            return 0;
+        }
+    }
+    return -1;
+}
+
+
 OPNMIDI_EXPORT const char *opn2_linkedLibraryVersion()
 {
 #if !defined(OPNMIDI_ENABLE_HQ_RESAMPLER)
@@ -315,6 +332,7 @@ OPNMIDI_EXPORT void opn2_reset(OPN2_MIDIPlayer *device)
         return;
     OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
     play->m_setup.tick_skip_samples_delay = 0;
+    play->opn.runAtPcmRate = play->m_setup.runAtPcmRate;
     play->opn.Reset(play->m_setup.emulator, play->m_setup.PCM_RATE);
     play->ch.clear();
     play->ch.resize(play->opn.NumChannels);

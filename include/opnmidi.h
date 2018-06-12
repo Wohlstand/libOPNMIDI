@@ -149,6 +149,9 @@ typedef struct {
     OPN2_UInt16 patch;
 } OPN2_Version;
 
+/*Run emulator with PCM rate to reduce CPU usage on slow devices. May decrease sounding accuracy.*/
+extern int opn2_setRunAtPcmRate(struct OPN2_MIDIPlayer *device, int enabled);
+
 /*Returns string which contains a version number*/
 extern const char *opn2_linkedLibraryVersion();
 

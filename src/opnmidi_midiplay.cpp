@@ -672,6 +672,7 @@ OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
     devices.clear();
 
     m_setup.emulator = OPNMIDI_EMU_MAME;
+    m_setup.runAtPcmRate = false;
 
     m_setup.PCM_RATE = sampleRate;
     m_setup.mindelay = 1.0 / (double)m_setup.PCM_RATE;
@@ -699,6 +700,7 @@ void OPNMIDIplay::applySetup()
     m_setup.tick_skip_samples_delay = 0;
 
     opn.ScaleModulators         = (m_setup.ScaleModulators != 0);
+    opn.runAtPcmRate            = m_setup.runAtPcmRate;
     opn.m_musicMode             = OPN2::MODE_MIDI;
     if(m_setup.LogarithmicVolumes != 0)
         opn.ChangeVolumeRangesModel(OPNMIDI_VolumeModel_CMF);
