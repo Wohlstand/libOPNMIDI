@@ -146,6 +146,7 @@ static stream_sample_t *DUMMYBUF = NULL;
 #define BUILD_OPN (BUILD_YM2203||BUILD_YM2608||BUILD_YM2610||BUILD_YM2610B||BUILD_YM2612||BUILD_YM3438)
 #define BUILD_OPN_PRESCALER (BUILD_YM2203||BUILD_YM2608)
 
+#define RSM_ENABLE 0
 #define RSM_FRAC 10
 
 /* globals */
@@ -623,10 +624,12 @@ typedef struct
 #endif
 	UINT32		clock;				/* master clock  (Hz)   */
 	UINT32		rate;				/* internal sampling rate (Hz) */
+#if RSM_ENABLE
 	INT32		rateratio;			/* resampling ratio */
 	INT32		framecnt;			/* resampling frames count*/
 	FMSAMPLE	cur_sample[2];		/* previous sample */
 	FMSAMPLE	prev_sample[2];		/* previous sample */
+#endif
 	UINT8		address;			/* address register     */
 	UINT8		status;				/* status flag          */
 	UINT32		mode;				/* mode  CSM / 3SLOT    */
@@ -2276,6 +2279,9 @@ void ym2612_generate(void *chip, FMSAMPLE *buffer, int frames, int mix)
 	FM_CH  *cch = F2612->CH;
 	FMSAMPLE  *bufOut = buffer;
 	int i;
+#if !RSM_ENABLE
+        FMSAMPLE bufTmp[2];
+#endif
 
 	ym2612_pre_generate(chip);
 
@@ -2292,6 +2298,7 @@ void ym2612_generate(void *chip, FMSAMPLE *buffer, int frames, int mix)
 	/* buffering */
 	for(i=0 ; i < frames ; i++)
 	{
+#if RSM_ENABLE
 		while(F2612->OPN.ST.framecnt >= F2612->OPN.ST.rateratio)/* Copy-Pasta from Nuked */
 		{
 			/* Copy-Pasta from Nuked */
@@ -2314,6 +2321,19 @@ void ym2612_generate(void *chip, FMSAMPLE *buffer, int frames, int mix)
 								  + F2612->OPN.ST.cur_sample[1] * F2612->OPN.ST.framecnt) / F2612->OPN.ST.rateratio);
 		}
 		F2612->OPN.ST.framecnt += 1 << RSM_FRAC;
+#else
+		if (mix)
+		{
+			ym2612_generate_one_native(chip, bufTmp);
+			bufOut[0] += bufTmp[0];
+			bufOut[1] += bufTmp[1];
+		}
+		else
+		{
+			ym2612_generate_one_native(chip, bufOut);
+		}
+		bufOut += 2;
+#endif
 	}
 	/* ym2612_post_generate(chip, frames); */
 }
@@ -2585,11 +2605,15 @@ void * ym2612_init(void *param, int clock, int rate,
 	F2612->OPN.P_CH = F2612->CH;
 	/* F2612->OPN.ST.device = device; */
 	F2612->OPN.ST.clock = clock;
+#if RSM_ENABLE
 	F2612->OPN.ST.rate = 53267;
 	F2612->OPN.ST.rateratio = (INT32)(UINT32)((((UINT64)144 * rate) << RSM_FRAC) / clock);
 	F2612->OPN.ST.framecnt = 1 << RSM_FRAC;
 	memset(&(F2612->OPN.ST.cur_sample), 0x00, sizeof(FMSAMPLE) * 2);
 	memset(&(F2612->OPN.ST.prev_sample), 0x00, sizeof(FMSAMPLE) * 2);
+#else
+	F2612->OPN.ST.rate = rate;
+#endif
 	/* F2612->OPN.ST.irq = 0; */
 	/* F2612->OPN.ST.status = 0; */
 	/* Extend handler */
@@ -2635,10 +2659,12 @@ void ym2612_reset_chip(void *chip)
 	FM_BUSY_CLEAR(&OPN->ST);
 	/* OPNWriteMode(OPN,0x27,0x30); */ /* mode 0 , timer reset */
 
+#if RSM_ENABLE
 	/* Resampler's state */
 	F2612->OPN.ST.framecnt = 1 << RSM_FRAC;
 	memset(&(F2612->OPN.ST.cur_sample), 0x00, sizeof(FMSAMPLE) * 2);
 	memset(&(F2612->OPN.ST.prev_sample), 0x00, sizeof(FMSAMPLE) * 2);
+#endif
 
 	OPN->eg_timer = 0;
 	OPN->eg_cnt   = 0;

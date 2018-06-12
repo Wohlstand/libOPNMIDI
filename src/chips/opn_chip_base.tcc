@@ -5,6 +5,18 @@
 #include <zita-resampler/vresampler.h>
 #endif
 
+#if !defined(LIKELY) && defined(__GNUC__)
+#define LIKELY(x) __builtin_expect((x), 1)
+#elif !defined(LIKELY)
+#define LIKELY(x) (x)
+#endif
+
+#if !defined(UNLIKELY) && defined(__GNUC__)
+#define UNLIKELY(x) __builtin_expect((x), 0)
+#elif !defined(UNLIKELY)
+#define UNLIKELY(x) (x)
+#endif
+
 /* OPNChipBase */
 
 inline OPNChipBase::OPNChipBase() :
@@ -21,7 +33,8 @@ inline OPNChipBase::~OPNChipBase()
 
 template <class T>
 OPNChipBaseT<T>::OPNChipBaseT()
-    : OPNChipBase()
+    : OPNChipBase(),
+      m_runningAtPcmRate(false)
 {
 #if defined(OPNMIDI_ENABLE_HQ_RESAMPLER)
     m_resampler = new VResampler;
@@ -35,6 +48,25 @@ OPNChipBaseT<T>::~OPNChipBaseT()
 #if defined(OPNMIDI_ENABLE_HQ_RESAMPLER)
     delete m_resampler;
 #endif
+}
+
+template <class T>
+bool OPNChipBaseT<T>::isRunningAtPcmRate() const
+{
+    return m_runningAtPcmRate;
+}
+
+template <class T>
+bool OPNChipBaseT<T>::setRunningAtPcmRate(bool r)
+{
+    if(r != m_runningAtPcmRate)
+    {
+        if(r && !static_cast<T *>(this)->canRunAtPcmRate())
+            return false;
+        m_runningAtPcmRate = r;
+        static_cast<T *>(this)->setRate(m_rate, m_clock);
+    }
+    return true;
 }
 
 template <class T>
@@ -149,6 +181,15 @@ void OPNChipBaseT<T>::resetResampler()
 template <class T>
 void OPNChipBaseT<T>::resampledGenerate(int32_t *output)
 {
+    if(UNLIKELY(m_runningAtPcmRate))
+    {
+        int16_t in[2];
+        static_cast<T *>(this)->nativeGenerate(in);
+        output[0] = (int32_t)in[0] * T::resamplerPreAmplify / T::resamplerPostAttenuate;
+        output[1] = (int32_t)in[1] * T::resamplerPreAmplify / T::resamplerPostAttenuate;
+        return;
+    }
+
     VResampler *rsm = m_resampler;
     float scale = (float)T::resamplerPreAmplify /
         (float)T::resamplerPostAttenuate;
@@ -176,6 +217,15 @@ void OPNChipBaseT<T>::resampledGenerate(int32_t *output)
 template <class T>
 void OPNChipBaseT<T>::resampledGenerate(int32_t *output)
 {
+    if(UNLIKELY(m_runningAtPcmRate))
+    {
+        int16_t in[2];
+        static_cast<T *>(this)->nativeGenerate(in);
+        output[0] = (int32_t)in[0] * T::resamplerPreAmplify / T::resamplerPostAttenuate;
+        output[1] = (int32_t)in[1] * T::resamplerPreAmplify / T::resamplerPostAttenuate;
+        return;
+    }
+
     int32_t samplecnt = m_samplecnt;
     const int32_t rateratio = m_rateratio;
     while(samplecnt >= rateratio)

@@ -15,12 +15,18 @@ class VResampler;
 
 class OPNChipBase
 {
+public:
+    enum { nativeRate = 53267 };
 protected:
     uint32_t m_rate;
     uint32_t m_clock;
 public:
     OPNChipBase();
     virtual ~OPNChipBase();
+
+    virtual bool canRunAtPcmRate() const = 0;
+    virtual bool isRunningAtPcmRate() const = 0;
+    virtual bool setRunningAtPcmRate(bool r) = 0;
 
     virtual void setRate(uint32_t rate, uint32_t clock) = 0;
     virtual void reset() = 0;
@@ -50,6 +56,9 @@ public:
     OPNChipBaseT();
     virtual ~OPNChipBaseT();
 
+    bool isRunningAtPcmRate() const override;
+    bool setRunningAtPcmRate(bool r) override;
+
     virtual void setRate(uint32_t rate, uint32_t clock) override;
     virtual void reset() override;
     void generate(int16_t *output, size_t frames) override;
@@ -57,6 +66,7 @@ public:
     void generate32(int32_t *output, size_t frames) override;
     void generateAndMix32(int32_t *output, size_t frames) override;
 private:
+    bool m_runningAtPcmRate;
     void setupResampler(uint32_t rate);
     void resetResampler();
     void resampledGenerate(int32_t *output);
