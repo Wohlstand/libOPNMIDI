@@ -692,6 +692,9 @@ public:
             bool sustained;
             char ____padding[3];
             MIDIchannel::NoteInfo::Phys ins;  // a copy of that in phys[]
+            //! Has fixed sustain, don't iterate "on" timeout
+            bool    fixed_sustain;
+            //! Timeout until note will be allowed to be killed by channel manager while it is on
             int64_t kon_time_until_neglible;
             int64_t vibdelay;
         };

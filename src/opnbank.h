@@ -40,6 +40,8 @@ public:
 };
 #endif
 
+enum { opnNoteOnMaxTime = 40000 };
+
 /* *********** FM Operator indexes *********** */
 enum
 {
