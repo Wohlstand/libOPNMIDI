@@ -11,7 +11,7 @@
 typedef NukedOPN2 CurrentOPN2;
 
 // No-op handler
-void opn2_audioTickHandler(void *instance, uint32_t rate) {}
+void opn2_audioTickHandler(void *instance, uint32_t chipId, uint32_t rate) {}
 
 class MutexType
 {

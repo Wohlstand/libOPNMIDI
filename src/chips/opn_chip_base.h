@@ -13,18 +13,22 @@
 class VResampler;
 #endif
 
-extern void opn2_audioTickHandler(void *instance, uint32_t rate);
+extern void opn2_audioTickHandler(void *instance, uint32_t chipId, uint32_t rate);
 
 class OPNChipBase
 {
 public:
     enum { nativeRate = 53267 };
 protected:
+    uint32_t m_id;
     uint32_t m_rate;
     uint32_t m_clock;
 public:
     OPNChipBase();
     virtual ~OPNChipBase();
+
+    uint32_t chipId() const { return m_id; }
+    void setChipId(uint32_t id) { m_id = id; }
 
     virtual bool canRunAtPcmRate() const = 0;
     virtual bool isRunningAtPcmRate() const = 0;

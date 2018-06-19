@@ -1113,7 +1113,7 @@ public:
     void realTime_panic();
 
     // Audio rate tick handler
-    void AudioTick(uint32_t rate);
+    void AudioTick(uint32_t chipId, uint32_t rate);
 
 private:
     enum

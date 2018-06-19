@@ -20,6 +20,7 @@
 /* OPNChipBase */
 
 inline OPNChipBase::OPNChipBase() :
+    m_id(0),
     m_rate(44100),
     m_clock(7670454)
 {
@@ -168,7 +169,7 @@ void OPNChipBaseT<T>::generateAndMix32(int32_t *output, size_t frames)
 template <class T>
 void OPNChipBaseT<T>::nativeTick(int16_t *frame)
 {
-    opn2_audioTickHandler(m_audioTickHandlerInstance, effectiveRate());
+    opn2_audioTickHandler(m_audioTickHandlerInstance, m_id, effectiveRate());
     static_cast<T *>(this)->nativeGenerate(frame);
 }
 

@@ -25,9 +25,9 @@
 
 // Generator callback on audio rate ticks
 
-void opn2_audioTickHandler(void *instance, uint32_t rate)
+void opn2_audioTickHandler(void *instance, uint32_t chipId, uint32_t rate)
 {
-    reinterpret_cast<OPNMIDIplay *>(instance)->AudioTick(rate);
+    reinterpret_cast<OPNMIDIplay *>(instance)->AudioTick(chipId, rate);
 }
 
 // Mapping from MIDI volume level to OPL level value.
@@ -1388,8 +1388,11 @@ void OPNMIDIplay::realTime_panic()
     KillSustainingNotes(-1, -1);
 }
 
-void OPNMIDIplay::AudioTick(uint32_t rate)
+void OPNMIDIplay::AudioTick(uint32_t chipId, uint32_t rate)
 {
+    if(chipId != 0)  // do first chip ticks only
+        return;
+
     uint32_t tickNumber = m_audioTickCounter++;
     double timeDelta = 1.0 / rate;
 

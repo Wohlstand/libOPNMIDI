@@ -312,6 +312,7 @@ void OPN2::Reset(int emulator, unsigned long PCM_RATE, void *audioTickHandler)
 #endif
         }
         cardsOP2[i].reset(chip);
+        chip->setChipId(i);
         chip->setRate((uint32_t)PCM_RATE, 7670454);
         if(runAtPcmRate)
             chip->setRunningAtPcmRate(true);
