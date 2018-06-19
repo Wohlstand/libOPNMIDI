@@ -1163,6 +1163,11 @@ public:
     uint64_t ChooseDevice(const std::string &name);
 };
 
+#if !defined(OPNMIDI_AUDIO_TICK_HANDLER)
+#error The audio tick handler must be enabled!
+#endif
+
+extern void opn2_audioTickHandler(void *instance, uint32_t chipId, uint32_t rate);
 extern int opn2RefreshNumCards(OPN2_MIDIPlayer *device);
 
 

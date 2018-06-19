@@ -10,9 +10,6 @@
 #include <nuked_opn2.h>
 typedef NukedOPN2 CurrentOPN2;
 
-// No-op handler
-void opn2_audioTickHandler(void *instance, uint32_t chipId, uint32_t rate) {}
-
 class MutexType
 {
     SDL_mutex *mut;

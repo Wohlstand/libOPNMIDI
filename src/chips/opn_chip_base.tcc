@@ -35,8 +35,11 @@ inline OPNChipBase::~OPNChipBase()
 template <class T>
 OPNChipBaseT<T>::OPNChipBaseT()
     : OPNChipBase(),
-      m_runningAtPcmRate(false),
+      m_runningAtPcmRate(false)
+#if defined(OPNMIDI_AUDIO_TICK_HANDLER)
+    ,
       m_audioTickHandlerInstance(NULL)
+#endif
 {
 #if defined(OPNMIDI_ENABLE_HQ_RESAMPLER)
     m_resampler = new VResampler;
@@ -71,11 +74,15 @@ bool OPNChipBaseT<T>::setRunningAtPcmRate(bool r)
     return true;
 }
 
+#if defined(OPNMIDI_AUDIO_TICK_HANDLER)
 template <class T>
 void OPNChipBaseT<T>::setAudioTickHandlerInstance(void *instance)
 {
+#if defined(OPNMIDI_AUDIO_TICK_HANDLER)
     m_audioTickHandlerInstance = instance;
+#endif
 }
+#endif
 
 template <class T>
 void OPNChipBaseT<T>::setRate(uint32_t rate, uint32_t clock)
@@ -169,7 +176,9 @@ void OPNChipBaseT<T>::generateAndMix32(int32_t *output, size_t frames)
 template <class T>
 void OPNChipBaseT<T>::nativeTick(int16_t *frame)
 {
+#if defined(OPNMIDI_AUDIO_TICK_HANDLER)
     opn2_audioTickHandler(m_audioTickHandlerInstance, m_id, effectiveRate());
+#endif
     static_cast<T *>(this)->nativeGenerate(frame);
 }
 

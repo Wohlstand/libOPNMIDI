@@ -23,13 +23,6 @@
 
 #include "opnmidi_private.hpp"
 
-// Generator callback on audio rate ticks
-
-void opn2_audioTickHandler(void *instance, uint32_t chipId, uint32_t rate)
-{
-    reinterpret_cast<OPNMIDIplay *>(instance)->AudioTick(chipId, rate);
-}
-
 // Mapping from MIDI volume level to OPL level value.
 
 static const uint32_t DMX_volume_mapping_table[] =
