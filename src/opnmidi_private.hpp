@@ -927,8 +927,10 @@ private:
     //! Counter of arpeggio processing
     size_t m_arpeggioCounter;
 
+#if defined(ADLMIDI_AUDIO_TICK_HANDLER)
     //! Audio tick counter
     uint32_t m_audioTickCounter;
+#endif
 
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
     std::vector<std::vector<uint8_t> > TrackData;
@@ -1112,8 +1114,10 @@ public:
 
     void realTime_panic();
 
+#if defined(ADLMIDI_AUDIO_TICK_HANDLER)
     // Audio rate tick handler
     void AudioTick(uint32_t chipId, uint32_t rate);
+#endif
 
 private:
     enum
@@ -1158,16 +1162,15 @@ private:
     void NoteOff(uint16_t MidCh, uint8_t note);
     void UpdateVibrato(double amount);
     void UpdateArpeggio(double /*amount*/);
+    void UpdateGlide(double amount);
 
 public:
     uint64_t ChooseDevice(const std::string &name);
 };
 
-#if !defined(OPNMIDI_AUDIO_TICK_HANDLER)
-#error The audio tick handler must be enabled!
-#endif
-
+#if defined(ADLMIDI_AUDIO_TICK_HANDLER)
 extern void opn2_audioTickHandler(void *instance, uint32_t chipId, uint32_t rate);
+#endif
 extern int opn2RefreshNumCards(OPN2_MIDIPlayer *device);
 
 
