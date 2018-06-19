@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.2)
-project (libOPNMIDI)
+project(libOPNMIDI C CXX)
 
 #===========================================================================================
 # Strip garbage
@@ -21,7 +21,12 @@ IF(NOT MSVC AND NOT MSDOS)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 ENDIF()
 
-if(CMAKE_BUILD_TYPE EQUAL "Release")
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release")
+endif()
+
+string(TOLOWER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_LOWER)
+if(CMAKE_BUILD_TYPE_LOWER EQUAL "release")
     add_definitions(-DNDEBUG)
 ENDIF()
 
