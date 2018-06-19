@@ -1393,8 +1393,12 @@ void OPNMIDIplay::AudioTick(uint32_t rate)
     uint32_t tickNumber = m_audioTickCounter++;
     double timeDelta = 1.0 / rate;
 
-    if(tickNumber % 32 == 0) // for efficiency, set rate limit on pitch updates
+    enum { portamentoInterval = 32 }; // for efficiency, set rate limit on pitch updates
+
+    if(tickNumber % portamentoInterval == 0)
     {
+        double portamentoDelta = timeDelta * portamentoInterval;
+
         for(unsigned channel = 0; channel < 16; ++channel)
         {
             MIDIchannel &midiChan = Ch[channel];
@@ -1405,7 +1409,7 @@ void OPNMIDIplay::AudioTick(uint32_t rate)
                 double previousTone = it->currentTone;
 
                 bool directionUp = previousTone < finalTone;
-                double toneIncr = timeDelta * (directionUp ? +it->glideRate : -it->glideRate);
+                double toneIncr = portamentoDelta * (directionUp ? +it->glideRate : -it->glideRate);
 
                 double currentTone = previousTone + toneIncr;
                 bool glideFinished = !(directionUp ? (currentTone < finalTone) : (currentTone > finalTone));
