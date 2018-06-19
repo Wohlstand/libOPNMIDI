@@ -547,6 +547,7 @@ public:
             }
         };
         char ____padding2[5];
+        unsigned gliding_note_count;
         NoteInfo activenotes[128];
 
         struct activenoteiterator
@@ -677,6 +678,7 @@ public:
         MIDIchannel()
         {
             activenotes_clear();
+            gliding_note_count = 0;
             reset();
         }
     };

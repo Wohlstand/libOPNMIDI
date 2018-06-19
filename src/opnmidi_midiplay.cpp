@@ -1153,7 +1153,9 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     ir.first->chip_channels_count = 0;
 
     int8_t currentPortamentoSource = midiChan.portamentoSource;
-    bool portamentoEnable = midiChan.portamentoEnable &&
+    double currentPortamentoRate = midiChan.portamentoRate;
+    bool portamentoEnable =
+        midiChan.portamentoEnable && currentPortamentoRate != HUGE_VAL &&
         !isPercussion && !isXgPercussion;
     // Record the last note on MIDI channel as source of portamento
     midiChan.portamentoSource = portamentoEnable ? (int8_t)note : (int8_t)-1;
@@ -1162,7 +1164,8 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     if (portamentoEnable && currentPortamentoSource >= 0)
     {
         ir.first->currentTone = currentPortamentoSource;
-        ir.first->glideRate = midiChan.portamentoRate;
+        ir.first->glideRate = currentPortamentoRate;
+        ++midiChan.gliding_note_count;
     }
 
     for(unsigned ccount = 0; ccount < MIDIchannel::NoteInfo::MaxNumPhysChans; ++ccount)
@@ -1616,7 +1619,11 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
     }
 
     if(info.chip_channels_count == 0)
+    {
+        if(i->glideRate != HUGE_VAL)
+            --Ch[MidCh].gliding_note_count;
         Ch[MidCh].activenotes_erase(i);
+    }
 }
 
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
@@ -2377,7 +2384,7 @@ void OPNMIDIplay::UpdatePortamento(unsigned MidCh)
     double rate = HUGE_VAL;
     uint16_t midival = Ch[MidCh].portamento;
     if(Ch[MidCh].portamentoEnable && midival > 0)
-        rate = 350.0 * std::exp2(-0.062 * (1.0 / 128) * midival);
+        rate = 350.0 * std::pow(2.0, -0.062 * (1.0 / 128) * midival);
     Ch[MidCh].portamentoRate = rate;
 }
 
@@ -2507,6 +2514,9 @@ void OPNMIDIplay::UpdateGlide(double amount)
     for(unsigned channel = 0; channel < 16; ++channel)
     {
         MIDIchannel &midiChan = Ch[channel];
+        if(midiChan.gliding_note_count == 0)
+            continue;
+
         for(MIDIchannel::activenoteiterator it = midiChan.activenotes_begin();
             it; ++it)
         {

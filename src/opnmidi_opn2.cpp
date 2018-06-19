@@ -277,6 +277,9 @@ void OPN2::ClearChips()
 
 void OPN2::Reset(int emulator, unsigned long PCM_RATE, void *audioTickHandler)
 {
+#if !defined(ADLMIDI_AUDIO_TICK_HANDLER)
+    (void)audioTickHandler;
+#endif
     ClearChips();
     ins.clear();
     pit.clear();
