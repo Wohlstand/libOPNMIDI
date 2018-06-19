@@ -555,7 +555,7 @@ riffskip:
         return false;
     }
 
-    opn.Reset(m_setup.emulator, m_setup.PCM_RATE); // Reset OPN2 chip
+    opn.Reset(m_setup.emulator, m_setup.PCM_RATE, this); // Reset OPN2 chip
     ch.clear();
     ch.resize(opn.NumChannels);
     return true;

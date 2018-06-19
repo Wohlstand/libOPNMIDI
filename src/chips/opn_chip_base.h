@@ -13,6 +13,8 @@
 class VResampler;
 #endif
 
+extern void opn2_audioTickHandler(void *instance, uint32_t rate);
+
 class OPNChipBase
 {
 public:
@@ -27,8 +29,10 @@ public:
     virtual bool canRunAtPcmRate() const = 0;
     virtual bool isRunningAtPcmRate() const = 0;
     virtual bool setRunningAtPcmRate(bool r) = 0;
+    virtual void setAudioTickHandlerInstance(void *instance) = 0;
 
     virtual void setRate(uint32_t rate, uint32_t clock) = 0;
+    virtual uint32_t effectiveRate() const = 0;
     virtual void reset() = 0;
     virtual void writeReg(uint32_t port, uint16_t addr, uint8_t data) = 0;
 
@@ -58,8 +62,10 @@ public:
 
     bool isRunningAtPcmRate() const override;
     bool setRunningAtPcmRate(bool r) override;
+    void setAudioTickHandlerInstance(void *instance);
 
     virtual void setRate(uint32_t rate, uint32_t clock) override;
+    uint32_t effectiveRate() const override;
     virtual void reset() override;
     void generate(int16_t *output, size_t frames) override;
     void generateAndMix(int16_t *output, size_t frames) override;
@@ -67,6 +73,8 @@ public:
     void generateAndMix32(int32_t *output, size_t frames) override;
 private:
     bool m_runningAtPcmRate;
+    void *m_audioTickHandlerInstance;
+    void nativeTick(int16_t *frame);
     void setupResampler(uint32_t rate);
     void resetResampler();
     void resampledGenerate(int32_t *output);

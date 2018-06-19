@@ -23,6 +23,13 @@
 
 #include "opnmidi_private.hpp"
 
+// Generator callback on audio rate ticks
+
+void opn2_audioTickHandler(void *instance, uint32_t rate)
+{
+    reinterpret_cast<OPNMIDIplay *>(instance)->AudioTick(rate);
+}
+
 // Mapping from MIDI volume level to OPL level value.
 
 static const uint32_t DMX_volume_mapping_table[] =
@@ -712,7 +719,7 @@ void OPNMIDIplay::applySetup()
 
     opn.NumCards    = m_setup.NumCards;
 
-    opn.Reset(m_setup.emulator, m_setup.PCM_RATE);
+    opn.Reset(m_setup.emulator, m_setup.PCM_RATE, this);
     ch.clear();
     ch.resize(opn.NumChannels, OpnChannel());
 
@@ -1365,6 +1372,9 @@ void OPNMIDIplay::realTime_panic()
     KillSustainingNotes(-1, -1);
 }
 
+void OPNMIDIplay::AudioTick(uint32_t rate)
+{
+}
 
 void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
                           OPNMIDIplay::MIDIchannel::activenoteiterator i,

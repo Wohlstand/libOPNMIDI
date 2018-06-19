@@ -333,7 +333,7 @@ OPNMIDI_EXPORT void opn2_reset(OPN2_MIDIPlayer *device)
     OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
     play->m_setup.tick_skip_samples_delay = 0;
     play->opn.runAtPcmRate = play->m_setup.runAtPcmRate;
-    play->opn.Reset(play->m_setup.emulator, play->m_setup.PCM_RATE);
+    play->opn.Reset(play->m_setup.emulator, play->m_setup.PCM_RATE, play);
     play->ch.clear();
     play->ch.resize(play->opn.NumChannels);
 }

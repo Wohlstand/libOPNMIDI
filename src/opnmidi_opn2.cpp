@@ -275,7 +275,7 @@ void OPN2::ClearChips()
     cardsOP2.clear();
 }
 
-void OPN2::Reset(int emulator, unsigned long PCM_RATE)
+void OPN2::Reset(int emulator, unsigned long PCM_RATE, void *audioTickHandler)
 {
     ClearChips();
     ins.clear();
@@ -285,33 +285,37 @@ void OPN2::Reset(int emulator, unsigned long PCM_RATE)
 
     for(size_t i = 0; i < cardsOP2.size(); i++)
     {
+        OPNChipBase *chip;
+
         switch(emulator)
         {
         default:
 #ifndef OPNMIDI_DISABLE_MAME_EMULATOR
         case OPNMIDI_EMU_MAME:
-            cardsOP2[i].reset(new MameOPN2());
+            chip = new MameOPN2;
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_NUKED_EMULATOR
         case OPNMIDI_EMU_NUKED:
-            cardsOP2[i].reset(new NukedOPN2());
+            chip = new NukedOPN2;
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_GENS_EMULATOR
         case OPNMIDI_EMU_GENS:
-            cardsOP2[i].reset(new GensOPN2());
+            chip = new GensOPN2;
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_GX_EMULATOR
         case OPNMIDI_EMU_GX:
-            cardsOP2[i].reset(new GXOPN2());
+            chip = new GXOPN2;
             break;
 #endif
         }
-        cardsOP2[i]->setRate((uint32_t)PCM_RATE, 7670454);
+        cardsOP2[i].reset(chip);
+        chip->setRate((uint32_t)PCM_RATE, 7670454);
         if(runAtPcmRate)
-            cardsOP2[i]->setRunningAtPcmRate(true);
+            chip->setRunningAtPcmRate(true);
+        chip->setAudioTickHandlerInstance(audioTickHandler);
     }
 
     NumChannels = NumCards * 6;

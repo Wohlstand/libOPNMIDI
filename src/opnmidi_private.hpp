@@ -235,7 +235,7 @@ public:
     void Silence();
     void ChangeVolumeRangesModel(OPNMIDI_VolumeModels volumeModel);
     void ClearChips();
-    void Reset(int emulator, unsigned long PCM_RATE);
+    void Reset(int emulator, unsigned long PCM_RATE, void *audioTickHandler);
 };
 
 
@@ -273,7 +273,7 @@ class OPNMIDIplay
 {
     friend void opn2_reset(struct OPN2_MIDIPlayer*);
 public:
-    OPNMIDIplay(unsigned long sampleRate = 22050);
+    explicit OPNMIDIplay(unsigned long sampleRate = 22050);
 
     ~OPNMIDIplay()
     {}
@@ -1099,6 +1099,9 @@ public:
     void realTime_BankChange(uint8_t channel, uint16_t bank);
 
     void realTime_panic();
+
+    // Audio rate tick handler
+    void AudioTick(uint32_t rate);
 
 private:
     enum
