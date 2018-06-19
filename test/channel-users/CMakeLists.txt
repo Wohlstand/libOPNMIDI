@@ -10,6 +10,7 @@ add_executable(ChannelUsersTest
                $<TARGET_OBJECTS:Catch-objects>)
 
 set_target_properties(ChannelUsersTest PROPERTIES COMPILE_DEFINITIONS "GSL_THROW_ON_CONTRACT_VIOLATION")
-target_link_libraries(ChannelUsersTest PUBLIC OPNMIDI_static)
+target_link_libraries(ChannelUsersTest PRIVATE OPNMIDI_static)
+target_compile_definitions(ChannelUsersTest PRIVATE OPNMIDI_AUDIO_TICK_HANDLER)
 add_test(NAME ChannelUsersTest COMMAND ChannelUsersTest)
 
