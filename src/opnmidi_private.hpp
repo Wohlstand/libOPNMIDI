@@ -435,11 +435,14 @@ public:
     // Persistent settings for each MIDI channel
     struct MIDIchannel
     {
-        uint16_t portamento;
         uint8_t bank_lsb, bank_msb;
         uint8_t patch;
         uint8_t volume, expression;
         uint8_t panning, vibrato, aftertouch, sustain;
+        uint16_t portamento;
+        bool portamentoEnable;
+        int8_t portamentoSource;  // note number or -1
+        double portamentoRate;
         //! Per note Aftertouch values
         uint8_t noteAftertouch[128];
         //! Is note aftertouch has any non-zero value
@@ -464,8 +467,11 @@ public:
             uint8_t vibrato;
             char ____padding[1];
             // Tone selected on noteon:
-            int16_t tone;
-            char ____padding2[10];
+            int16_t noteTone;
+            // Current tone (!= noteTone if gliding note)
+            double currentTone;
+            // Gliding rate
+            double glideRate;
             // Patch selected on noteon; index to banks[AdlBank][]
             size_t  midiins;
             // Patch selected
@@ -654,6 +660,9 @@ public:
             vibdelay = 0;
             panning = OPN_PANNING_BOTH;
             portamento = 0;
+            portamentoEnable = false;
+            portamentoSource = -1;
+            portamentoRate = HUGE_VAL;
             brightness = 127;
         }
         bool hasVibrato()
@@ -918,6 +927,9 @@ private:
     //! Counter of arpeggio processing
     size_t m_arpeggioCounter;
 
+    //! Audio tick counter
+    uint32_t m_audioTickCounter;
+
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
     std::vector<std::vector<uint8_t> > TrackData;
 
@@ -1141,7 +1153,7 @@ private:
     void Panic();
     void KillSustainingNotes(int32_t MidCh = -1, int32_t this_adlchn = -1);
     void SetRPN(unsigned MidCh, unsigned value, bool MSB);
-    //void UpdatePortamento(unsigned MidCh)
+    void UpdatePortamento(unsigned MidCh);
     void NoteUpdate_All(uint16_t MidCh, unsigned props_mask);
     void NoteOff(uint16_t MidCh, uint8_t note);
     void UpdateVibrato(double amount);
