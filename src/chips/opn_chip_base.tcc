@@ -78,9 +78,7 @@ bool OPNChipBaseT<T>::setRunningAtPcmRate(bool r)
 template <class T>
 void OPNChipBaseT<T>::setAudioTickHandlerInstance(void *instance)
 {
-#if defined(OPNMIDI_AUDIO_TICK_HANDLER)
     m_audioTickHandlerInstance = instance;
-#endif
 }
 #endif
 
