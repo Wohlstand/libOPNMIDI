@@ -375,10 +375,10 @@ int main(int argc, char **argv)
         if(wave_open(sampleRate, wave_out.c_str()) == 0)
         {
             wave_enable_stereo();
+            short buff[4096];
             int complete_prev = -1;
             while(!stop)
             {
-                short buff[4096];
                 size_t got = (size_t)opn2_play(myDevice, 4096, buff);
                 if(got <= 0)
                     break;
