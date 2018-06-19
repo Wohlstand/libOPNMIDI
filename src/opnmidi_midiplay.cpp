@@ -657,8 +657,10 @@ bool OPNMIDIplay::buildTrackData()
 
 
 OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
-    m_arpeggioCounter(0),
-    m_audioTickCounter(0)
+    m_arpeggioCounter(0)
+#if defined(ADLMIDI_AUDIO_TICK_HANDLER)
+    , m_audioTickCounter(0)
+#endif
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
     , fullSongTimeLength(0.0),
     postSongWaitDelay(1.0),
@@ -782,6 +784,9 @@ double OPNMIDIplay::Tick(double s, double granularity)
 
     UpdateVibrato(s);
     UpdateArpeggio(s);
+#if !defined(ADLMIDI_AUDIO_TICK_HANDLER)
+    UpdateGlide(s);
+#endif
 
     if(CurrentPositionNew.wait < 0.0)//Avoid negative delay value!
         return 0.0;
@@ -796,6 +801,9 @@ void OPNMIDIplay::TickIteratos(double s)
         ch[c].AddAge(static_cast<int64_t>(s * 1000.0));
     UpdateVibrato(s);
     UpdateArpeggio(s);
+#if !defined(ADLMIDI_AUDIO_TICK_HANDLER)
+    UpdateGlide(s);
+#endif
 }
 
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
@@ -1145,7 +1153,9 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     ir.first->chip_channels_count = 0;
 
     int8_t currentPortamentoSource = midiChan.portamentoSource;
-    bool portamentoEnable = midiChan.portamentoEnable &&
+    double currentPortamentoRate = midiChan.portamentoRate;
+    bool portamentoEnable =
+        midiChan.portamentoEnable && currentPortamentoRate != HUGE_VAL &&
         !isPercussion && !isXgPercussion;
     // Record the last note on MIDI channel as source of portamento
     midiChan.portamentoSource = portamentoEnable ? (int8_t)note : (int8_t)-1;
@@ -1154,7 +1164,8 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     if (portamentoEnable && currentPortamentoSource >= 0)
     {
         ir.first->currentTone = currentPortamentoSource;
-        ir.first->glideRate = midiChan.portamentoRate;
+        ir.first->glideRate = currentPortamentoRate;
+        ++midiChan.gliding_note_count;
     }
 
     for(unsigned ccount = 0; ccount < MIDIchannel::NoteInfo::MaxNumPhysChans; ++ccount)
@@ -1381,6 +1392,7 @@ void OPNMIDIplay::realTime_panic()
     KillSustainingNotes(-1, -1);
 }
 
+#if defined(ADLMIDI_AUDIO_TICK_HANDLER)
 void OPNMIDIplay::AudioTick(uint32_t chipId, uint32_t rate)
 {
     if(chipId != 0)  // do first chip ticks only
@@ -1394,32 +1406,10 @@ void OPNMIDIplay::AudioTick(uint32_t chipId, uint32_t rate)
     if(tickNumber % portamentoInterval == 0)
     {
         double portamentoDelta = timeDelta * portamentoInterval;
-
-        for(unsigned channel = 0; channel < 16; ++channel)
-        {
-            MIDIchannel &midiChan = Ch[channel];
-            for(MIDIchannel::activenoteiterator it = midiChan.activenotes_begin();
-                it; ++it)
-            {
-                double finalTone = it->noteTone;
-                double previousTone = it->currentTone;
-
-                bool directionUp = previousTone < finalTone;
-                double toneIncr = portamentoDelta * (directionUp ? +it->glideRate : -it->glideRate);
-
-                double currentTone = previousTone + toneIncr;
-                bool glideFinished = !(directionUp ? (currentTone < finalTone) : (currentTone > finalTone));
-                currentTone = glideFinished ? finalTone : currentTone;
-
-                if(currentTone != previousTone)
-                {
-                    it->currentTone = currentTone;
-                    NoteUpdate(channel, it, Upd_Pitch);
-                }
-            }
-        }
+        UpdateGlide(portamentoDelta);
     }
 }
+#endif
 
 void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
                           OPNMIDIplay::MIDIchannel::activenoteiterator i,
@@ -1629,7 +1619,11 @@ void OPNMIDIplay::NoteUpdate(uint16_t MidCh,
     }
 
     if(info.chip_channels_count == 0)
+    {
+        if(i->glideRate != HUGE_VAL)
+            --Ch[MidCh].gliding_note_count;
         Ch[MidCh].activenotes_erase(i);
+    }
 }
 
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
@@ -2390,7 +2384,7 @@ void OPNMIDIplay::UpdatePortamento(unsigned MidCh)
     double rate = HUGE_VAL;
     uint16_t midival = Ch[MidCh].portamento;
     if(Ch[MidCh].portamentoEnable && midival > 0)
-        rate = 350.0 * std::exp2(-0.062 * (1.0 / 128) * midival);
+        rate = 350.0 * std::pow(2.0, -0.062 * (1.0 / 128) * midival);
     Ch[MidCh].portamentoRate = rate;
 }
 
@@ -2515,6 +2509,35 @@ retry_arpeggio:
     }
 }
 
+void OPNMIDIplay::UpdateGlide(double amount)
+{
+    for(unsigned channel = 0; channel < 16; ++channel)
+    {
+        MIDIchannel &midiChan = Ch[channel];
+        if(midiChan.gliding_note_count == 0)
+            continue;
+
+        for(MIDIchannel::activenoteiterator it = midiChan.activenotes_begin();
+            it; ++it)
+        {
+            double finalTone = it->noteTone;
+            double previousTone = it->currentTone;
+
+            bool directionUp = previousTone < finalTone;
+            double toneIncr = amount * (directionUp ? +it->glideRate : -it->glideRate);
+
+            double currentTone = previousTone + toneIncr;
+            bool glideFinished = !(directionUp ? (currentTone < finalTone) : (currentTone > finalTone));
+            currentTone = glideFinished ? finalTone : currentTone;
+
+            if(currentTone != previousTone)
+            {
+                it->currentTone = currentTone;
+                NoteUpdate(channel, it, Upd_Pitch);
+            }
+        }
+    }
+}
 
 /* TODO */
 

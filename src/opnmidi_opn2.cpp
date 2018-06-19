@@ -277,6 +277,9 @@ void OPN2::ClearChips()
 
 void OPN2::Reset(int emulator, unsigned long PCM_RATE, void *audioTickHandler)
 {
+#if !defined(ADLMIDI_AUDIO_TICK_HANDLER)
+    (void)audioTickHandler;
+#endif
     ClearChips();
     ins.clear();
     pit.clear();
@@ -316,7 +319,9 @@ void OPN2::Reset(int emulator, unsigned long PCM_RATE, void *audioTickHandler)
         chip->setRate((uint32_t)PCM_RATE, 7670454);
         if(runAtPcmRate)
             chip->setRunningAtPcmRate(true);
+#if defined(ADLMIDI_AUDIO_TICK_HANDLER)
         chip->setAudioTickHandlerInstance(audioTickHandler);
+#endif
     }
 
     NumChannels = NumCards * 6;
