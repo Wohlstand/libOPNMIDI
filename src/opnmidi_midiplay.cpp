@@ -657,6 +657,7 @@ bool OPNMIDIplay::buildTrackData()
 
 
 OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
+    m_sysExDeviceId(0),
     m_arpeggioCounter(0)
 #if defined(ADLMIDI_AUDIO_TICK_HANDLER)
     , m_audioTickCounter(0)
@@ -1386,6 +1387,172 @@ void OPNMIDIplay::realTime_BankChange(uint8_t channel, uint16_t bank)
     Ch[channel].bank_msb = uint8_t((bank >> 8) & 0xFF);
 }
 
+void OPNMIDIplay::setDeviceId(uint8_t id)
+{
+    m_sysExDeviceId = id;
+}
+
+bool OPNMIDIplay::realTime_SysEx(const uint8_t *msg, unsigned size)
+{
+    if(size < 4 || msg[0] != 0xF0 || msg[size - 1] != 0xF7)
+        return false;
+
+    unsigned manufacturer = msg[1];
+    unsigned dev = msg[2];
+    msg += 3;
+    size -= 4;
+
+    switch(manufacturer)
+    {
+    default:
+        break;
+    case Manufacturer_UniversalNonRealtime:
+    case Manufacturer_UniversalRealtime:
+        return doUniversalSysEx(
+            dev, manufacturer == Manufacturer_UniversalRealtime, msg, size);
+    case Manufacturer_Roland:
+        return doRolandSysEx(dev, msg, size);
+    case Manufacturer_Yamaha:
+        return doYamahaSysEx(dev, msg, size);
+    }
+
+    return false;
+}
+
+bool OPNMIDIplay::doUniversalSysEx(unsigned dev, bool realtime, const uint8_t *data, unsigned size)
+{
+    bool devicematch = dev == 0x7F || dev == m_sysExDeviceId;
+    if(size < 2 || !devicematch)
+        return false;
+
+    unsigned address =
+        (((unsigned)data[0] & 0x7F) << 8) |
+        (((unsigned)data[1] & 0x7F));
+    data += 2;
+    size -= 2;
+
+    switch(((unsigned)realtime << 16) | address)
+    {
+        case (0 << 16) | 0x0901: // GM System On
+            /*TODO*/
+            return true;
+        case (0 << 16) | 0x0902: // GM System Off
+            /*TODO*/
+            return true;
+        case (1 << 16) | 0x0401: // MIDI Master Volume
+            if(size != 2)
+                break;
+            unsigned volume =
+                (((unsigned)data[0] & 0x7F)) |
+                (((unsigned)data[1] & 0x7F) << 7);
+            /*TODO*/
+            (void)volume;
+            return true;
+    }
+
+    return false;
+}
+
+bool OPNMIDIplay::doRolandSysEx(unsigned dev, const uint8_t *data, unsigned size)
+{
+    bool devicematch = dev == 0x7F || (dev & 0x0F) == m_sysExDeviceId;
+    if(size < 6 || !devicematch)
+        return false;
+
+    unsigned model = data[0] & 0x7F;
+    unsigned mode = data[1] & 0x7F;
+    unsigned checksum = data[size - 1] & 0x7F;
+    data += 2;
+    size -= 3;
+
+#if !defined(OPNMIDI_SKIP_ROLAND_CHECKSUM)
+    {
+        unsigned checkvalue = 0;
+        for(unsigned i = 0; i < size; ++i)
+            checkvalue += data[i] & 0x7F;
+        checkvalue = (128 - (checkvalue & 127)) & 127;
+        if(checkvalue != checksum)
+            return false;
+    }
+#endif
+
+    unsigned address =
+        (((unsigned)data[0] & 0x7F) << 16) |
+        (((unsigned)data[1] & 0x7F) << 8)  |
+        (((unsigned)data[2] & 0x7F));
+    data += 3;
+    size -= 3;
+
+    if(mode != RolandMode_Send) // don't have MIDI-Out reply ability
+        return false;
+
+    switch((model << 24) | address)
+    {
+    case (RolandModel_GS << 24) | 0x00007F: // System Mode Set
+    {
+        if(size != 1 || (dev & 0xF0) != 0x10)
+            break;
+        unsigned mode = data[0] & 0x7F;
+        /*TODO*/
+        (void)mode;
+        return true;
+    }
+    case (RolandModel_GS << 24) | 0x40007F: // Mode Set
+    {
+        if(size != 1 || (dev & 0xF0) != 0x10)
+            break;
+        unsigned value = data[0] & 0x7F;
+        /*TODO*/
+        (void)value;
+        return true;
+    }
+    }
+
+    return false;
+}
+
+bool OPNMIDIplay::doYamahaSysEx(unsigned dev, const uint8_t *data, unsigned size)
+{
+    bool devicematch = dev == 0x7F || (dev & 0x0F) == m_sysExDeviceId;
+    if(size < 1 || !devicematch)
+        return false;
+
+    unsigned model = data[0] & 0x7F;
+    ++data;
+    --size;
+
+    switch((model << 8) | (dev & 0xF0))
+    {
+    case (YamahaModel_XG << 8) | 0x10:  // parameter change
+    {
+        if(size < 3)
+            break;
+
+        unsigned address =
+            (((unsigned)data[0] & 0x7F) << 16) |
+            (((unsigned)data[1] & 0x7F) << 8)  |
+            (((unsigned)data[2] & 0x7F));
+        data += 3;
+        size -= 3;
+
+        switch(address)
+        {
+        case 0x00007E:  // XG System On
+            if(size != 1)
+                break;
+            unsigned value = data[0] & 0x7F;
+            /*TODO*/
+            (void)value;
+            return true;
+        }
+
+        break;
+    }
+    }
+
+    return false;
+}
+
 void OPNMIDIplay::realTime_panic()
 {
     Panic();
@@ -1766,6 +1933,10 @@ OPNMIDIplay::MidiEvent OPNMIDIplay::parseEvent(uint8_t **pptr, uint8_t *end, int
             evt.isValid = 0;
             return evt;
         }
+        evt.type = MidiEvent::T_SYSEX;
+        evt.data.clear();
+        evt.data.push_back(byte);
+        std::copy(ptr, ptr + length, std::back_inserter(evt.data));
         ptr += (size_t)length;
         return evt;
     }
@@ -1981,6 +2152,13 @@ void OPNMIDIplay::HandleEvent(size_t tk, const OPNMIDIplay::MidiEvent &evt, int 
     {
         //std::string data( length?(const char*) &TrackData[tk][CurrentPosition.track[tk].ptr]:0, length );
         //UI.PrintLn("SysEx %02X: %u bytes", byte, length/*, data.c_str()*/);
+#if 0
+        fputs("SysEx:", stderr);
+        for(size_t i = 0; i < evt.data.size(); ++i)
+            fprintf(stderr, " %02X", evt.data[i]);
+        fputc('\n', stderr);
+#endif
+        realTime_SysEx(evt.data.data(), (unsigned)evt.data.size());
         return;
     }
 

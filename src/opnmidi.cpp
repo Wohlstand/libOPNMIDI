@@ -63,6 +63,17 @@ OPNMIDI_EXPORT struct OPN2_MIDIPlayer *opn2_init(long sample_rate)
     return midi_device;
 }
 
+OPNMIDI_EXPORT int opn2_setDeviceIdentifier(OPN2_MIDIPlayer *device, unsigned id)
+{
+    if(!device || id > 0x0f)
+        return -1;
+    OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(!play)
+        return -1;
+    play->setDeviceId(id);
+    return 0;
+}
+
 OPNMIDI_EXPORT int opn2_setNumChips(OPN2_MIDIPlayer *device, int numCards)
 {
     if(device == NULL)
@@ -1001,4 +1012,14 @@ OPNMIDI_EXPORT void opn2_rt_bankChange(struct OPN2_MIDIPlayer *device, OPN2_UInt
     if(!player)
         return;
     player->realTime_BankChange(channel, (uint16_t)bank);
+}
+
+OPNMIDI_EXPORT int opn2_rt_systemExclusive(struct OPN2_MIDIPlayer *device, const OPN2_UInt8 *msg, unsigned size)
+{
+    if(!device)
+        return -1;
+    OPNMIDIplay *player = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
+    if(!player)
+        return -1;
+    return player->realTime_SysEx(msg, size);
 }

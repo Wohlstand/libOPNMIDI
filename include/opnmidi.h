@@ -167,6 +167,9 @@ extern const char *opn2_errorInfo(struct OPN2_MIDIPlayer *device);
 /*Initialize ADLMIDI Player device*/
 extern struct OPN2_MIDIPlayer *opn2_init(long sample_rate);
 
+/*Set 4-bit device identifier*/
+extern int opn2_setDeviceIdentifier(struct OPN2_MIDIPlayer *device, unsigned id);
+
 /*Load MIDI file from File System*/
 extern int opn2_openFile(struct OPN2_MIDIPlayer *device, const char *filePath);
 
@@ -295,6 +298,9 @@ extern void opn2_rt_bankChangeLSB(struct OPN2_MIDIPlayer *device, OPN2_UInt8 cha
 extern void opn2_rt_bankChangeMSB(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 msb);
 /*Change bank by absolute signed value*/
 extern void opn2_rt_bankChange(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_SInt16 bank);
+
+/*Perform a system exclusive message*/
+extern int opn2_rt_systemExclusive(struct OPN2_MIDIPlayer *device, const OPN2_UInt8 *msg, unsigned size);
 
 
 /**Hooks**/
