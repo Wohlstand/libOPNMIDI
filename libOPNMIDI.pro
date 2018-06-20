@@ -15,8 +15,6 @@ macx: QMAKE_CXXFLAGS_WARN_ON += -Wno-absolute-value
 
 INCLUDEPATH += $$PWD $$PWD/include
 
-DEFINES += OPNMIDI_AUDIO_TICK_HANDLER
-
 HEADERS += \
     include/opnmidi.h \
     src/chips/gens_opn2.h \
