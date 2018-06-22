@@ -1158,7 +1158,8 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
         midiChan.portamentoEnable && currentPortamentoRate != HUGE_VAL &&
         !isPercussion && !isXgPercussion;
     // Record the last note on MIDI channel as source of portamento
-    midiChan.portamentoSource = portamentoEnable ? (int8_t)note : (int8_t)-1;
+    midiChan.portamentoSource = static_cast<int8_t>(note);
+    // midiChan.portamentoSource = portamentoEnable ? (int8_t)note : (int8_t)-1;
 
     // Enable gliding on portamento note
     if (portamentoEnable && currentPortamentoSource >= 0)
