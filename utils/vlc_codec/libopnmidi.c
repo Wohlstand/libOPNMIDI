@@ -292,7 +292,9 @@ static block_t *DecodeBlock (decoder_t *p_dec, block_t **pp_block)
         case 0x90:
             opn2_rt_noteOn(p_sys->synth, channel, p1, p2);
             break;
-        /*case 0xA0: note aftertouch not implemented */
+        case 0xA0:
+            opn2_rt_noteAfterTouch(p_sys->synth, channel, p1, p2);
+            break;
         case 0xB0:
             opn2_rt_controllerChange(p_sys->synth, channel, p1, p2);
             break;
