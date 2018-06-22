@@ -84,7 +84,7 @@ You need to make in the any IDE a library project and put into it next files
 * opnmidi_private.cpp	- some internal functions sources
 
 * `chips/opn_chip_base.h`   - Header of base class over all emulation cores
-* `chips/opn_chip_base.cpp` - Code of base class over all emulation cores
+* `chips/opn_chip_base.tcc` - Code of base class over all emulation cores
 
 * chips/gens_opn2.h  - Header of emulator frontent over Gens 2.10 emulator
 * chips/gens_opn2.cpp  - Code of emulator frontent over Gens 2.10 emulator
