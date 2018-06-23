@@ -1101,13 +1101,3 @@ OPNMIDI_EXPORT int opn2_rt_systemExclusive(struct OPN2_MIDIPlayer *device, const
         return -1;
     return play->realTime_SysEx(msg, size);
 }
-
-OPNMIDI_EXPORT int opn2_rt_systemExclusive(struct OPN2_MIDIPlayer *device, const OPN2_UInt8 *msg, unsigned size)
-{
-    if(!device)
-        return -1;
-    OPNMIDIplay *player = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
-    if(!player)
-        return -1;
-    return player->realTime_SysEx(msg, size);
-}
