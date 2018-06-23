@@ -28,26 +28,28 @@ HEADERS += \
     src/chips/gx/gx_ym2612.h \
     src/chips/opn_chip_base.h \
     src/chips/opn_chip_base.tcc \
+    src/cvt_mus2mid.hpp \
+    src/cvt_xmi2mid.hpp \
+    src/midi_sequencer.h \
+    src/midi_sequencer.hpp \
+    src/midi_sequencer_impl.hpp \
     src/fraction.hpp \
     src/opnbank.h \
-    src/opnmidi_mus2mid.h \
-    src/opnmidi_private.hpp \
-    src/opnmidi_xmi2mid.h
+    src/opnmidi_private.hpp
 
 SOURCES += \
     src/chips/gens_opn2.cpp \
     src/chips/gens/Ym2612_Emu.cpp \
+    src/chips/gx/gx_ym2612.c \
+    src/chips/gx_opn2.cpp \
     src/chips/mame/mame_ym2612fm.c \
     src/chips/mame_opn2.cpp \
     src/chips/nuked_opn2.cpp \
     src/chips/nuked/ym3438.c \
-    src/chips/gx_opn2.cpp \
-    src/chips/gx/gx_ym2612.c \
     src/opnmidi.cpp \
     src/opnmidi_load.cpp \
     src/opnmidi_midiplay.cpp \
-    src/opnmidi_mus2mid.c \
     src/opnmidi_opn2.cpp \
     src/opnmidi_private.cpp \
-    src/opnmidi_xmi2mid.c
+    src/opnmidi_sequencer.cpp
 

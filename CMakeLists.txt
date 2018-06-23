@@ -5,21 +5,27 @@ project(libOPNMIDI C CXX)
 # Strip garbage
 if(APPLE)
     set(LINK_FLAGS_RELEASE  "${LINK_FLAGS_RELEASE} -dead_strip")
-ELSEIF(NOT MSVC AND NOT MSDOS)
+elseif(NOT MSVC AND NOT MSDOS)
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Os -s -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-s")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os -s -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-s")
     set(LINK_FLAGS_RELEASE  "${LINK_FLAGS_RELEASE} -Wl,--gc-sections -Wl,-s")
-ENDIF()
+endif()
 
 # Global optimization flags
-IF(NOT MSVC AND NOT MSDOS)
+if(NOT MSVC AND NOT MSDOS)
 # Global optimization flags
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -fno-omit-frame-pointer")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-omit-frame-pointer")
 # Turn on all warnings
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
-ENDIF()
+# Deny undefined symbols
+    if(NOT APPLE)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--no-undefined" )
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined" )
+        set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--no-undefined" )
+    endif()
+endif()
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
@@ -96,20 +102,18 @@ list(APPEND libOPNMIDI_SOURCES
     ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_private.cpp
 )
 
-if(WITH_MUS_SUPPORT AND WITH_MIDI_SEQUENCER)
+if(WITH_MIDI_SEQUENCER)
     list(APPEND libOPNMIDI_SOURCES
-        ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_mus2mid.c
+        ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_sequencer.cpp
     )
-else()
-    add_definitions(-DOPNMIDI_DISABLE_MUS_SUPPORT)
 endif()
 
-if(WITH_XMI_SUPPORT AND WITH_MIDI_SEQUENCER)
-    list(APPEND libOPNMIDI_SOURCES
-        ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_xmi2mid.c
-    )
-else()
-    add_definitions(-DOPNMIDI_DISABLE_XMI_SUPPORT)
+if(NOT WITH_MUS_SUPPORT OR NOT WITH_MIDI_SEQUENCER)
+    add_definitions(-DBWMIDI_DISABLE_MUS_SUPPORT)
+endif()
+
+if(NOT WITH_XMI_SUPPORT OR NOT WITH_MIDI_SEQUENCER)
+    add_definitions(-DBWMIDI_DISABLE_XMI_SUPPORT)
 endif()
 
 if(USE_GENS_EMULATOR)

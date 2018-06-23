@@ -250,8 +250,8 @@ void OPN2::ChangeVolumeRangesModel(OPNMIDI_VolumeModels volumeModel)
         m_volumeScale = OPN2::VOLUME_Generic;
         break;
 
-    case OPNMIDI_VolumeModel_CMF:
-        m_volumeScale = OPN2::VOLUME_CMF;
+    case OPNMIDI_VolumeModel_NativeOPN2:
+        m_volumeScale = OPN2::VOLUME_NATIVE;
         break;
 
     case OPNMIDI_VolumeModel_DMX:
