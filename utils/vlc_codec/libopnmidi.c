@@ -18,12 +18,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *****************************************************************************/
 
-/*
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
-*/
-
 #include <vlc_common.h>
 #include <vlc_plugin.h>
 #include <vlc_codec.h>
@@ -47,24 +41,23 @@
 #define SOUNDFONT_LONGTEXT N_( \
     "Custom bank file to use for software synthesis." )
 
-/*#define CHORUS_TEXT N_("Chorus")*/
+#if 0 /* Old code */
+#define CHORUS_TEXT N_("Chorus")
 
-/*#define GAIN_TEXT N_("Synthesis gain")*/
-/*
+#define GAIN_TEXT N_("Synthesis gain")
 #define GAIN_LONGTEXT N_("This gain is applied to synthesis output. " \
     "High values may cause saturation when many notes are played at a time." )
-*/
 
-/*#define POLYPHONY_TEXT N_("Polyphony")*/
-/*
+#define POLYPHONY_TEXT N_("Polyphony")
 #define POLYPHONY_LONGTEXT N_( \
     "The polyphony defines how many voices can be played at a time. " \
     "Larger values require more processing power.")
-*/
 
-/*#define REVERB_TEXT N_("Reverb")*/
+#define REVERB_TEXT N_("Reverb")
+#endif
 
 #define SAMPLE_RATE_TEXT N_("Sample rate")
+
 #define EMULATED_CHIPS_TEXT N_("Count of emulated chips")
 
 static int  Open  (vlc_object_t *);
@@ -205,6 +198,7 @@ static void Flush (decoder_t *p_dec)
     opn2_panic(p_sys->synth);
 }
 
+
 #if (LIBVLC_VERSION_MAJOR >= 3)
 static int DecodeBlock (decoder_t *p_dec, block_t *p_block)
 {
@@ -221,6 +215,7 @@ static block_t *DecodeBlock (decoder_t *p_dec, block_t **pp_block)
         return NULL;
     p_block = *pp_block;
 #endif
+
     if (p_block == NULL)
     {
 #if (LIBVLC_VERSION_MAJOR >= 3)
@@ -236,13 +231,15 @@ static block_t *DecodeBlock (decoder_t *p_dec, block_t **pp_block)
 
     if (p_block->i_flags & (BLOCK_FLAG_DISCONTINUITY|BLOCK_FLAG_CORRUPTED))
     {
-        Flush (p_dec);
 #if (LIBVLC_VERSION_MAJOR >= 3)
+        Flush (p_dec);
         if (p_block->i_flags & BLOCK_FLAG_CORRUPTED)
         {
             block_Release(p_block);
             return VLCDEC_SUCCESS;
         }
+#else
+        Flush (p_dec);
 #endif
     }
 
@@ -273,8 +270,9 @@ static block_t *DecodeBlock (decoder_t *p_dec, block_t **pp_block)
                     msg_Warn (p_dec, "fragmented SysEx not implemented");
                     goto drop;
                 }
-                //fluid_synth_sysex (p_sys->synth, (char *)p_block->p_buffer + 1,
-                //                   p_block->i_buffer - 2, NULL, NULL, NULL, 0);
+                opn2_rt_systemExclusive(p_sys->synth,
+                                        (const OPN2_UInt8 *)p_block->p_buffer,
+                                        p_block->i_buffer);
                 break;
             case 0xF:
                 opn2_rt_resetState(p_sys->synth);
@@ -292,7 +290,9 @@ static block_t *DecodeBlock (decoder_t *p_dec, block_t **pp_block)
         case 0x90:
             opn2_rt_noteOn(p_sys->synth, channel, p1, p2);
             break;
-        /*case 0xA0: note aftertouch not implemented */
+        case 0xA0:
+            opn2_rt_noteAfterTouch(p_sys->synth, channel, p1, p2);
+            break;
         case 0xB0:
             opn2_rt_controllerChange(p_sys->synth, channel, p1, p2);
             break;

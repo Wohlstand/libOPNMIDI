@@ -17,7 +17,7 @@ Library is based on core of the [libADLMIDI](https://github.com/Wohlstand/libADL
 * OPN2 emulation
 * Customizable bank of FM patches (You have to use the [bank editor](https://github.com/Wohlstand/OPN2BankEditor) to create own sound bank)
 * Stereo sound
-* Number of simulated chips can be specified as 1-100 (maximum channels 600!)
+* Number of simulated OPN2 chips can be specified as 1-100 (maximum channels 600!)
 * Pan (binary panning, i.e. left/right side on/off)
 * Pitch-bender with adjustable range
 * Vibrato that responds to RPN/NRPN parameters
@@ -63,8 +63,8 @@ You need to make in the any IDE a library project and put into it next files
 (or include those files into subfolder of your exist project instead if you want to use it statically):
 
 ### Useful macros
-* `OPNMIDI_DISABLE_XMI_SUPPORT` - Disables XMI to MIDI converter
-* `OPNMIDI_DISABLE_MUS_SUPPORT` - Disables MUS to MIDI converter
+* `BWMIDI_DISABLE_XMI_SUPPORT` - Disables XMI to MIDI converter
+* `BWMIDI_DISABLE_MUS_SUPPORT` - Disables MUS to MIDI converter
 * `OPNMIDI_DISABLE_MIDI_SEQUENCER` - Completely disables built-in MIDI sequencer.
 * `OPNMIDI_USE_LEGACY_EMULATOR` - Enables Gens 2.10 YM2612 emulator to be used. Nuked OPN2 is used by default if macro is not defined.
 
@@ -72,7 +72,6 @@ You need to make in the any IDE a library project and put into it next files
 * opnmidi.h    - Library API, use it to control library
 
 ### Internal code (src)
-* fraction.hpp  - Fraction number handling
 * opnbank.h    - bank structures definition
 * opnmidi_private.hpp - header of internal private APIs
 
@@ -84,7 +83,7 @@ You need to make in the any IDE a library project and put into it next files
 * opnmidi_private.cpp	- some internal functions sources
 
 * `chips/opn_chip_base.h`   - Header of base class over all emulation cores
-* `chips/opn_chip_base.cpp` - Code of base class over all emulation cores
+* `chips/opn_chip_base.tcc` - Code of base class over all emulation cores
 
 * chips/gens_opn2.h  - Header of emulator frontent over Gens 2.10 emulator
 * chips/gens_opn2.cpp  - Code of emulator frontent over Gens 2.10 emulator
@@ -101,15 +100,15 @@ You need to make in the any IDE a library project and put into it next files
 * chips/nuked/ym3438.h  - Nuked OPN2 Emulation header
 * chips/nuked/ym3438.cpp   - Code of Nuked OPN2 emulator by Stéphane Dallongeville, improved by Shay Green
 
-#### MUS2MIDI converter
-To remove MUS support, define `OPNMIDI_DISABLE_MUS_SUPPORT` macro and remove those files:
-* opnmidi_mus2mid.h - MUS2MID converter header
-* opnmidi_mus2mid.c	- MUS2MID converter source
-
-#### XMI2MIDI converter
-To remove XMI support, define `OPNMIDI_DISABLE_XMI_SUPPORT` macro and remove those files:
-* opnmidi_xmi2mid.h - XMI2MID converter header
-* opnmidi_xmi2mid.c	- XMI2MID converter source
+#### MIDI Sequencer
+To remove MIDI Sequecer, define `OPNMIDI_DISABLE_MIDI_SEQUENCER` macro and remove all those files
+* adlmidi_sequencer.cpp	- MIDI Sequencer related source
+* cvt_mus2mid.hpp - MUS2MID converter source (define `BWMIDI_DISABLE_MUS_SUPPORT` macro to remove MUS support)
+* cvt_xmi2mid.hpp - XMI2MID converter source (define `BWMIDI_DISABLE_XMI_SUPPORT` macro to remove XMI support)
+* fraction.hpp  - Fraction number handling (Used by Sequencer only)
+* midi_sequencer.h	- MIDI Sequencer C bindings
+* midi_sequencer.hpp	- MIDI Sequencer C++ declaration
+* midi_sequencer_impl.hpp	- MIDI Sequencer C++ implementation (must be once included into one of CPP together with interfaces initializations)
 
 **Important**: Please use GENS emulator for on mobile or any non-power devices because it requires very small CPU power. Nuked OPN2 emulator is very accurate (compared to real OPN2 chip), however, it requires a VERY POWERFUL device even for a single chip emulation and is a high probability that your device will lag and playback will be dirty and choppy.
 
@@ -121,6 +120,11 @@ To remove XMI support, define `OPNMIDI_DISABLE_XMI_SUPPORT` macro and remove tho
 # Changelog
 ## 1.4.0   <dev>
  * Implemented a full support for Portamento! (Thanks to [Jean Pierre Cimalando](https://github.com/jpcima) for a work!)
+ * Added support for SysEx event handling! (Thanks to [Jean Pierre Cimalando](https://github.com/jpcima) for a work!)
+ * Added support for GS way of custom drum channels (through SysEx events)
+ * Ignore some NRPN events and lsb bank number when using GS standard (after catching of GS Reset SysEx call)
+ * Added support for CC66-Sostenuto controller (Pedal hold of currently-pressed notes only while CC64 holds also all next notes)
+ * Added support for CC67-SoftPedal controller (SoftPedal lowers the volume of notes played)
 
 ## 1.3.0   2018-06-19
  * Optimizing the MIDI banks management system for MultiBanks (Thanks to [Jean Pierre Cimalando](https://github.com/jpcima) for a work!)

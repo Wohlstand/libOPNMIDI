@@ -58,7 +58,7 @@ enum OPNMIDI_VolumeModels
 {
     OPNMIDI_VolumeModel_AUTO = 0,
     OPNMIDI_VolumeModel_Generic,
-    OPNMIDI_VolumeModel_CMF,
+    OPNMIDI_VolumeModel_NativeOPN2,
     OPNMIDI_VolumeModel_DMX,
     OPNMIDI_VolumeModel_APOGEE,
     OPNMIDI_VolumeModel_9X
@@ -300,8 +300,7 @@ extern void opn2_rt_bankChangeMSB(struct OPN2_MIDIPlayer *device, OPN2_UInt8 cha
 extern void opn2_rt_bankChange(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_SInt16 bank);
 
 /*Perform a system exclusive message*/
-extern int opn2_rt_systemExclusive(struct OPN2_MIDIPlayer *device, const OPN2_UInt8 *msg, unsigned size);
-
+extern int opn2_rt_systemExclusive(struct OPN2_MIDIPlayer *device, const OPN2_UInt8 *msg, size_t size);
 
 /**Hooks**/
 
