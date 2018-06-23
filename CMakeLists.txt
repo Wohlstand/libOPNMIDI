@@ -190,11 +190,11 @@ if(NOT libOPNMIDI_STATIC AND NOT libOPNMIDI_SHARED)
 You must enable at least one of them!")
 endif()
 
-add_library(OPNMIDI INTERFACE)
+add_library(OPNMIDI_IF INTERFACE)
 if(libOPNMIDI_SHARED)
-  target_link_libraries(OPNMIDI INTERFACE OPNMIDI_shared)
+  target_link_libraries(OPNMIDI_IF INTERFACE OPNMIDI_shared)
 else()
-  target_link_libraries(OPNMIDI INTERFACE OPNMIDI_static)
+  target_link_libraries(OPNMIDI_IF INTERFACE OPNMIDI_static)
 endif()
 
 if(WITH_MIDIPLAY OR WITH_DAC_UTIL)
@@ -221,7 +221,7 @@ if(WITH_MIDIPLAY)
         ${libOPNMIDI_SOURCE_DIR}/utils/midiplay/wave_writer.c
         # ${libOPNMIDI_SOURCE_DIR}/utils/midiplay/wave_writer.c # WIP
     )
-    target_link_libraries(opnmidiplay OPNMIDI ${SDL2_NEEDED_LIBRARIES})
+    target_link_libraries(opnmidiplay OPNMIDI_IF ${SDL2_NEEDED_LIBRARIES})
 
     if(libOPNMIDI_SHARED)
         add_dependencies(opnmidiplay OPNMIDI_shared)
@@ -255,13 +255,11 @@ if(WITH_VLC_PLUGIN)
     target_include_directories(opnmidi_plugin PRIVATE
             ${LIBVLC_INCLUDE_DIR}/vlc/plugins
             ${LIBVLC_INCLUDE_DIR}/vlc)
-    target_link_libraries(opnmidi_plugin OPNMIDI vlccore m stdc++)
+    target_link_libraries(opnmidi_plugin OPNMIDI_IF vlccore m stdc++)
     # target_link_libraries(opnmidi_plugin INTERFACE "-export-symbol-regex ^vlc_entry")
 
     if(libOPNMIDI_SHARED)
         add_dependencies(opnmidi_plugin OPNMIDI_shared)
-        # ========= WIP =========
-        # set_target_properties(opnmidiplay PROPERTIES COMPILE_FLAGS "-Wl,-rpath='$$ORIGIN/../lib'")
     else()
         if(NOT libOPNMIDI_STATIC)
             message(FATAL_ERROR "libOPNMIDI is required to be built!")
