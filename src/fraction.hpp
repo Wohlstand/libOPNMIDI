@@ -4,6 +4,7 @@
 #include <cmath>
 #include <limits>
 
+
 /* Fraction number handling.
  * Copyright (C) 1992,2001 Bisqwit (http://iki.fi/bisqwit/)
  */

@@ -10,6 +10,6 @@ add_executable (ActiveNotesList
                 $<TARGET_OBJECTS:Catch-objects>)
 
 set_target_properties(ActiveNotesList PROPERTIES COMPILE_DEFINITIONS "GSL_THROW_ON_CONTRACT_VIOLATION")
-target_link_libraries(ActiveNotesList PUBLIC OPNMIDI_static)
+target_link_libraries(ActiveNotesList PRIVATE OPNMIDI_IF)
+target_compile_definitions(ActiveNotesList PRIVATE OPNMIDI_AUDIO_TICK_HANDLER)
 add_test(NAME ActiveNotesList COMMAND ActiveNotesList)
-

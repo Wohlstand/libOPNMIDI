@@ -5,21 +5,27 @@ project(libOPNMIDI C CXX)
 # Strip garbage
 if(APPLE)
     set(LINK_FLAGS_RELEASE  "${LINK_FLAGS_RELEASE} -dead_strip")
-ELSEIF(NOT MSVC AND NOT MSDOS)
+elseif(NOT MSVC AND NOT MSDOS)
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Os -s -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-s")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Os -s -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-s")
     set(LINK_FLAGS_RELEASE  "${LINK_FLAGS_RELEASE} -Wl,--gc-sections -Wl,-s")
-ENDIF()
+endif()
 
 # Global optimization flags
-IF(NOT MSVC AND NOT MSDOS)
+if(NOT MSVC AND NOT MSDOS)
 # Global optimization flags
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -fno-omit-frame-pointer")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-omit-frame-pointer")
 # Turn on all warnings
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
-ENDIF()
+# Deny undefined symbols
+    if(NOT APPLE)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--no-undefined" )
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined" )
+        set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--no-undefined" )
+    endif()
+endif()
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
@@ -96,20 +102,18 @@ list(APPEND libOPNMIDI_SOURCES
     ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_private.cpp
 )
 
-if(WITH_MUS_SUPPORT AND WITH_MIDI_SEQUENCER)
+if(WITH_MIDI_SEQUENCER)
     list(APPEND libOPNMIDI_SOURCES
-        ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_mus2mid.c
+        ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_sequencer.cpp
     )
-else()
-    add_definitions(-DOPNMIDI_DISABLE_MUS_SUPPORT)
 endif()
 
-if(WITH_XMI_SUPPORT AND WITH_MIDI_SEQUENCER)
-    list(APPEND libOPNMIDI_SOURCES
-        ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_xmi2mid.c
-    )
-else()
-    add_definitions(-DOPNMIDI_DISABLE_XMI_SUPPORT)
+if(NOT WITH_MUS_SUPPORT OR NOT WITH_MIDI_SEQUENCER)
+    add_definitions(-DBWMIDI_DISABLE_MUS_SUPPORT)
+endif()
+
+if(NOT WITH_XMI_SUPPORT OR NOT WITH_MIDI_SEQUENCER)
+    add_definitions(-DBWMIDI_DISABLE_XMI_SUPPORT)
 endif()
 
 if(USE_GENS_EMULATOR)
@@ -186,11 +190,11 @@ if(NOT libOPNMIDI_STATIC AND NOT libOPNMIDI_SHARED)
 You must enable at least one of them!")
 endif()
 
-add_library(OPNMIDI INTERFACE)
+add_library(OPNMIDI_IF INTERFACE)
 if(libOPNMIDI_SHARED)
-  target_link_libraries(OPNMIDI INTERFACE OPNMIDI_shared)
+  target_link_libraries(OPNMIDI_IF INTERFACE OPNMIDI_shared)
 else()
-  target_link_libraries(OPNMIDI INTERFACE OPNMIDI_static)
+  target_link_libraries(OPNMIDI_IF INTERFACE OPNMIDI_static)
 endif()
 
 if(WITH_MIDIPLAY OR WITH_DAC_UTIL)
@@ -217,7 +221,7 @@ if(WITH_MIDIPLAY)
         ${libOPNMIDI_SOURCE_DIR}/utils/midiplay/wave_writer.c
         # ${libOPNMIDI_SOURCE_DIR}/utils/midiplay/wave_writer.c # WIP
     )
-    target_link_libraries(opnmidiplay OPNMIDI ${SDL2_NEEDED_LIBRARIES})
+    target_link_libraries(opnmidiplay OPNMIDI_IF ${SDL2_NEEDED_LIBRARIES})
 
     if(libOPNMIDI_SHARED)
         add_dependencies(opnmidiplay OPNMIDI_shared)
@@ -251,13 +255,11 @@ if(WITH_VLC_PLUGIN)
     target_include_directories(opnmidi_plugin PRIVATE
             ${LIBVLC_INCLUDE_DIR}/vlc/plugins
             ${LIBVLC_INCLUDE_DIR}/vlc)
-    target_link_libraries(opnmidi_plugin OPNMIDI vlccore m stdc++)
+    target_link_libraries(opnmidi_plugin OPNMIDI_IF vlccore m stdc++)
     # target_link_libraries(opnmidi_plugin INTERFACE "-export-symbol-regex ^vlc_entry")
 
     if(libOPNMIDI_SHARED)
         add_dependencies(opnmidi_plugin OPNMIDI_shared)
-        # ========= WIP =========
-        # set_target_properties(opnmidiplay PROPERTIES COMPILE_FLAGS "-Wl,-rpath='$$ORIGIN/../lib'")
     else()
         if(NOT libOPNMIDI_STATIC)
             message(FATAL_ERROR "libOPNMIDI is required to be built!")

@@ -250,8 +250,8 @@ void OPN2::ChangeVolumeRangesModel(OPNMIDI_VolumeModels volumeModel)
         m_volumeScale = OPN2::VOLUME_Generic;
         break;
 
-    case OPNMIDI_VolumeModel_CMF:
-        m_volumeScale = OPN2::VOLUME_CMF;
+    case OPNMIDI_VolumeModel_NativeOPN2:
+        m_volumeScale = OPN2::VOLUME_NATIVE;
         break;
 
     case OPNMIDI_VolumeModel_DMX:
@@ -275,8 +275,11 @@ void OPN2::ClearChips()
     cardsOP2.clear();
 }
 
-void OPN2::Reset(int emulator, unsigned long PCM_RATE)
+void OPN2::Reset(int emulator, unsigned long PCM_RATE, void *audioTickHandler)
 {
+#if !defined(ADLMIDI_AUDIO_TICK_HANDLER)
+    (void)audioTickHandler;
+#endif
     ClearChips();
     ins.clear();
     pit.clear();
@@ -285,33 +288,40 @@ void OPN2::Reset(int emulator, unsigned long PCM_RATE)
 
     for(size_t i = 0; i < cardsOP2.size(); i++)
     {
+        OPNChipBase *chip;
+
         switch(emulator)
         {
         default:
 #ifndef OPNMIDI_DISABLE_MAME_EMULATOR
         case OPNMIDI_EMU_MAME:
-            cardsOP2[i].reset(new MameOPN2());
+            chip = new MameOPN2;
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_NUKED_EMULATOR
         case OPNMIDI_EMU_NUKED:
-            cardsOP2[i].reset(new NukedOPN2());
+            chip = new NukedOPN2;
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_GENS_EMULATOR
         case OPNMIDI_EMU_GENS:
-            cardsOP2[i].reset(new GensOPN2());
+            chip = new GensOPN2;
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_GX_EMULATOR
         case OPNMIDI_EMU_GX:
-            cardsOP2[i].reset(new GXOPN2());
+            chip = new GXOPN2;
             break;
 #endif
         }
-        cardsOP2[i]->setRate((uint32_t)PCM_RATE, 7670454);
+        cardsOP2[i].reset(chip);
+        chip->setChipId((uint32_t)i);
+        chip->setRate((uint32_t)PCM_RATE, 7670454);
         if(runAtPcmRate)
-            cardsOP2[i]->setRunningAtPcmRate(true);
+            chip->setRunningAtPcmRate(true);
+#if defined(ADLMIDI_AUDIO_TICK_HANDLER)
+        chip->setAudioTickHandlerInstance(audioTickHandler);
+#endif
     }
 
     NumChannels = NumCards * 6;

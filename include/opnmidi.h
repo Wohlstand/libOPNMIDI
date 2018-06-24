@@ -29,7 +29,7 @@ extern "C" {
 #endif
 
 #define OPNMIDI_VERSION_MAJOR       1
-#define OPNMIDI_VERSION_MINOR       3
+#define OPNMIDI_VERSION_MINOR       4
 #define OPNMIDI_VERSION_PATCHLEVEL  0
 
 #define OPNMIDI_TOSTR_I(s) #s
@@ -58,7 +58,7 @@ enum OPNMIDI_VolumeModels
 {
     OPNMIDI_VolumeModel_AUTO = 0,
     OPNMIDI_VolumeModel_Generic,
-    OPNMIDI_VolumeModel_CMF,
+    OPNMIDI_VolumeModel_NativeOPN2,
     OPNMIDI_VolumeModel_DMX,
     OPNMIDI_VolumeModel_APOGEE,
     OPNMIDI_VolumeModel_9X
@@ -166,6 +166,9 @@ extern const char *opn2_errorInfo(struct OPN2_MIDIPlayer *device);
 
 /*Initialize ADLMIDI Player device*/
 extern struct OPN2_MIDIPlayer *opn2_init(long sample_rate);
+
+/*Set 4-bit device identifier*/
+extern int opn2_setDeviceIdentifier(struct OPN2_MIDIPlayer *device, unsigned id);
 
 /*Load MIDI file from File System*/
 extern int opn2_openFile(struct OPN2_MIDIPlayer *device, const char *filePath);
@@ -296,6 +299,8 @@ extern void opn2_rt_bankChangeMSB(struct OPN2_MIDIPlayer *device, OPN2_UInt8 cha
 /*Change bank by absolute signed value*/
 extern void opn2_rt_bankChange(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_SInt16 bank);
 
+/*Perform a system exclusive message*/
+extern int opn2_rt_systemExclusive(struct OPN2_MIDIPlayer *device, const OPN2_UInt8 *msg, size_t size);
 
 /**Hooks**/
 

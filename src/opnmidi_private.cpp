@@ -25,6 +25,15 @@
 
 std::string OPN2MIDI_ErrorString;
 
+// Generator callback on audio rate ticks
+
+#if defined(ADLMIDI_AUDIO_TICK_HANDLER)
+void opn2_audioTickHandler(void *instance, uint32_t chipId, uint32_t rate)
+{
+    reinterpret_cast<OPNMIDIplay *>(instance)->AudioTick(chipId, rate);
+}
+#endif
+
 int opn2RefreshNumCards(OPN2_MIDIPlayer * /*device*/)
 {
 //    OPNMIDIplay *play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
