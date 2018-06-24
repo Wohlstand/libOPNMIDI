@@ -165,7 +165,7 @@ int main(int argc, char **argv)
         g_audioBuffer_lock.Unlock();
 
         const SDL_AudioSpec &spec = obtained;
-        while(g_audioBuffer.size() > spec.samples + (spec.freq * 2) * OurHeadRoomLength)
+        while(g_audioBuffer.size() > static_cast<size_t>(spec.samples + (spec.freq * 2) * OurHeadRoomLength))
         {
             SDL_Delay(1);
         }

@@ -49,17 +49,17 @@
 #endif
 
 
-static const uint8_t g_noteChannelsMap[6] = { 0, 1, 2, 4, 5, 6 };
+static const uint32_t g_noteChannelsMap[6] = { 0, 1, 2, 4, 5, 6 };
 
 static inline void getOpnChannel(size_t     in_channel,
-                                 size_t     &out_card,
+                                 size_t     &out_chip,
                                  uint8_t    &out_port,
-                                 uint8_t    &out_ch)
+                                 uint32_t   &out_ch)
 {
-    out_card    = in_channel / 6;
-    uint8_t ch4 = in_channel % 6;
+    out_chip    = in_channel / 6;
+    size_t ch4 = in_channel % 6;
     out_port = ((ch4 < 3) ? 0 : 1);
-    out_ch = ch4 % 3;
+    out_ch = static_cast<uint32_t>(ch4 % 3);
 }
 
 static opnInstMeta2 makeEmptyInstrument()
@@ -92,23 +92,30 @@ void OPN2::writeReg(size_t chip, uint8_t port, uint8_t index, uint8_t value)
     m_chips[chip]->writeReg(port, index, value);
 }
 
+void OPN2::writeRegI(size_t chip, uint8_t port, uint32_t index, uint32_t value)
+{
+    m_chips[chip]->writeReg(port, static_cast<uint8_t>(index), static_cast<uint8_t>(value));
+}
+
 void OPN2::noteOff(size_t c)
 {
     size_t      chip;
-    uint8_t     port, cc;
-    uint8_t     ch4 = c % 6;
+    uint8_t     port;
+    uint32_t    cc;
+    size_t      ch4 = c % 6;
     getOpnChannel(c, chip, port, cc);
-    writeReg(chip, 0, 0x28, g_noteChannelsMap[ch4]);
+    writeRegI(chip, 0, 0x28, g_noteChannelsMap[ch4]);
 }
 
 void OPN2::noteOn(size_t c, double hertz) // Hertz range: 0..131071
 {
     size_t      chip;
-    uint8_t     port, cc;
-    uint8_t     ch4 = c % 6;
+    uint8_t     port;
+    uint32_t    cc;
+    size_t      ch4 = c % 6;
     getOpnChannel(c, chip, port, cc);
 
-    uint16_t x2 = 0x0000;
+    uint32_t x2 = 0x0000;
 
     if(hertz < 0 || hertz > 262143) // Avoid infinite loop
         return;
@@ -120,9 +127,9 @@ void OPN2::noteOn(size_t c, double hertz) // Hertz range: 0..131071
     }
 
     x2 += static_cast<uint32_t>(hertz + 0.5);
-    writeReg(chip, port, 0xA4 + cc, (x2>>8) & 0xFF);//Set frequency and octave
-    writeReg(chip, port, 0xA0 + cc, x2 & 0xFF);
-    writeReg(chip, 0, 0x28, 0xF0 + g_noteChannelsMap[ch4]);
+    writeRegI(chip, port, 0xA4 + cc, (x2>>8) & 0xFF);//Set frequency and octave
+    writeRegI(chip, port, 0xA0 + cc, x2 & 0xFF);
+    writeRegI(chip, 0, 0x28, 0xF0 + g_noteChannelsMap[ch4]);
 }
 
 void OPN2::touchNote(size_t c, uint8_t volume, uint8_t brightness)
@@ -130,7 +137,8 @@ void OPN2::touchNote(size_t c, uint8_t volume, uint8_t brightness)
     if(volume > 127) volume = 127;
 
     size_t      chip;
-    uint8_t     port, cc;
+    uint8_t     port;
+    uint32_t    cc;
     getOpnChannel(c, chip, port, cc);
 
     const opnInstData &adli = m_insCache[c];
@@ -165,15 +173,15 @@ void OPN2::touchNote(size_t c, uint8_t volume, uint8_t brightness)
     for(uint8_t op = 0; op < 4; op++)
     {
         bool do_op = alg_do[alg][op] || m_scaleModulators;
-        uint8_t x = op_vol[op];
-        uint8_t vol_res = do_op ? uint8_t(127 - (static_cast<uint32_t>(volume) * (127 - (x & 127)))/127) : x;
+        uint32_t x = op_vol[op];
+        uint32_t vol_res = do_op ? (127 - (static_cast<uint32_t>(volume) * (127 - (x & 127)))/127) : x;
         if(brightness != 127)
         {
-            brightness = static_cast<uint8_t>(::round(127.0 * ::sqrt((static_cast<double>(brightness)) * (1.0 / 127.0))));
+            brightness = static_cast<uint32_t>(::round(127.0 * ::sqrt((static_cast<double>(brightness)) * (1.0 / 127.0))));
             if(!do_op)
-                vol_res = uint8_t(127 - (brightness * (127 - (static_cast<uint32_t>(vol_res) & 127))) / 127);
+                vol_res = (127 - (brightness * (127 - (static_cast<uint32_t>(vol_res) & 127))) / 127);
         }
-        writeReg(chip, port, 0x40 + cc + (4 * op), vol_res);
+        writeRegI(chip, port, 0x40 + cc + (4 * op), vol_res);
     }
     // Correct formula (ST3, AdPlug):
     //   63-((63-(instrvol))/63)*chanvol
@@ -186,29 +194,31 @@ void OPN2::touchNote(size_t c, uint8_t volume, uint8_t brightness)
 void OPN2::setPatch(size_t c, const opnInstData &instrument)
 {
     size_t      chip;
-    uint8_t     port, cc;
+    uint8_t     port;
+    uint32_t    cc;
     getOpnChannel(c, chip, port, cc);
     m_insCache[c] = instrument;
     for(uint8_t d = 0; d < 7; d++)
     {
         for(uint8_t op = 0; op < 4; op++)
-            writeReg(chip, port, 0x30 + (0x10 * d) + (op * 4) + cc, instrument.OPS[op].data[d]);
+            writeRegI(chip, port, 0x30 + (0x10 * d) + (op * 4) + cc, instrument.OPS[op].data[d]);
     }
 
-    writeReg(chip, port, 0xB0 + cc, instrument.fbalg);//Feedback/Algorithm
+    writeRegI(chip, port, 0xB0 + cc, instrument.fbalg);//Feedback/Algorithm
     m_regLFOSens[c] = (m_regLFOSens[c] & 0xC0) | (instrument.lfosens & 0x3F);
-    writeReg(chip, port, 0xB4 + cc, m_regLFOSens[c]);//Panorame and LFO bits
+    writeRegI(chip, port, 0xB4 + cc, m_regLFOSens[c]);//Panorame and LFO bits
 }
 
 void OPN2::setPan(size_t c, uint8_t value)
 {
     size_t      chip;
-    uint8_t     port, cc;
+    uint8_t     port;
+    uint32_t    cc;
     getOpnChannel(c, chip, port, cc);
     const opnInstData &adli = m_insCache[c];
     uint8_t val = (value & 0xC0) | (adli.lfosens & 0x3F);
     m_regLFOSens[c] = val;
-    writeReg(chip, port, 0xB4 + cc, val);
+    writeRegI(chip, port, 0xB4 + cc, val);
 }
 
 void OPN2::silenceAll() // Silence all OPL channels.

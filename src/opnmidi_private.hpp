@@ -137,7 +137,7 @@ extern std::string OPN2MIDI_ErrorString;
 template <class Real>
 inline Real opn2_cvtReal(int32_t x)
 {
-    return x * ((Real)1 / INT16_MAX);
+    return static_cast<Real>(x) * (static_cast<Real>(1) / static_cast<Real>(INT16_MAX));
 }
 inline int32_t opn2_cvtS16(int32_t x)
 {
@@ -189,7 +189,7 @@ public:
     //! Total number of chip channels between all running emulators
     uint32_t m_numChannels;
     //! Just a padding. Reserved.
-    char ____padding[4];
+    char _padding[4];
     //! Running chip emulators
     std::vector<AdlMIDI_SPtr<OPNChipBase > > m_chips;
 private:
@@ -225,7 +225,7 @@ public:
     bool m_runAtPcmRate;
 
     //! Just a padding. Reserved.
-    char ___padding2[3];
+    char _padding2[3];
 
     /**
      * @brief Music playing mode
@@ -260,7 +260,7 @@ public:
     } m_volumeScale;
 
     //! Reserved
-    char ____padding3[8];
+    char _padding3[8];
 
     //! Category of the channel
     /*! 1 = DAC, 0 = regular
@@ -286,6 +286,15 @@ public:
      * @param value Value to write
      */
     void writeReg(size_t chip, uint8_t port, uint8_t index, uint8_t value);
+
+    /**
+     * @brief Write data to OPN2 chip register
+     * @param chip Index of emulated chip. In hardware OPN2 builds, this parameter is ignored
+     * @param port Port of the chip to write
+     * @param index Register address to write
+     * @param value Value to write
+     */
+    void writeRegI(size_t chip, uint8_t port, uint32_t index, uint32_t value);
 
     /**
      * @brief Off the note in specified chip channel
@@ -383,6 +392,8 @@ public:
 
     void applySetup();
 
+    void resetMIDI();
+
     /**********************Internal structures and classes**********************/
 
     /**
@@ -423,7 +434,7 @@ public:
         //! Is note aftertouch has any non-zero value
         bool    noteAfterTouchInUse;
         //! Reserved
-        char ____padding[6];
+        char _padding[6];
         //! Pitch bend value
         int bend;
         //! Pitch bend sensitivity
@@ -552,7 +563,7 @@ public:
         };
 
         //! Reserved
-        char ____padding2[5];
+        char _padding2[5];
         //! Count of gliding notes in this channel
         unsigned gliding_note_count;
 
@@ -723,7 +734,7 @@ public:
                 { return MidCh == l.MidCh && note == l.note; }
             bool operator!=(const Location &l) const
                 { return !operator==(l); }
-            char ____padding[1];
+            char _padding[1];
         };
         struct LocationData
         {
@@ -735,8 +746,8 @@ public:
                 Sustain_Sostenuto   = 0x02,
                 Sustain_ANY         = Sustain_Pedal | Sustain_Sostenuto,
             };
-            uint8_t sustained;
-            char ____padding[3];
+            uint32_t sustained;
+            char _padding[3];
             MIDIchannel::NoteInfo::Phys ins;  // a copy of that in phys[]
             //! Has fixed sustain, don't iterate "on" timeout
             bool    fixed_sustain;
@@ -895,11 +906,11 @@ private:
     std::string errorStringOut;
 
     //! Missing instruments catches
-    std::set<uint8_t> caugh_missing_instruments;
+    std::set<size_t> caugh_missing_instruments;
     //! Missing melodic banks catches
-    std::set<uint16_t> caugh_missing_banks_melodic;
+    std::set<size_t> caugh_missing_banks_melodic;
     //! Missing percussion banks catches
-    std::set<uint16_t> caugh_missing_banks_percussion;
+    std::set<size_t> caugh_missing_banks_percussion;
 
 public:
 
@@ -1238,7 +1249,7 @@ private:
      */
     void killSustainingNotes(int32_t midCh = -1,
                              int32_t this_adlchn = -1,
-                             uint8_t sustain_type = OpnChannel::LocationData::Sustain_ANY);
+                             uint32_t sustain_type = OpnChannel::LocationData::Sustain_ANY);
     /**
      * @brief Find active notes and mark them as sostenuto-sustained
      * @param MidCh MIDI channel, -1 - all MIDI channels

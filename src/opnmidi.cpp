@@ -74,7 +74,7 @@ OPNMIDI_EXPORT int adl_setDeviceIdentifier(OPN2_MIDIPlayer *device, unsigned id)
     MidiPlayer *play = GET_MIDI_PLAYER(device);
     if(!play)
         return -1;
-    play->setDeviceId(id);
+    play->setDeviceId(static_cast<uint8_t>(id));
     return 0;
 }
 
@@ -372,6 +372,7 @@ OPNMIDI_EXPORT void opn2_reset(OPN2_MIDIPlayer *device)
     play->m_synth.reset(play->m_setup.emulator, play->m_setup.PCM_RATE, play);
     play->m_chipChannels.clear();
     play->m_chipChannels.resize(play->m_synth.m_numChannels);
+    play->resetMIDI();
 }
 
 OPNMIDI_EXPORT double opn2_totalTimeLength(struct OPN2_MIDIPlayer *device)
@@ -649,8 +650,8 @@ static void CopySamplesTransformed(OPN2_UInt8 *dstLeft, OPN2_UInt8 *dstRight, co
                                    Ret(&transform)(int32_t))
 {
     for(size_t i = 0; i < frameCount; ++i) {
-        *(Dst *)(dstLeft + (i * sampleOffset)) = transform(src[2 * i]);
-        *(Dst *)(dstRight + (i * sampleOffset)) = transform(src[(2 * i) + 1]);
+        *(Dst *)(dstLeft + (i * sampleOffset)) = (transform(src[2 * i]));
+        *(Dst *)(dstRight + (i * sampleOffset)) = (transform(src[(2 * i) + 1]));
     }
 }
 

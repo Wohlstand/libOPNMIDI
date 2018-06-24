@@ -25,7 +25,7 @@
 
 // Mapping from MIDI volume level to OPL level value.
 
-static const uint8_t DMX_volume_mapping_table[128] =
+static const uint_fast32_t DMX_volume_mapping_table[128] =
 {
     0,  1,  3,  5,  6,  8,  10, 11,
     13, 14, 16, 17, 19, 20, 22, 23,
@@ -45,7 +45,7 @@ static const uint8_t DMX_volume_mapping_table[128] =
     124, 124, 125, 125, 126, 126, 127, 127,
 };
 
-static const uint8_t W9X_volume_mapping_table[32] =
+static const uint_fast32_t W9X_volume_mapping_table[32] =
 {
     63, 63, 40, 36, 32, 28, 23, 21,
     19, 17, 15, 14, 13, 12, 11, 10,
@@ -111,8 +111,8 @@ OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
     initSequencerInterface();
 #endif
+    resetMIDI();
     applySetup();
-    chooseDevice("none");
     realTime_ResetState();
 }
 
@@ -142,6 +142,21 @@ void OPNMIDIplay::applySetup()
 
     // Reset the arpeggio counter
     m_arpeggioCounter = 0;
+}
+
+void OPNMIDIplay::resetMIDI()
+{
+    m_masterVolume = MasterVolumeDefault;
+    m_sysExDeviceId = 0;
+    m_synthMode = Mode_XG;
+    m_arpeggioCounter = 0;
+
+    m_midiChannels.clear();
+    m_midiChannels.resize(16, MIDIchannel());
+
+    caugh_missing_instruments.clear();
+    caugh_missing_banks_melodic.clear();
+    caugh_missing_banks_percussion.clear();
 }
 
 void OPNMIDIplay::TickIterators(double s)
@@ -207,13 +222,13 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     size_t midiins = midiChan.patch;
     bool isPercussion = (channel % 16 == 9) || midiChan.is_xg_percussion;
 
-    uint16_t bank = 0;
+    size_t bank = 0;
     if(midiChan.bank_msb || midiChan.bank_lsb)
     {
         if((m_synthMode & Mode_GS) != 0) //in GS mode ignore LSB
-            bank = (uint16_t(midiChan.bank_msb) * 256);
+            bank = (midiChan.bank_msb * 256);
         else
-            bank = (uint16_t(midiChan.bank_msb) * 256) + uint16_t(midiChan.bank_lsb);
+            bank = (midiChan.bank_msb * 256) + midiChan.bank_lsb;
     }
 
     if(isPercussion)
@@ -229,11 +244,11 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
             // Let XG Percussion bank will use (0...127 LSB range in WOPN file)
 
             // Choose: SFX or Drum Kits
-            bank = (uint16_t)midiins + ((bank == 0x7E00) ? 128 : 0);
+            bank = midiins + ((bank == 0x7E00) ? 128 : 0);
         }
         else
         {
-            bank = (uint16_t)midiins;
+            bank = midiins;
         }
         midiins = note; // Percussion instrument
     }
@@ -255,7 +270,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
             ains = &bnk->ins[midiins];
         else if(hooks.onDebugMessage)
         {
-            std::set<uint16_t> &missing = (isPercussion) ?
+            std::set<size_t> &missing = (isPercussion) ?
                                           caugh_missing_banks_percussion : caugh_missing_banks_melodic;
             const char *text = (isPercussion) ?
                                "percussion" : "melodic";
@@ -274,7 +289,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
             ains = &bnk->ins[midiins];
     }
 
-    int16_t tone = note;
+    int32_t tone = note;
     if(!isPercussion && (bank > 0)) // For non-zero banks
     {
         if(ains->flags & opnInstMeta::Flag_NoSound)
@@ -392,7 +407,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     ir = midiChan.activenotes_insert(note);
     ir.first->vol     = velocity;
     ir.first->vibrato = midiChan.noteAftertouch[note];
-    ir.first->noteTone = tone;
+    ir.first->noteTone = static_cast<int16_t>(tone);
     ir.first->currentTone = tone;
     ir.first->glideRate = HUGE_VAL;
     ir.first->midiins = midiins;
@@ -488,12 +503,12 @@ void OPNMIDIplay::realTime_Controller(uint8_t channel, uint8_t type, uint8_t val
         break;
 
     case 5: // Set portamento msb
-        m_midiChannels[channel].portamento = static_cast<uint16_t>((m_midiChannels[channel].portamento & 0x7F) | (value << 7));
+        m_midiChannels[channel].portamento = static_cast<uint16_t>((m_midiChannels[channel].portamento & 0x007F) | (value << 7));
         updatePortamento(channel);
         break;
 
     case 37: // Set portamento lsb
-        m_midiChannels[channel].portamento = (m_midiChannels[channel].portamento & 0x3F80) | (value);
+        m_midiChannels[channel].portamento = static_cast<uint16_t>((m_midiChannels[channel].portamento & 0x3F80) | (value));
         updatePortamento(channel);
         break;
 
@@ -721,7 +736,7 @@ bool OPNMIDIplay::doUniversalSysEx(unsigned dev, bool realtime, const uint8_t *d
             unsigned volume =
                 (((unsigned)data[0] & 0x7F)) |
                 (((unsigned)data[1] & 0x7F) << 7);
-            m_masterVolume = volume >> 7;
+            m_masterVolume = static_cast<uint8_t>(volume >> 7);
             for(size_t ch = 0; ch < m_midiChannels.size(); ch++)
                 noteUpdateAll(uint16_t(ch), Upd_Volume);
             return true;
@@ -891,6 +906,8 @@ void OPNMIDIplay::realTime_deviceSwitch(size_t track, const char *data, size_t l
 
 uint64_t OPNMIDIplay::realTime_currentDevice(size_t track)
 {
+    if(m_currentMidiDevice.empty())
+        return 0;
     return m_currentMidiDevice[track];
 }
 
@@ -1004,9 +1021,9 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
 
         if(props_mask & Upd_Volume)
         {
-            uint32_t volume;
+            uint_fast32_t volume;
             bool is_percussion = (midCh == 9) || m_midiChannels[midCh].is_xg_percussion;
-            uint8_t brightness = is_percussion ? 127 : m_midiChannels[midCh].brightness;
+            uint_fast32_t brightness = is_percussion ? 127 : m_midiChannels[midCh].brightness;
 
             if(!m_setup.fullRangeBrightnessCC74)
             {
@@ -1033,7 +1050,7 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
                 //volume = (int)(volume * std::sqrt( (double) ch[c].users.size() ));
 
                 // The formula below: SOLVE(V=127^3 * 2^( (A-63.49999) / 8), A)
-                volume = volume > (8725 * 127) ? static_cast<uint32_t>((std::log(static_cast<double>(volume)) * 11.541560327111707 - 1.601379199767093e+02) * 2.0) : 0;
+                volume = volume > (8725 * 127) ? static_cast<uint_fast32_t>((std::log(static_cast<double>(volume)) * 11.541560327111707 - 1.601379199767093e+02) * 2.0) : 0;
                 // The incorrect formula below: SOLVE(V=127^3 * (2^(A/63)-1), A)
                 //opl.Touch_Real(c, volume>11210 ? 91.61112 * std::log(4.8819E-7*volume + 1.0)+0.5 : 0);
             }
@@ -1074,7 +1091,7 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
             break;
             }
 
-            m_synth.touchNote(c, volume, brightness);
+            m_synth.touchNote(c, static_cast<uint8_t>(volume), static_cast<uint8_t>(brightness));
 
             /* DEBUG ONLY!!!
             static uint32_t max = 0;
@@ -1336,7 +1353,7 @@ void OPNMIDIplay::panic()
     }
 }
 
-void OPNMIDIplay::killSustainingNotes(int32_t midCh, int32_t this_adlchn, uint8_t sustain_type)
+void OPNMIDIplay::killSustainingNotes(int32_t midCh, int32_t this_adlchn, uint32_t sustain_type)
 {
     uint32_t first = 0, last = m_synth.m_numChannels;
 

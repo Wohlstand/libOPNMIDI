@@ -170,7 +170,7 @@ bool OPNMIDIplay::LoadBank(FileAndMemReader &fr)
                 errorStringOut = "Custom bank: Fail to read melodic bank meta-data!";
                 return false;
             }
-            uint16_t bankno = uint16_t(bank_meta[33]) * 256 + uint16_t(bank_meta[32]);
+            size_t bankno = size_t(bank_meta[33]) * 256 + size_t(bank_meta[32]);
             OPN2::Bank &bank = m_synth.m_insBanks[bankno];
             //strncpy(bank.name, char_p(bank_meta), 32);
             banks.push_back(&bank);
@@ -185,7 +185,7 @@ bool OPNMIDIplay::LoadBank(FileAndMemReader &fr)
                 errorStringOut = "Custom bank: Fail to read percussion bank meta-data!";
                 return false;
             }
-            uint16_t bankno = uint16_t(bank_meta[33]) * 256 + uint16_t(bank_meta[32]) + OPN2::PercussionTag;
+            size_t bankno = size_t(bank_meta[33]) * 256 + size_t(bank_meta[32]) + OPN2::PercussionTag;
             OPN2::Bank &bank = m_synth.m_insBanks[bankno];
             //strncpy(bank.name, char_p(bank_meta), 32);
             banks.push_back(&bank);
@@ -255,11 +255,8 @@ bool OPNMIDIplay::LoadMIDI_pre()
     }
 
     /**** Set all properties BEFORE starting of actial file reading! ****/
+    resetMIDI();
     applySetup();
-
-    caugh_missing_instruments.clear();
-    caugh_missing_banks_melodic.clear();
-    caugh_missing_banks_percussion.clear();
 
     return true;
 }
