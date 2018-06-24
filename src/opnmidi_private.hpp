@@ -41,7 +41,7 @@
 
 #ifdef _WIN32
 #   undef NO_OLDNAMES
-
+#       include <stdint.h>
 #   ifdef _MSC_VER
 #       ifdef _WIN64
 typedef __int64 ssize_t;
@@ -73,7 +73,6 @@ typedef int32_t ssize_t;
 #include <vector> // vector
 #include <deque>  // deque
 #include <cmath>  // exp, log, ceil
-#include <stdint.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
