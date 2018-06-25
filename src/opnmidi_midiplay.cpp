@@ -1380,7 +1380,7 @@ void OPNMIDIplay::killSustainingNotes(int32_t midCh, int32_t this_adlchn, uint32
                 if(hooks.onNote)
                     hooks.onNote(hooks.onNote_userData, (int)c, j->loc.note, midiins, 0, 0.0);
                 j->sustained &= ~sustain_type;
-                if((j->sustained == OpnChannel::LocationData::Sustain_None))
+                if(j->sustained == OpnChannel::LocationData::Sustain_None)
                     m_chipChannels[c].users_erase(j);//Remove only when note is clean from any holders
             }
         }
