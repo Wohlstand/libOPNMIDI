@@ -1489,7 +1489,7 @@ void OPNMIDIplay::updateVibrato(double amount)
 
 size_t OPNMIDIplay::chooseDevice(const std::string &name)
 {
-    std::map<std::string, uint64_t>::iterator i = m_midiDevices.find(name);
+    std::map<std::string, size_t>::iterator i = m_midiDevices.find(name);
 
     if(i != m_midiDevices.end())
         return i->second;
