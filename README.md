@@ -5,7 +5,8 @@ OPNMIDI Library: Copyright (c) 2017-2018 Vitaly Novichkov <admin@wohlnet.ru>
 
 Library is based on core of the [libADLMIDI](https://github.com/Wohlstand/libADLMIDI), a MIDI playing library with OPL3 emulation.
 
-[![Build Status](https://semaphoreci.com/api/v1/wohlstand/libopnmidi/branches/master/badge.svg)](https://semaphoreci.com/wohlstand/libopnmidi)
+* Semaphore-CI: [![Build Status](https://semaphoreci.com/api/v1/wohlstand/libopnmidi/branches/master/badge.svg)](https://semaphoreci.com/wohlstand/libopnmidi)
+* AppVeyor CI: [![Build status](https://ci.appveyor.com/api/projects/status/98m4ltr1swyg7s5y?svg=true)](https://ci.appveyor.com/project/Wohlstand/libopnmidi)
 
 # Tested on platforms
 * Linux GCC 4.8, 4.9, 5.4 / CLang

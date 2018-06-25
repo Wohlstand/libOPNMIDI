@@ -21,7 +21,7 @@ TEST_CASE( "MIDI Channel manipulating", "[OPNMIDIplay::MIDIchannel]" )
                     midi_ch.activenotes_erase(i);
             }
 
-            const opnInstMeta2 &ains = OPN2::emptyInstrument;
+            const opnInstMeta2 &ains = OPN2::m_emptyInstrument;
 
             OPNMIDIplay::MIDIchannel::NoteInfo::Phys voices[OPNMIDIplay::MIDIchannel::NoteInfo::MaxNumPhysChans] = {
                 {0, ains.opn[0], /*false*/},

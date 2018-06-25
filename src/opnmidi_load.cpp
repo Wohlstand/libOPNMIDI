@@ -135,7 +135,7 @@ bool OPNMIDIplay::LoadBank(FileAndMemReader &fr)
         }
     }
 
-    opn.cleanInstrumentBanks();
+    m_synth.m_insBanks.clear();
     if((readU16BE(fr, count_melodic_banks) != 2) || (readU16BE(fr, count_percussive_banks) != 2))
     {
         errorStringOut = "Can't load bank file: Can't read count of banks!";
@@ -148,13 +148,13 @@ bool OPNMIDIplay::LoadBank(FileAndMemReader &fr)
         return false;
     }
 
-    if(fr.read(&opn.regLFO, 1, 1) != 1)
+    if(fr.read(&m_synth.m_regLFOSetup, 1, 1) != 1)
     {
         errorStringOut = "Can't load bank file: Can't read LFO registry state!";
         return false;
     }
 
-    opn.cleanInstrumentBanks();
+    m_synth.m_insBanks.clear();
 
     std::vector<OPN2::Bank *> banks;
     banks.reserve(count_melodic_banks + count_percussive_banks);
@@ -166,12 +166,12 @@ bool OPNMIDIplay::LoadBank(FileAndMemReader &fr)
             uint8_t bank_meta[34];
             if(fr.read(bank_meta, 1, 34) != 34)
             {
-                opn.cleanInstrumentBanks();
+                m_synth.m_insBanks.clear();
                 errorStringOut = "Custom bank: Fail to read melodic bank meta-data!";
                 return false;
             }
-            uint16_t bankno = uint16_t(bank_meta[33]) * 256 + uint16_t(bank_meta[32]);
-            OPN2::Bank &bank = opn.dynamic_banks[bankno];
+            size_t bankno = size_t(bank_meta[33]) * 256 + size_t(bank_meta[32]);
+            OPN2::Bank &bank = m_synth.m_insBanks[bankno];
             //strncpy(bank.name, char_p(bank_meta), 32);
             banks.push_back(&bank);
         }
@@ -181,18 +181,18 @@ bool OPNMIDIplay::LoadBank(FileAndMemReader &fr)
             uint8_t bank_meta[34];
             if(fr.read(bank_meta, 1, 34) != 34)
             {
-                opn.cleanInstrumentBanks();
+                m_synth.m_insBanks.clear();
                 errorStringOut = "Custom bank: Fail to read percussion bank meta-data!";
                 return false;
             }
-            uint16_t bankno = uint16_t(bank_meta[33]) * 256 + uint16_t(bank_meta[32]) + OPN2::PercussionTag;
-            OPN2::Bank &bank = opn.dynamic_banks[bankno];
+            size_t bankno = size_t(bank_meta[33]) * 256 + size_t(bank_meta[32]) + OPN2::PercussionTag;
+            OPN2::Bank &bank = m_synth.m_insBanks[bankno];
             //strncpy(bank.name, char_p(bank_meta), 32);
             banks.push_back(&bank);
         }
     }
 
-    size_t total = 128 * opn.dynamic_banks.size();
+    size_t total = 128 * m_synth.m_insBanks.size();
 
     for(size_t i = 0; i < total; i++)
     {
@@ -203,7 +203,7 @@ bool OPNMIDIplay::LoadBank(FileAndMemReader &fr)
         size_t readSize = version >= 2 ? WOPL_INST_SIZE_V2 : WOPL_INST_SIZE_V1;
         if(fr.read(idata, 1, readSize) != readSize)
         {
-            opn.cleanInstrumentBanks();
+            m_synth.m_insBanks.clear();
             errorStringOut = "Can't load bank file: Failed to read instrument data";
             return false;
         }
@@ -248,18 +248,15 @@ bool OPNMIDIplay::LoadBank(FileAndMemReader &fr)
 
 bool OPNMIDIplay::LoadMIDI_pre()
 {
-    if(opn.dynamic_banks.empty())
+    if(m_synth.m_insBanks.empty())
     {
         errorStringOut = "Bank is not set! Please load any instruments bank by using of adl_openBankFile() or adl_openBankData() functions!";
         return false;
     }
 
     /**** Set all properties BEFORE starting of actial file reading! ****/
+    resetMIDI();
     applySetup();
-
-    caugh_missing_instruments.clear();
-    caugh_missing_banks_melodic.clear();
-    caugh_missing_banks_percussion.clear();
 
     return true;
 }
@@ -276,8 +273,8 @@ bool OPNMIDIplay::LoadMIDI_post()
     else if(format == MidiSequencer::Format_RSXX)
     {
         //opl.CartoonersVolumes = true;
-        opn.m_musicMode     = OPN2::MODE_RSXX;
-        opn.m_volumeScale   = OPN2::VOLUME_Generic;
+        m_synth.m_musicMode     = OPN2::MODE_RSXX;
+        m_synth.m_volumeScale   = OPN2::VOLUME_Generic;
     }
     else if(format == MidiSequencer::Format_IMF)
     {
@@ -286,9 +283,9 @@ bool OPNMIDIplay::LoadMIDI_post()
         return false;
     }
 
-    opn.Reset(m_setup.emulator, m_setup.PCM_RATE, this); // Reset OPN2 chip
-    ch.clear();
-    ch.resize(opn.NumChannels);
+    m_synth.reset(m_setup.emulator, m_setup.PCM_RATE, this); // Reset OPN2 chip
+    m_chipChannels.clear();
+    m_chipChannels.resize(m_synth.m_numChannels);
 
     return true;
 }
