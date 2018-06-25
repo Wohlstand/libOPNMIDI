@@ -90,7 +90,7 @@ static void rtDeviceSwitch(void *userdata, size_t track, const char *data, size_
     context->realTime_deviceSwitch(track, data, length);
 }
 
-static uint64_t rtCurrentDevice(void *userdata, size_t track)
+static size_t rtCurrentDevice(void *userdata, size_t track)
 {
     OPNMIDIplay *context = reinterpret_cast<OPNMIDIplay *>(userdata);
     return context->realTime_currentDevice(track);

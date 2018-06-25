@@ -904,7 +904,7 @@ void OPNMIDIplay::realTime_deviceSwitch(size_t track, const char *data, size_t l
     m_currentMidiDevice[track] = chooseDevice(indata);
 }
 
-uint64_t OPNMIDIplay::realTime_currentDevice(size_t track)
+size_t OPNMIDIplay::realTime_currentDevice(size_t track)
 {
     if(m_currentMidiDevice.empty())
         return 0;
@@ -1487,7 +1487,7 @@ void OPNMIDIplay::updateVibrato(double amount)
 
 
 
-uint64_t OPNMIDIplay::chooseDevice(const std::string &name)
+size_t OPNMIDIplay::chooseDevice(const std::string &name)
 {
     std::map<std::string, uint64_t>::iterator i = m_midiDevices.find(name);
 

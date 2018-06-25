@@ -888,9 +888,9 @@ public:
 
 private:
     //! Per-track MIDI devices map
-    std::map<std::string, uint64_t> m_midiDevices;
+    std::map<std::string, size_t> m_midiDevices;
     //! Current MIDI device per track
-    std::map<uint64_t /*track*/, uint64_t /*channel begin index*/> m_currentMidiDevice;
+    std::map<size_t /*track*/, size_t /*channel begin index*/> m_currentMidiDevice;
 
     //! Chip channels map
     std::vector<OpnChannel> m_chipChannels;
@@ -1113,7 +1113,7 @@ public:
      * @param track MIDI track index
      * @return Multiple 16 value
      */
-    uint64_t realTime_currentDevice(size_t track);
+    size_t realTime_currentDevice(size_t track);
 
 #if defined(ADLMIDI_AUDIO_TICK_HANDLER)
     // Audio rate tick handler
@@ -1301,7 +1301,7 @@ public:
      * @param name Name of MIDI device
      * @return Offset of the MIDI Channels, multiple to 16
      */
-    uint64_t chooseDevice(const std::string &name);
+    size_t chooseDevice(const std::string &name);
 };
 
 #if defined(ADLMIDI_AUDIO_TICK_HANDLER)
