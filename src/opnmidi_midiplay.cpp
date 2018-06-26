@@ -325,13 +325,28 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     //bool pseudo_4op = ains.flags & opnInstMeta::Flag_Pseudo8op;
     //if((opn.AdlPercussionMode == 1) && PercussionMap[midiins & 0xFF]) i[1] = i[0];
 
+    bool isBlankNote = (ains->flags & opnInstMeta::Flag_NoSound);
+
     if(hooks.onDebugMessage)
     {
-        if(!caugh_missing_instruments.count(static_cast<uint8_t>(midiins)) && (ains->flags & opnInstMeta::Flag_NoSound))
+        if(!caugh_missing_instruments.count(static_cast<uint8_t>(midiins)) && isBlankNote)
         {
             hooks.onDebugMessage(hooks.onDebugMessage_userData, "[%i] Playing missing instrument %i", channel, midiins);
             caugh_missing_instruments.insert(static_cast<uint8_t>(midiins));
         }
+    }
+
+    if(isBlankNote)
+    {
+        // Don't even try to play the blank instrument! But, insert the dummy note.
+        std::pair<MIDIchannel::activenoteiterator, bool>
+        dummy = midiChan.activenotes_insert(note);
+        dummy.first->isBlank = true;
+        dummy.first->ains = NULL;
+        dummy.first->chip_channels_count = 0;
+        // Record the last note on MIDI channel as source of portamento
+        midiChan.portamentoSource = static_cast<int8_t>(note);
+        return false;
     }
 
     // Allocate AdLib channel (the physical sound channel for the note)
@@ -412,6 +427,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     ir.first->glideRate = HUGE_VAL;
     ir.first->midiins = midiins;
     ir.first->isPercussion = isPercussion;
+    ir.first->isBlank = isBlankNote;
     ir.first->ains = ains;
     ir.first->chip_channels_count = 0;
 
@@ -945,6 +961,13 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
     OpnChannel::Location my_loc;
     my_loc.MidCh = static_cast<uint16_t>(midCh);
     my_loc.note  = info.note;
+
+    if(info.isBlank)
+    {
+        if(props_mask & Upd_Off)
+            m_midiChannels[midCh].activenotes_erase(i);
+        return;
+    }
 
     for(unsigned ccount = 0, ctotal = info.chip_channels_count; ccount < ctotal; ccount++)
     {
