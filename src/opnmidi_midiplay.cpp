@@ -411,6 +411,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     ir.first->currentTone = tone;
     ir.first->glideRate = HUGE_VAL;
     ir.first->midiins = midiins;
+    ir.first->isPercussion = isPercussion;
     ir.first->ains = ains;
     ir.first->chip_channels_count = 0;
 
@@ -1196,15 +1197,7 @@ int64_t OPNMIDIplay::calculateChipChannelGoodness(size_t c, const MIDIchannel::N
             }
 
             // Percussion is inferior to melody
-            s += 50 * (int64_t)(k->midiins / 128);
-            /*
-                    if(k->second.midiins >= 25
-                    && k->second.midiins < 40
-                    && j->second.ins != ins)
-                    {
-                        s -= 14000; // HACK: Don't clobber the bass or the guitar
-                    }
-                    */
+            s += k->isPercussion ? 50 : 0;
         }
 
         // If there is another channel to which this note
