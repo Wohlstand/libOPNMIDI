@@ -325,7 +325,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     //bool pseudo_4op = ains.flags & opnInstMeta::Flag_Pseudo8op;
     //if((opn.AdlPercussionMode == 1) && PercussionMap[midiins & 0xFF]) i[1] = i[0];
 
-    bool isBlankNote = (ains->flags & opnInstMeta::Flag_NoSound);
+    bool isBlankNote = (ains->flags & opnInstMeta::Flag_NoSound) != 0;
 
     if(hooks.onDebugMessage)
     {
