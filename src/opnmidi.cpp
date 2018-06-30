@@ -485,6 +485,17 @@ OPNMIDI_EXPORT void opn2_setTempo(struct OPN2_MIDIPlayer *device, double tempo)
 }
 
 
+OPNMIDI_EXPORT int opn2_describeChannels(struct OPN2_MIDIPlayer *device, char *str, char *attr, size_t size)
+{
+    if(!device)
+        return -1;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    if(!play)
+        return -1;
+    play->describeChannels(str, attr, size);
+    return 0;
+}
+
 
 OPNMIDI_EXPORT const char *opn2_metaMusicTitle(struct OPN2_MIDIPlayer *device)
 {

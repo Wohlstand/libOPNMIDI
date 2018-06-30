@@ -327,6 +327,15 @@ int main(int argc, char **argv)
             if(got <= 0)
                 break;
 
+            #ifdef DEBUG_TRACE_ALL_CHANNELS
+            enum { TerminalColumns = 80 };
+            char channelText[TerminalColumns + 1];
+            char channelAttr[TerminalColumns + 1];
+            opn2_describeChannels(myDevice, channelText, channelAttr, sizeof(channelText));
+            std::fprintf(stdout, "%*s\r", TerminalColumns, "");  // erase the line
+            std::fprintf(stdout, "%s\n", channelText);
+            #endif
+
             #ifndef DEBUG_TRACE_ALL_EVENTS
             double time_pos = opn2_positionTell(myDevice);
             uint64_t milliseconds = static_cast<uint64_t>(time_pos * 1000.0);

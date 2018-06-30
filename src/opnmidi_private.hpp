@@ -1306,6 +1306,14 @@ public:
      * @return Offset of the MIDI Channels, multiple to 16
      */
     size_t chooseDevice(const std::string &name);
+
+    /**
+     * @brief Gets a textual description of the state of chip channels
+     * @param text character pointer for text
+     * @param attr character pointer for text attributes
+     * @param size number of characters available to write
+     */
+    void describeChannels(char *text, char *attr, size_t size);
 };
 
 #if defined(ADLMIDI_AUDIO_TICK_HANDLER)

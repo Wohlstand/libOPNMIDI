@@ -1619,6 +1619,40 @@ void OPNMIDIplay::updateGlide(double amount)
     }
 }
 
+void OPNMIDIplay::describeChannels(char *str, char *attr, size_t size)
+{
+    if (!str || size <= 0)
+        return;
+
+    OPN2 &synth = m_synth;
+    uint32_t numChannels = synth.m_numChannels;
+
+    uint32_t index = 0;
+    for(uint32_t i = 0; index < numChannels && index < size - 1; ++i)
+    {
+        const OpnChannel &adlChannel = m_chipChannels[i];
+
+        OpnChannel::LocationData *loc = adlChannel.users_first;
+        if(!loc)  // off
+        {
+            str[index++] = '-';
+        }
+        else if(loc->next)  // arpeggio
+        {
+            str[index++] = '@';
+        }
+        else  // on
+        {
+            str[index++] = '+';
+        }
+
+        attr[index] = '\0';  // TODO
+    }
+
+    str[index] = 0;
+    attr[index] = 0;
+}
+
 /* TODO */
 
 //#ifndef ADLMIDI_DISABLE_CPP_EXTRAS

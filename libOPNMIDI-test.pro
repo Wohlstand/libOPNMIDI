@@ -11,6 +11,7 @@ TARGET=opnplay
 LIBS += -lSDL2 -lpthread -ldl
 
 # DEFINES += DEBUG_DUMP_RAW_STREAM
+# DEFINES += DEBUG_TRACE_ALL_CHANNELS
 
 QMAKE_CFLAGS    += -std=c90 -pedantic
 QMAKE_CXXFLAGS  += -std=c++98 -pedantic
