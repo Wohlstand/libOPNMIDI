@@ -1628,22 +1628,22 @@ void OPNMIDIplay::describeChannels(char *str, char *attr, size_t size)
     uint32_t numChannels = synth.m_numChannels;
 
     uint32_t index = 0;
-    for(uint32_t i = 0; index < numChannels && index < size - 1; ++i)
+    while(index < numChannels && index < size - 1)
     {
-        const OpnChannel &adlChannel = m_chipChannels[i];
+        const OpnChannel &adlChannel = m_chipChannels[index];
 
         OpnChannel::LocationData *loc = adlChannel.users_first;
         if(!loc)  // off
         {
-            str[index++] = '-';
+            str[index] = '-';
         }
         else if(loc->next)  // arpeggio
         {
-            str[index++] = '@';
+            str[index] = '@';
         }
         else  // on
         {
-            str[index++] = '+';
+            str[index] = '+';
         }
 
         uint8_t attribute = 0;
@@ -1651,6 +1651,7 @@ void OPNMIDIplay::describeChannels(char *str, char *attr, size_t size)
             attribute |= (uint8_t)(loc->loc.MidCh & 0xF);
 
         attr[index] = (char)attribute;
+        ++index;
     }
 
     str[index] = 0;
