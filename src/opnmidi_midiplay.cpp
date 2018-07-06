@@ -1093,6 +1093,8 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
                 volume = 2 * (m_midiChannels[midCh].volume * m_midiChannels[midCh].expression * m_masterVolume / 16129) + 1;
                 //volume = 2 * (Ch[MidCh].volume) + 1;
                 volume = (DMX_volume_mapping_table[(vol < 128) ? vol : 127] * volume) >> 9;
+                if(volume > 0)
+                    volume += 64;//OPN has 0~127 range. As 0...63 is almost full silence, but at 64 to 127 is very closed to OPL3, just add 64.
             }
             break;
 
@@ -1101,7 +1103,8 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
                 volume = (m_midiChannels[midCh].volume * m_midiChannels[midCh].expression * m_masterVolume / 16129);
                 volume = ((64 * (vol + 0x80)) * volume) >> 15;
                 //volume = ((63 * (vol + 0x80)) * Ch[MidCh].volume) >> 15;
-                volume *= 2;//OPN has 0~127 range
+                if(volume > 0)
+                    volume += 64;//OPN has 0~127 range. As 0...63 is almost full silence, but at 64 to 127 is very closed to OPL3, just add 64.
             }
             break;
 
@@ -1110,7 +1113,8 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
                 //volume = 63 - W9X_volume_mapping_table[(((vol * Ch[MidCh].volume /** Ch[MidCh].expression*/) * 127 / 16129 /*2048383*/) >> 2)];
                 volume = 63 - W9X_volume_mapping_table[((vol * m_midiChannels[midCh].volume * m_midiChannels[midCh].expression * m_masterVolume / 2048383) >> 2)];
                 //volume = W9X_volume_mapping_table[vol >> 2] + volume;
-                volume *= 2;//OPN has 0~127 range
+                if(volume > 0)
+                    volume += 64;//OPN has 0~127 range. As 0...63 is almost full silence, but at 64 to 127 is very closed to OPL3, just add 64.
             }
             break;
             }
