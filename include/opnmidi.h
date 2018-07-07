@@ -265,6 +265,34 @@ extern double opn2_tickEvents(struct OPN2_MIDIPlayer *device, double seconds, do
 /*Returns 1 if music position has reached end*/
 extern int opn2_atEnd(struct OPN2_MIDIPlayer *device);
 
+/**
+ * @brief Returns the number of tracks of the current sequence
+ * @param device Instance of the library
+ * @return Count of tracks in the current sequence
+ */
+extern size_t opn2_trackCount(struct OPN2_MIDIPlayer *device);
+
+/**
+ * @brief Track options
+ */
+enum OPNMIDI_TrackOptions
+{
+    /*! Enabled track */
+    OPNMIDI_TrackOption_On   = 1,
+    /*! Disabled track */
+    OPNMIDI_TrackOption_Off  = 2,
+    /*! Solo track */
+    OPNMIDI_TrackOption_Solo = 3,
+};
+
+/**
+ * @brief Sets options on a track of the current sequence
+ * @param device Instance of the library
+ * @param trackNumber Identifier of the designated track.
+ * @return 0 on success, <0 when any error has occurred
+ */
+extern int opn2_setTrackOptions(struct OPN2_MIDIPlayer *device, size_t trackNumber, unsigned trackOptions);
+
 /**RealTime**/
 
 /*Force Off all notes on all channels*/
