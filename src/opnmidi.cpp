@@ -974,6 +974,63 @@ OPNMIDI_EXPORT int opn2_atEnd(struct OPN2_MIDIPlayer *device)
 #endif
 }
 
+OPNMIDI_EXPORT size_t opn2_trackCount(struct OPN2_MIDIPlayer *device)
+{
+#ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
+    if(!device)
+        return 0;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    if(!play)
+        return 0;
+    return play->m_sequencer.getTrackCount();
+#else
+    ADL_UNUSED(device);
+    return 0;
+#endif
+}
+
+OPNMIDI_EXPORT int opn2_setTrackOptions(struct OPN2_MIDIPlayer *device, size_t trackNumber, unsigned trackOptions)
+{
+#ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
+    if(!device)
+        return -1;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    if(!play)
+        return -1;
+    MidiSequencer &seq = play->m_sequencer;
+
+    unsigned enableFlag = trackOptions & 3;
+    trackOptions &= ~3u;
+
+    // handle on/off/solo
+    switch(enableFlag)
+    {
+    default:
+        break;
+    case OPNMIDI_TrackOption_On:
+    case OPNMIDI_TrackOption_Off:
+        if(!seq.setTrackEnabled(trackNumber, enableFlag == OPNMIDI_TrackOption_On))
+            return -1;
+        break;
+    case OPNMIDI_TrackOption_Solo:
+        seq.setSoloTrack(trackNumber);
+        break;
+    }
+
+    // handle others...
+    if(trackOptions != 0)
+        return -1;
+
+    return 0;
+
+#else
+    ADL_UNUSED(device);
+    ADL_UNUSED(trackNumber);
+    ADL_UNUSED(trackOptions);
+    return -1;
+#endif
+}
+
 OPNMIDI_EXPORT void opn2_panic(struct OPN2_MIDIPlayer *device)
 {
     if(!device)
