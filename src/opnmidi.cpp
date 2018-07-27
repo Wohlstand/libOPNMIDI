@@ -92,7 +92,7 @@ OPNMIDI_EXPORT int opn2_setNumChips(OPN2_MIDIPlayer *device, int numCards)
     }
 
     play->m_synth.m_numChips = play->m_setup.NumCards;
-    opn2_reset(device);
+    play->partialReset();
 
     return opn2RefreshNumCards(device);
 }
@@ -291,7 +291,7 @@ OPNMIDI_EXPORT int opn2_switchEmulator(struct OPN2_MIDIPlayer *device, int emula
         if(play && (emulator >= 0) && (emulator < OPNMIDI_EMU_end))
         {
             play->m_setup.emulator = emulator;
-            opn2_reset(device);
+            play->partialReset();
             return 0;
         }
         play->setErrorString("OPN2 MIDI: Unknown emulation core!");
@@ -308,7 +308,7 @@ OPNMIDI_EXPORT int opn2_setRunAtPcmRate(OPN2_MIDIPlayer *device, int enabled)
         if(play)
         {
             play->m_setup.runAtPcmRate = (enabled != 0);
-            opn2_reset(device);
+            play->partialReset();
             return 0;
         }
     }
@@ -367,11 +367,7 @@ OPNMIDI_EXPORT void opn2_reset(OPN2_MIDIPlayer *device)
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    play->m_setup.tick_skip_samples_delay = 0;
-    play->m_synth.m_runAtPcmRate = play->m_setup.runAtPcmRate;
-    play->m_synth.reset(play->m_setup.emulator, play->m_setup.PCM_RATE, play);
-    play->m_chipChannels.clear();
-    play->m_chipChannels.resize(play->m_synth.m_numChannels);
+    play->partialReset();
     play->resetMIDI();
 }
 

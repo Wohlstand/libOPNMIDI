@@ -144,6 +144,16 @@ void OPNMIDIplay::applySetup()
     m_arpeggioCounter = 0;
 }
 
+void OPNMIDIplay::partialReset()
+{
+    realTime_panic();
+    m_setup.tick_skip_samples_delay = 0;
+    m_synth.m_runAtPcmRate = m_setup.runAtPcmRate;
+    m_synth.reset(m_setup.emulator, m_setup.PCM_RATE, this);
+    m_chipChannels.clear();
+    m_chipChannels.resize(m_synth.m_numChannels);
+}
+
 void OPNMIDIplay::resetMIDI()
 {
     m_masterVolume = MasterVolumeDefault;
