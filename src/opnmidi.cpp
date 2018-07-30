@@ -67,7 +67,7 @@ OPNMIDI_EXPORT struct OPN2_MIDIPlayer *opn2_init(long sample_rate)
     return midi_device;
 }
 
-OPNMIDI_EXPORT int adl_setDeviceIdentifier(OPN2_MIDIPlayer *device, unsigned id)
+OPNMIDI_EXPORT int opn2_setDeviceIdentifier(OPN2_MIDIPlayer *device, unsigned id)
 {
     if(!device || id > 0x0f)
         return -1;
