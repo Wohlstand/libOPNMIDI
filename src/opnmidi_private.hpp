@@ -28,7 +28,7 @@
 #ifndef OPNMIDI_EXPORT
 #   if defined (_WIN32) && defined(ADLMIDI_BUILD_DLL)
 #       define OPNMIDI_EXPORT __declspec(dllexport)
-#   elif defined (LIBADLMIDI_VISIBILITY)
+#   elif defined (LIBADLMIDI_VISIBILITY) && defined (__GNUC__)
 #       define OPNMIDI_EXPORT __attribute__((visibility ("default")))
 #   else
 #       define OPNMIDI_EXPORT

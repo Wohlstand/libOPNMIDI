@@ -62,6 +62,15 @@ function(set_legacy_standard destTarget)
         endif()
     endif()
 endfunction()
+
+function(set_visibility_hidden destTarget)
+    if(CMAKE_C_COMPILER_ID MATCHES "^(GNU|Clang)$")
+        target_compile_options(${destTarget} PRIVATE
+          -fvisibility=hidden -fvisibility-inlines-hidden)
+        target_compile_definitions(${destTarget} PRIVATE
+          "LIBADLMIDI_VISIBILITY")
+    endif()
+endfunction()
 #===========================================================================================
 
 option(libOPNMIDI_STATIC   "Build static library of libOPNMIDI" ON)
@@ -174,6 +183,7 @@ if(libOPNMIDI_STATIC)
     set_target_properties(OPNMIDI_static PROPERTIES OUTPUT_NAME OPNMIDI)
     target_include_directories(OPNMIDI_static PUBLIC ${libOPNMIDI_SOURCE_DIR}/include)
     set_legacy_standard(OPNMIDI_static)
+    set_visibility_hidden(OPNMIDI_static)
     list(APPEND libOPNMIDI_INSTALLS OPNMIDI_static)
 endif()
 
@@ -182,6 +192,7 @@ if(libOPNMIDI_SHARED)
     set_target_properties(OPNMIDI_shared PROPERTIES OUTPUT_NAME OPNMIDI)
     target_include_directories(OPNMIDI_shared PUBLIC ${libOPNMIDI_SOURCE_DIR}/include)
     set_legacy_standard(OPNMIDI_shared)
+    set_visibility_hidden(OPNMIDI_shared)
     list(APPEND libOPNMIDI_INSTALLS OPNMIDI_shared)
 endif()
 
