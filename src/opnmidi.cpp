@@ -345,11 +345,6 @@ OPNMIDI_EXPORT const char *opn2_errorInfo(struct OPN2_MIDIPlayer *device)
     return play->getErrorString().c_str();
 }
 
-OPNMIDI_EXPORT const char *opn2_getMusicTitle(struct OPN2_MIDIPlayer *device)
-{
-    return opn2_metaMusicTitle(device);
-}
-
 OPNMIDI_EXPORT void opn2_close(OPN2_MIDIPlayer *device)
 {
     if(!device)
