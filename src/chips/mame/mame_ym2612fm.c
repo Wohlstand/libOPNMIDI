@@ -2474,7 +2474,7 @@ void ym2612_generate_one_native(void *chip, FMSAMPLE buffer[])
 	else
 	{
 		lt += dacout;
-		lt += dacout;
+		rt += dacout;
 	}
 	lt += ((out_fm[5]>>0) & OPN->pan[10]);
 	rt += ((out_fm[5]>>0) & OPN->pan[11]);
