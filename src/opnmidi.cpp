@@ -288,7 +288,7 @@ OPNMIDI_EXPORT int opn2_switchEmulator(struct OPN2_MIDIPlayer *device, int emula
         assert(play);
         if(!play)
             return -1;
-        if(play && (emulator >= 0) && (emulator < OPNMIDI_EMU_end))
+        if(opn2_isEmulatorAvailable(emulator))
         {
             play->m_setup.emulator = emulator;
             play->partialReset();
