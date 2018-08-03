@@ -90,7 +90,7 @@ OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
 {
     m_midiDevices.clear();
 
-    m_setup.emulator = OPNMIDI_EMU_MAME;
+    m_setup.emulator = opn2_getLowestEmulator();
     m_setup.runAtPcmRate = false;
 
     m_setup.PCM_RATE = sampleRate;

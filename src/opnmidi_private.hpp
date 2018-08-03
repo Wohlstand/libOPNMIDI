@@ -1322,5 +1322,23 @@ extern void opn2_audioTickHandler(void *instance, uint32_t chipId, uint32_t rate
 #endif
 extern int opn2RefreshNumCards(OPN2_MIDIPlayer *device);
 
+/**
+ * @brief Check emulator availability
+ * @param emulator Emulator ID (Opn2_Emulator)
+ * @return true when emulator is available
+ */
+extern bool opn2_isEmulatorAvailable(int emulator);
+
+/**
+ * @brief Find highest emulator
+ * @return The Opn2_Emulator enum value which contains ID of highest emulator
+ */
+extern int opn2_getHighestEmulator();
+
+/**
+ * @brief Find lowest emulator
+ * @return The Opn2_Emulator enum value which contains ID of lowest emulator
+ */
+extern int opn2_getLowestEmulator();
 
 #endif // ADLMIDI_PRIVATE_HPP
