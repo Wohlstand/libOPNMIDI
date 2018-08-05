@@ -48,6 +48,48 @@
 #include "chips/gx_opn2.h"
 #endif
 
+static const unsigned opn2_emulatorSupport = 0
+#ifndef OPNMIDI_DISABLE_NUKED_EMULATOR
+    | (1u << OPNMIDI_EMU_NUKED)
+#endif
+#ifndef OPNMIDI_DISABLE_MAME_EMULATOR
+    | (1u << OPNMIDI_EMU_MAME)
+#endif
+#ifndef OPNMIDI_DISABLE_GENS_EMULATOR
+    | (1u << OPNMIDI_EMU_GENS)
+#endif
+#ifndef OPNMIDI_DISABLE_GX_EMULATOR
+    | (1u << OPNMIDI_EMU_GX)
+#endif
+;
+
+//! Check emulator availability
+bool opn2_isEmulatorAvailable(int emulator)
+{
+    return (opn2_emulatorSupport & (1u << (unsigned)emulator)) != 0;
+}
+
+//! Find highest emulator
+int opn2_getHighestEmulator()
+{
+    int emu = -1;
+    for(unsigned m = opn2_emulatorSupport; m > 0; m >>= 1)
+        ++emu;
+    return emu;
+}
+
+//! Find lowest emulator
+int opn2_getLowestEmulator()
+{
+    int emu = -1;
+    unsigned m = opn2_emulatorSupport;
+    if(m > 0)
+    {
+        for(emu = 0; (m & 1) == 0; m >>= 1)
+            ++emu;
+    }
+    return emu;
+}
 
 static const uint32_t g_noteChannelsMap[6] = { 0, 1, 2, 4, 5, 6 };
 
@@ -283,6 +325,8 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, void *audioTickHandler)
         switch(emulator)
         {
         default:
+            assert(false);
+            abort();
 #ifndef OPNMIDI_DISABLE_MAME_EMULATOR
         case OPNMIDI_EMU_MAME:
             chip = new MameOPN2;

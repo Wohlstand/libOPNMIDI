@@ -28,7 +28,7 @@
 #ifndef OPNMIDI_EXPORT
 #   if defined (_WIN32) && defined(ADLMIDI_BUILD_DLL)
 #       define OPNMIDI_EXPORT __declspec(dllexport)
-#   elif defined (LIBADLMIDI_VISIBILITY)
+#   elif defined (LIBADLMIDI_VISIBILITY) && defined (__GNUC__)
 #       define OPNMIDI_EXPORT __attribute__((visibility ("default")))
 #   else
 #       define OPNMIDI_EXPORT
@@ -392,6 +392,7 @@ public:
 
     void applySetup();
 
+    void partialReset();
     void resetMIDI();
 
     /**********************Internal structures and classes**********************/
@@ -1306,6 +1307,14 @@ public:
      * @return Offset of the MIDI Channels, multiple to 16
      */
     size_t chooseDevice(const std::string &name);
+
+    /**
+     * @brief Gets a textual description of the state of chip channels
+     * @param text character pointer for text
+     * @param attr character pointer for text attributes
+     * @param size number of characters available to write
+     */
+    void describeChannels(char *text, char *attr, size_t size);
 };
 
 #if defined(ADLMIDI_AUDIO_TICK_HANDLER)
@@ -1313,5 +1322,23 @@ extern void opn2_audioTickHandler(void *instance, uint32_t chipId, uint32_t rate
 #endif
 extern int opn2RefreshNumCards(OPN2_MIDIPlayer *device);
 
+/**
+ * @brief Check emulator availability
+ * @param emulator Emulator ID (Opn2_Emulator)
+ * @return true when emulator is available
+ */
+extern bool opn2_isEmulatorAvailable(int emulator);
+
+/**
+ * @brief Find highest emulator
+ * @return The Opn2_Emulator enum value which contains ID of highest emulator
+ */
+extern int opn2_getHighestEmulator();
+
+/**
+ * @brief Find lowest emulator
+ * @return The Opn2_Emulator enum value which contains ID of lowest emulator
+ */
+extern int opn2_getLowestEmulator();
 
 #endif // ADLMIDI_PRIVATE_HPP

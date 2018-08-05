@@ -22,14 +22,16 @@ Library is based on core of the [libADLMIDI](https://github.com/Wohlstand/libADL
 * Pan (binary panning, i.e. left/right side on/off)
 * Pitch-bender with adjustable range
 * Vibrato that responds to RPN/NRPN parameters
-* Sustain enable/disable
+* Sustain (a.k.a. Pedal hold) and Sostenuto enable/disable
+* MIDI and RMI file support
+* Real-Time MIDI API suppor
 * MIDI and RMI file support
 * loopStart / loopEnd tag support (Final Fantasy VII)
 * 111-th controller based loop start (RPG-Maker)
 * Use automatic arpeggio with chords to relieve channel pressure
 * Support for multiple concurrent MIDI synthesizers (per-track device/port select FF 09 message), can be used to overcome 16 channel limit
 * Partial support for GS and XG standards (having more instruments than in one 128:128 GM set and ability to use multiple channels for percussion purposes, and a support for some GS/XG exclusive controllers)
-* CC74 affects a modulator scale
+* CC74 "Brightness" affects a modulator scale (to simulate frequency cut-off on WT synths)
 * Portamento support (CC5, CC37, and CC65)
 * SysEx support that supports some generic, GS, and XG features
 
@@ -43,6 +45,16 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 make
 sudo make install
 ```
+
+# License
+The library is licensed under in it's parts LGPL 2.1+, GPL v2+, GPL v3+, and MIT.
+* Nuked OPN2 emulator is licensed under LGPL v2.1+.
+* GENS 2.10 emulator is licensed under LGPL v2.1+.
+* MAME YM2612 emulator is licensed under GPL v2+.
+* Genesis Plus GX emulator is licensed under GPL v2+.
+* Chip interfaces are licensed under LGPL v2.1+.
+* File Reader class and MIDI Sequencer is licensed under MIT.
+* Other parts of library are licensed under GPLv3+.
 
 ## Available CMake options
 * **CMAKE_PREFIX_PATH** - destinition folder where libOPNMIDI will be installed. On Linux it is /usr/local/ by default.
@@ -129,6 +141,7 @@ To remove MIDI Sequecer, define `OPNMIDI_DISABLE_MIDI_SEQUENCER` macro and remov
  * Added support for CC66-Sostenuto controller (Pedal hold of currently-pressed notes only while CC64 holds also all next notes)
  * Added support for CC67-SoftPedal controller (SoftPedal lowers the volume of notes played)
  * Resolved a trouble which sometimes makes a junk noise sound and unnecessary overuse of chip channels
+ * Volume models support taken from libADLMIDI has been adapted to OPN2's chip speficis
 
 ## 1.3.0   2018-06-19
  * Optimizing the MIDI banks management system for MultiBanks (Thanks to [Jean Pierre Cimalando](https://github.com/jpcima) for a work!)

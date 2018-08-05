@@ -169,6 +169,7 @@ int main(int argc, char **argv)
     bool fullRangedBrightness = false;
     int loopEnabled = 1;
     int emulator = OPNMIDI_EMU_MAME;
+    size_t soloTrack = ~(size_t)0;
 
     int arg = 1;
     for(arg = 1; arg < argc; arg++)
@@ -189,6 +190,15 @@ int main(int argc, char **argv)
             emulator = OPNMIDI_EMU_GX;
         else if(!std::strcmp("-s", argv[arg]))
             scaleModulators = true;
+        else if(!std::strcmp("--solo", argv[arg]))
+        {
+            if(arg + 1 >= argc)
+            {
+                printError("The option --solo requires an argument!\n");
+                return 1;
+            }
+            soloTrack = std::strtoul(argv[++arg], NULL, 0);
+        }
         else if(!std::strcmp("--", argv[arg]))
             break;
         else
@@ -280,6 +290,14 @@ int main(int argc, char **argv)
         return 2;
     }
 
+    std::fprintf(stdout, " - Track count: %lu\n", (unsigned long)opn2_trackCount(myDevice));
+
+    if(soloTrack != ~(size_t)0)
+    {
+        std::fprintf(stdout, " - Solo track: %lu\n", (unsigned long)soloTrack);
+        opn2_setTrackOptions(myDevice, soloTrack, OPNMIDI_TrackOption_Solo);
+    }
+
     std::fprintf(stdout, " - File [%s] opened!\n", musPath.c_str());
     std::fflush(stdout);
 
@@ -326,6 +344,15 @@ int main(int argc, char **argv)
             size_t got = (size_t)opn2_play(myDevice, 4096, buff);
             if(got <= 0)
                 break;
+
+            #ifdef DEBUG_TRACE_ALL_CHANNELS
+            enum { TerminalColumns = 80 };
+            char channelText[TerminalColumns + 1];
+            char channelAttr[TerminalColumns + 1];
+            opn2_describeChannels(myDevice, channelText, channelAttr, sizeof(channelText));
+            std::fprintf(stdout, "%*s\r", TerminalColumns, "");  // erase the line
+            std::fprintf(stdout, "%s\n", channelText);
+            #endif
 
             #ifndef DEBUG_TRACE_ALL_EVENTS
             double time_pos = opn2_positionTell(myDevice);

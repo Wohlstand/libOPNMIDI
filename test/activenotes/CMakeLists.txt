@@ -7,9 +7,16 @@ include_directories (${CMAKE_CURRENT_SOURCE_DIR}/../common
 
 add_executable (ActiveNotesList
                 active_notes.cpp
+                ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_midiplay.cpp
+                ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_opn2.cpp
+                ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_opn2.cpp
+                ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked/ym3438.c
                 $<TARGET_OBJECTS:Catch-objects>)
 
 set_target_properties(ActiveNotesList PROPERTIES COMPILE_DEFINITIONS "GSL_THROW_ON_CONTRACT_VIOLATION")
-target_link_libraries(ActiveNotesList PRIVATE OPNMIDI_IF)
-target_compile_definitions(ActiveNotesList PRIVATE OPNMIDI_AUDIO_TICK_HANDLER)
+target_compile_definitions(ActiveNotesList PRIVATE
+  OPNMIDI_DISABLE_MIDI_SEQUENCER
+  OPNMIDI_DISABLE_GENS_EMULATOR
+  OPNMIDI_DISABLE_MAME_EMULATOR
+  OPNMIDI_DISABLE_GX_EMULATOR)
 add_test(NAME ActiveNotesList COMMAND ActiveNotesList)

@@ -200,6 +200,9 @@ extern void opn2_positionRewind(struct OPN2_MIDIPlayer *device);
 /*Set tempo multiplier: 1.0 - original tempo, >1 - play faster, <1 - play slower */
 extern void opn2_setTempo(struct OPN2_MIDIPlayer *device, double tempo);
 
+/*Get a textual description of the chip channel state. For display only.*/
+extern int opn2_describeChannels(struct OPN2_MIDIPlayer *device, char *text, char *attr, size_t size);
+
 /*Close and delete OPNMIDI device*/
 extern void opn2_close(struct OPN2_MIDIPlayer *device);
 
@@ -261,6 +264,34 @@ extern double opn2_tickEvents(struct OPN2_MIDIPlayer *device, double seconds, do
 
 /*Returns 1 if music position has reached end*/
 extern int opn2_atEnd(struct OPN2_MIDIPlayer *device);
+
+/**
+ * @brief Returns the number of tracks of the current sequence
+ * @param device Instance of the library
+ * @return Count of tracks in the current sequence
+ */
+extern size_t opn2_trackCount(struct OPN2_MIDIPlayer *device);
+
+/**
+ * @brief Track options
+ */
+enum OPNMIDI_TrackOptions
+{
+    /*! Enabled track */
+    OPNMIDI_TrackOption_On   = 1,
+    /*! Disabled track */
+    OPNMIDI_TrackOption_Off  = 2,
+    /*! Solo track */
+    OPNMIDI_TrackOption_Solo = 3,
+};
+
+/**
+ * @brief Sets options on a track of the current sequence
+ * @param device Instance of the library
+ * @param trackNumber Identifier of the designated track.
+ * @return 0 on success, <0 when any error has occurred
+ */
+extern int opn2_setTrackOptions(struct OPN2_MIDIPlayer *device, size_t trackNumber, unsigned trackOptions);
 
 /**RealTime**/
 

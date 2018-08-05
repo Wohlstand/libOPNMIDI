@@ -67,7 +67,7 @@ OPNMIDI_EXPORT struct OPN2_MIDIPlayer *opn2_init(long sample_rate)
     return midi_device;
 }
 
-OPNMIDI_EXPORT int adl_setDeviceIdentifier(OPN2_MIDIPlayer *device, unsigned id)
+OPNMIDI_EXPORT int opn2_setDeviceIdentifier(OPN2_MIDIPlayer *device, unsigned id)
 {
     if(!device || id > 0x0f)
         return -1;
@@ -92,7 +92,7 @@ OPNMIDI_EXPORT int opn2_setNumChips(OPN2_MIDIPlayer *device, int numCards)
     }
 
     play->m_synth.m_numChips = play->m_setup.NumCards;
-    opn2_reset(device);
+    play->partialReset();
 
     return opn2RefreshNumCards(device);
 }
@@ -288,10 +288,10 @@ OPNMIDI_EXPORT int opn2_switchEmulator(struct OPN2_MIDIPlayer *device, int emula
         assert(play);
         if(!play)
             return -1;
-        if(play && (emulator >= 0) && (emulator < OPNMIDI_EMU_end))
+        if(opn2_isEmulatorAvailable(emulator))
         {
             play->m_setup.emulator = emulator;
-            opn2_reset(device);
+            play->partialReset();
             return 0;
         }
         play->setErrorString("OPN2 MIDI: Unknown emulation core!");
@@ -308,7 +308,7 @@ OPNMIDI_EXPORT int opn2_setRunAtPcmRate(OPN2_MIDIPlayer *device, int enabled)
         if(play)
         {
             play->m_setup.runAtPcmRate = (enabled != 0);
-            opn2_reset(device);
+            play->partialReset();
             return 0;
         }
     }
@@ -345,11 +345,6 @@ OPNMIDI_EXPORT const char *opn2_errorInfo(struct OPN2_MIDIPlayer *device)
     return play->getErrorString().c_str();
 }
 
-OPNMIDI_EXPORT const char *opn2_getMusicTitle(struct OPN2_MIDIPlayer *device)
-{
-    return opn2_metaMusicTitle(device);
-}
-
 OPNMIDI_EXPORT void opn2_close(OPN2_MIDIPlayer *device)
 {
     if(!device)
@@ -367,11 +362,7 @@ OPNMIDI_EXPORT void opn2_reset(OPN2_MIDIPlayer *device)
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    play->m_setup.tick_skip_samples_delay = 0;
-    play->m_synth.m_runAtPcmRate = play->m_setup.runAtPcmRate;
-    play->m_synth.reset(play->m_setup.emulator, play->m_setup.PCM_RATE, play);
-    play->m_chipChannels.clear();
-    play->m_chipChannels.resize(play->m_synth.m_numChannels);
+    play->partialReset();
     play->resetMIDI();
 }
 
@@ -484,6 +475,17 @@ OPNMIDI_EXPORT void opn2_setTempo(struct OPN2_MIDIPlayer *device, double tempo)
 #endif
 }
 
+
+OPNMIDI_EXPORT int opn2_describeChannels(struct OPN2_MIDIPlayer *device, char *str, char *attr, size_t size)
+{
+    if(!device)
+        return -1;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    if(!play)
+        return -1;
+    play->describeChannels(str, attr, size);
+    return 0;
+}
 
 
 OPNMIDI_EXPORT const char *opn2_metaMusicTitle(struct OPN2_MIDIPlayer *device)
@@ -960,6 +962,63 @@ OPNMIDI_EXPORT int opn2_atEnd(struct OPN2_MIDIPlayer *device)
 #else
     ADL_UNUSED(device);
     return 1;
+#endif
+}
+
+OPNMIDI_EXPORT size_t opn2_trackCount(struct OPN2_MIDIPlayer *device)
+{
+#ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
+    if(!device)
+        return 0;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    if(!play)
+        return 0;
+    return play->m_sequencer.getTrackCount();
+#else
+    ADL_UNUSED(device);
+    return 0;
+#endif
+}
+
+OPNMIDI_EXPORT int opn2_setTrackOptions(struct OPN2_MIDIPlayer *device, size_t trackNumber, unsigned trackOptions)
+{
+#ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
+    if(!device)
+        return -1;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    if(!play)
+        return -1;
+    MidiSequencer &seq = play->m_sequencer;
+
+    unsigned enableFlag = trackOptions & 3;
+    trackOptions &= ~3u;
+
+    // handle on/off/solo
+    switch(enableFlag)
+    {
+    default:
+        break;
+    case OPNMIDI_TrackOption_On:
+    case OPNMIDI_TrackOption_Off:
+        if(!seq.setTrackEnabled(trackNumber, enableFlag == OPNMIDI_TrackOption_On))
+            return -1;
+        break;
+    case OPNMIDI_TrackOption_Solo:
+        seq.setSoloTrack(trackNumber);
+        break;
+    }
+
+    // handle others...
+    if(trackOptions != 0)
+        return -1;
+
+    return 0;
+
+#else
+    ADL_UNUSED(device);
+    ADL_UNUSED(trackNumber);
+    ADL_UNUSED(trackOptions);
+    return -1;
 #endif
 }
 
