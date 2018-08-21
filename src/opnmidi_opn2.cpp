@@ -159,13 +159,14 @@ void OPN2::noteOn(size_t c, double hertz) // Hertz range: 0..131071
 
     uint32_t x2 = 0x0000;
 
-    if(hertz < 0 || hertz > 262143) // Avoid infinite loop
+    if(hertz < 0) // Avoid infinite loop
         return;
 
-    while((hertz >= 1023.75) && (x2 < 0x3800))
+    while(hertz >= 1023.75)
     {
         hertz /= 2.0;    // Calculate octave
-        x2 += 0x800;
+        if(x2 < 0x3800)
+            x2 += 0x800;
     }
 
     x2 += static_cast<uint32_t>(hertz + 0.5);
