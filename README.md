@@ -142,6 +142,7 @@ To remove MIDI Sequecer, define `OPNMIDI_DISABLE_MIDI_SEQUENCER` macro and remov
  * Added support for CC67-SoftPedal controller (SoftPedal lowers the volume of notes played)
  * Resolved a trouble which sometimes makes a junk noise sound and unnecessary overuse of chip channels
  * Volume models support taken from libADLMIDI has been adapted to OPN2's chip speficis
+ * Fixed inability to play high notes due physical tone frequency out of range on the OPN2 chip
 
 ## 1.3.0   2018-06-19
  * Optimizing the MIDI banks management system for MultiBanks (Thanks to [Jean Pierre Cimalando](https://github.com/jpcima) for a work!)
