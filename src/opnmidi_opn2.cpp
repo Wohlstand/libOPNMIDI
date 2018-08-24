@@ -186,7 +186,10 @@ void OPN2::noteOn(size_t c, double hertz) // Hertz range: 0..131071
             uint32_t dt  = reg & 0xF0;
             uint32_t mul = reg & 0x0F;
             if((mul + mul_offset) > 0x0F)
+            {
                 mul_offset = 0;
+                mul = 0x0F;
+            }
             writeRegI(chip, port, address, uint8_t(dt | (mul + mul_offset)));
         }
         else
