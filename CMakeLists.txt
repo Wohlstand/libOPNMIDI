@@ -118,6 +118,7 @@ if(WITH_MIDI_SEQUENCER)
     list(APPEND libOPNMIDI_SOURCES
         ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_sequencer.cpp
     )
+    add_definitions(-DENABLE_END_SILENCE_SKIPPING)
 endif()
 
 if(NOT WITH_MUS_SUPPORT OR NOT WITH_MIDI_SEQUENCER)

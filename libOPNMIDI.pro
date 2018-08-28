@@ -11,6 +11,8 @@ INSTALLINCLUDES = $$PWD/include/*
 INSTALLINCLUDESTO = OPNMIDI
 include($$PWD/../audio_codec_common.pri)
 
+DEFINES += ENABLE_END_SILENCE_SKIPPING
+
 macx: QMAKE_CXXFLAGS_WARN_ON += -Wno-absolute-value
 
 INCLUDEPATH += $$PWD $$PWD/include
