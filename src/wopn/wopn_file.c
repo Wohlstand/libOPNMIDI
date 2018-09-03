@@ -140,9 +140,9 @@ static void WOPN_parseInstrument(WOPNInstrument *ins, uint8_t *cursor, uint16_t 
     strncpy(ins->inst_name, (const char*)cursor, 32);
     ins->inst_name[32] = '\0';
     ins->note_offset = toSint16BE(cursor + 32);
-    ins->midi_velocity_offset = 0;
+    ins->midi_velocity_offset = 0;  //TODO: for future version > 2
     ins->percussion_key_number = cursor[34];
-    ins->inst_flags = 0;
+    ins->inst_flags = 0;  //TODO: for future version > 2
     ins->fbalg = cursor[35];
     ins->lfosens = cursor[36];
     for(l = 0; l < 4; l++)
@@ -160,6 +160,10 @@ static void WOPN_parseInstrument(WOPNInstrument *ins, uint8_t *cursor, uint16_t 
     {
         ins->delay_on_ms  = toUint16BE(cursor + 65);
         ins->delay_off_ms = toUint16BE(cursor + 67);
+
+        /* Null delays indicate the blank instrument in version 2 */
+        if((version < 3) && ins->delay_on_ms == 0 && ins->delay_off_ms == 0)
+            ins->inst_flags |= WOPN_Ins_IsBlank;
     }
 }
 
@@ -184,8 +188,17 @@ static void WOPN_writeInstrument(WOPNInstrument *ins, uint8_t *cursor, uint16_t 
     }
     if((version >= 2) && has_sounding_delays)
     {
-        fromUint16BE(ins->delay_on_ms, cursor + 65);
-        fromUint16BE(ins->delay_off_ms, cursor + 67);
+        if((version < 3) && (ins->inst_flags & WOPN_Ins_IsBlank) != 0)
+        {
+            /* Null delays indicate the blank instrument in version 2 */
+            fromUint16BE(0, cursor + 65);
+            fromUint16BE(0, cursor + 67);
+        }
+        else
+        {
+            fromUint16BE(ins->delay_on_ms, cursor + 65);
+            fromUint16BE(ins->delay_off_ms, cursor + 67);
+        }
     }
 }
 

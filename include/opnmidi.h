@@ -486,6 +486,14 @@ enum
 };
 
 /**
+ * @brief Instrument flags
+ */
+typedef enum OPN2_InstrumentFlags
+{
+    OPNMIDI_Ins_IsBlank    = 0x01
+} OPN2_InstrumentFlags;
+
+/**
  * @brief Operator structure, part of Instrument structure
  */
 typedef struct OPN2_Operator
@@ -519,7 +527,7 @@ typedef struct OPN2_Instrument
     OPN2_SInt8  midi_velocity_offset;
     /* Percussion MIDI base tone number at which this drum will be played */
     OPN2_UInt8 percussion_key_number;
-    /* Reserved (no sound/pseudo-8op?) */
+    /* Instrument flags */
     OPN2_UInt8 inst_flags;
     /* Feedback and Algorithm register data */
     OPN2_UInt8 fbalg;

@@ -74,6 +74,13 @@ TEST_CASE("[WOPNFile] Load, Save, Load")
                             fprintf(stderr, "--- Loading error %d\n", error);
                         REQUIRE(error == 0);
 
+                        if(version <= 2 && opni.inst.delay_on_ms == 0 && opni.inst.delay_off_ms == 0)
+                        {
+                            // version 2 has no blank flag, but has null delays
+                            // problem: cannot deduce a blank program, as OPNI does not save delays
+                            opni2.inst.inst_flags |= WOPN_Ins_IsBlank;
+                        }
+
                         size_t compare_size = sizeof(OPNIFile) - 2 * sizeof(uint16_t);
                         REQUIRE(memcmp(&opni, &opni2, compare_size) == 0);
 
