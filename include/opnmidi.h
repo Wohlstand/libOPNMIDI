@@ -113,6 +113,117 @@ extern OPNMIDI_DECLSPEC int  opn2_setNumChips(struct OPN2_MIDIPlayer *device, in
 /* Get current number of emulated chips */
 extern OPNMIDI_DECLSPEC int  opn2_getNumChips(struct OPN2_MIDIPlayer *device);
 
+/**
+ * @brief Reference to dynamic bank
+ */
+typedef struct OPN2_Bank
+{
+    void *pointer[3];
+} OPN2_Bank;
+
+/**
+ * @brief Identifier of dynamic bank
+ */
+typedef struct OPN2_BankId
+{
+    /*! 0 if bank is melodic set, or 1 if bank is a percussion set */
+    OPN2_UInt8 percussive;
+    /*! Assign to MSB bank number */
+    OPN2_UInt8 msb;
+    /*! Assign to LSB bank number */
+    OPN2_UInt8 lsb;
+} OPN2_BankId;
+
+/**
+ * @brief Flags for dynamic bank access
+ */
+enum OPN2_BankAccessFlags
+{
+    /*! create bank, allocating memory as needed */
+    OPNMIDI_Bank_Create = 1,
+    /*! create bank, never allocating memory */
+    OPNMIDI_Bank_CreateRt = 1|2
+};
+
+typedef struct OPN2_Instrument OPN2_Instrument;
+
+
+
+
+/* ======== Setup ======== */
+
+#ifdef OPNMIDI_UNSTABLE_API
+
+/**
+ * @brief Preallocates a minimum number of bank slots. Returns the actual capacity
+ * @param device Instance of the library
+ * @param banks Count of bank slots to pre-allocate.
+ * @return actual capacity of reserved bank slots.
+ */
+extern OPNMIDI_DECLSPEC int opn2_reserveBanks(struct OPN2_MIDIPlayer *device, unsigned banks);
+/**
+ * @brief Gets the bank designated by the identifier, optionally creating if it does not exist
+ * @param device Instance of the library
+ * @param id Identifier of dynamic bank
+ * @param flags Flags for dynamic bank access (OPN2_BankAccessFlags)
+ * @param bank Reference to dynamic bank
+ * @return 0 on success, <0 when any error has occurred
+ */
+extern OPNMIDI_DECLSPEC int opn2_getBank(struct OPN2_MIDIPlayer *device, const OPN2_BankId *id, int flags, OPN2_Bank *bank);
+/**
+ * @brief Gets the identifier of a bank
+ * @param device Instance of the library
+ * @param bank Reference to dynamic bank.
+ * @param id Identifier of dynamic bank
+ * @return 0 on success, <0 when any error has occurred
+ */
+extern OPNMIDI_DECLSPEC int opn2_getBankId(struct OPN2_MIDIPlayer *device, const OPN2_Bank *bank, OPN2_BankId *id);
+/**
+ * @brief Removes a bank
+ * @param device Instance of the library
+ * @param bank Reference to dynamic bank
+ * @return 0 on success, <0 when any error has occurred
+ */
+extern OPNMIDI_DECLSPEC int opn2_removeBank(struct OPN2_MIDIPlayer *device, OPN2_Bank *bank);
+/**
+ * @brief Gets the first bank
+ * @param device Instance of the library
+ * @param bank Reference to dynamic bank
+ * @return 0 on success, <0 when any error has occurred
+ */
+extern OPNMIDI_DECLSPEC int opn2_getFirstBank(struct OPN2_MIDIPlayer *device, OPN2_Bank *bank);
+/**
+ * @brief Iterates to the next bank
+ * @param device Instance of the library
+ * @param bank Reference to dynamic bank
+ * @return 0 on success, <0 when any error has occurred or end has been reached.
+ */
+extern OPNMIDI_DECLSPEC int opn2_getNextBank(struct OPN2_MIDIPlayer *device, OPN2_Bank *bank);
+/**
+ * @brief Gets the nth intrument in the bank [0..127]
+ * @param device Instance of the library
+ * @param bank Reference to dynamic bank
+ * @param index Index of the instrument
+ * @param ins Instrument entry
+ * @return 0 on success, <0 when any error has occurred
+ */
+extern OPNMIDI_DECLSPEC int opn2_getInstrument(struct OPN2_MIDIPlayer *device, const OPN2_Bank *bank, unsigned index, OPN2_Instrument *ins);
+/**
+ * @brief Sets the nth intrument in the bank [0..127]
+ * @param device Instance of the library
+ * @param bank Reference to dynamic bank
+ * @param index Index of the instrument
+ * @param ins Instrument structure pointer
+ * @return 0 on success, <0 when any error has occurred
+ *
+ * This function allows to override an instrument on the fly
+ */
+extern OPNMIDI_DECLSPEC int opn2_setInstrument(struct OPN2_MIDIPlayer *device, OPN2_Bank *bank, unsigned index, const OPN2_Instrument *ins);
+
+#endif  // OPNMIDI_UNSTABLE_API
+
+
+
 /*Enable or disable Enables scaling of modulator volumes*/
 extern OPNMIDI_DECLSPEC void opn2_setScaleModulators(struct OPN2_MIDIPlayer *device, int smod);
 
@@ -360,6 +471,54 @@ extern OPNMIDI_DECLSPEC void opn2_setNoteHook(struct OPN2_MIDIPlayer *device, OP
 
 /* Set debug message hook */
 extern OPNMIDI_DECLSPEC void opn2_setDebugMessageHook(struct OPN2_MIDIPlayer *device, OPN2_DebugMessageHook debugMessageHook, void *userData);
+
+/**
+ * @brief Operator structure, part of Instrument structure
+ */
+typedef struct OPN2_Operator
+{
+    /* Detune and frequency multiplication register data */
+    OPN2_UInt8 dtfm_30;
+    /* Total level register data */
+    OPN2_UInt8 level_40;
+    /* Rate scale and attack register data */
+    OPN2_UInt8 rsatk_50;
+    /* Amplitude modulation enable and Decay-1 register data */
+    OPN2_UInt8 amdecay1_60;
+    /* Decay-2 register data */
+    OPN2_UInt8 decay2_70;
+    /* Sustain and Release register data */
+    OPN2_UInt8 susrel_80;
+    /* SSG-EG register data */
+    OPN2_UInt8 ssgeg_90;
+} OPN2_Operator;
+
+/**
+ * @brief Instrument structure
+ */
+typedef struct OPN2_Instrument
+{
+    /*! Version of the instrument object */
+    int version;
+    /* MIDI note key (half-tone) offset for an instrument (or a first voice in pseudo-4-op mode) */
+    OPN2_SInt16 note_offset;
+    /* Reserved */
+    OPN2_SInt8  midi_velocity_offset;
+    /* Percussion MIDI base tone number at which this drum will be played */
+    OPN2_UInt8 percussion_key_number;
+    /* Reserved (no sound/pseudo-8op?) */
+    OPN2_UInt8 inst_flags;
+    /* Feedback and Algorithm register data */
+    OPN2_UInt8 fbalg;
+    /* LFO Sensitivity register data */
+    OPN2_UInt8 lfosens;
+    /* Operators register data */
+    OPN2_Operator operators[4];
+    /* Millisecond delay of sounding while key is on */
+    OPN2_UInt16 delay_on_ms;
+    /* Millisecond delay of sounding after key off */
+    OPN2_UInt16 delay_off_ms;
+} OPN2_Instrument;
 
 #ifdef __cplusplus
 }
