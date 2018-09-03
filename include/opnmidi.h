@@ -472,6 +472,19 @@ extern OPNMIDI_DECLSPEC void opn2_setNoteHook(struct OPN2_MIDIPlayer *device, OP
 /* Set debug message hook */
 extern OPNMIDI_DECLSPEC void opn2_setDebugMessageHook(struct OPN2_MIDIPlayer *device, OPN2_DebugMessageHook debugMessageHook, void *userData);
 
+
+
+
+/* ======== Instrument structures ======== */
+
+/**
+ * @brief Version of the instrument data format
+ */
+enum
+{
+    OPNMIDI_InstrumentVersion = 0
+};
+
 /**
  * @brief Operator structure, part of Instrument structure
  */
