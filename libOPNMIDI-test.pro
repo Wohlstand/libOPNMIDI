@@ -10,6 +10,7 @@ TARGET=opnplay
 # LIBS += -Wl,-Bstatic -lSDL2 -Wl,-Bdynamic -lpthread -ldl
 LIBS += -lSDL2 -lpthread -ldl
 
+DEFINES += ENABLE_END_SILENCE_SKIPPING
 # DEFINES += DEBUG_DUMP_RAW_STREAM
 # DEFINES += DEBUG_TRACE_ALL_CHANNELS
 

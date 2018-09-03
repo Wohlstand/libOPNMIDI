@@ -614,6 +614,19 @@ bool BW_MidiSequencer::buildSmfTrackData(const std::vector<std::vector<uint8_t> 
                 }
             }
 
+#ifdef ENABLE_END_SILENCE_SKIPPING
+            //Have track end on its own row? Clear any delay on the row before
+            if(event.subtype == MidiEvent::ST_ENDTRACK && evtPos.events.size() == 1)
+            {
+                if (!m_trackData[tk].empty())
+                {
+                    MidiTrackRow &previous = m_trackData[tk].back();
+                    previous.delay = 0;
+                    previous.timeDelay = 0;
+                }
+            }
+#endif
+
             if((evtPos.delay > 0) || (event.subtype == MidiEvent::ST_ENDTRACK))
             {
                 evtPos.absPos = abs_position;
@@ -1502,7 +1515,7 @@ void BW_MidiSequencer::handleEvent(size_t track, const BW_MidiSequencer::MidiEve
             if(m_interface->onDebugMessage)
                 m_interface->onDebugMessage(m_interface->onDebugMessage_userData, "Switching another device: %s", data);
             if(m_interface->rt_deviceSwitch)
-                m_interface->rt_deviceSwitch(m_interface->rtUserData, track, data, length);
+                m_interface->rt_deviceSwitch(m_interface->rtUserData, track, data, size_t(length));
             return;
         }
 
