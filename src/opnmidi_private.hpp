@@ -26,9 +26,9 @@
 
 // Setup compiler defines useful for exporting required public API symbols in gme.cpp
 #ifndef OPNMIDI_EXPORT
-#   if defined (_WIN32) && defined(ADLMIDI_BUILD_DLL)
+#   if defined (_WIN32) && defined(OPNMIDI_BUILD_DLL)
 #       define OPNMIDI_EXPORT __declspec(dllexport)
-#   elif defined (LIBADLMIDI_VISIBILITY) && defined (__GNUC__)
+#   elif defined (LIBOPNMIDI_VISIBILITY) && defined (__GNUC__)
 #       define OPNMIDI_EXPORT __attribute__((visibility ("default")))
 #   else
 #       define OPNMIDI_EXPORT
@@ -119,7 +119,10 @@ typedef BW_MidiSequencer MidiSequencer;
 #include "chips/opn_chip_base.h"
 
 #include "opnbank.h"
-#include "opnmidi.h"
+
+#define OPNMIDI_BUILD
+#include "opnmidi.h"    //Main API
+
 #include "opnmidi_ptr.hpp"
 #include "opnmidi_bankmap.h"
 
