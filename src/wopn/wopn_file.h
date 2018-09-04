@@ -43,7 +43,7 @@ typedef unsigned short int uint16_t;
 /* Volume scaling model implemented in the libOPNMIDI */
 typedef enum WOPN_VolumeModel
 {
-    WOPN_VM_Generic = 0,
+    WOPN_VM_Generic = 0
 } WOPN_VolumeModel;
 
 typedef enum WOPN_InstrumentFlags

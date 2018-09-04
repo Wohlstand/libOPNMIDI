@@ -36,7 +36,7 @@ static const uint16_t   wopn_latest_version = 2;
 enum
 {
     WOPN_INST_SIZE_V1 = 65,
-    WOPN_INST_SIZE_V2 = 69,
+    WOPN_INST_SIZE_V2 = 69
 };
 
 static uint16_t toUint16LE(const uint8_t *arr)
@@ -140,9 +140,9 @@ static void WOPN_parseInstrument(WOPNInstrument *ins, uint8_t *cursor, uint16_t 
     strncpy(ins->inst_name, (const char*)cursor, 32);
     ins->inst_name[32] = '\0';
     ins->note_offset = toSint16BE(cursor + 32);
-    ins->midi_velocity_offset = 0;  //TODO: for future version > 2
+    ins->midi_velocity_offset = 0;  /* TODO: for future version > 2 */
     ins->percussion_key_number = cursor[34];
-    ins->inst_flags = 0;  //TODO: for future version > 2
+    ins->inst_flags = 0;  /* TODO: for future version > 2 */
     ins->fbalg = cursor[35];
     ins->lfosens = cursor[36];
     for(l = 0; l < 4; l++)
