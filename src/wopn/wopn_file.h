@@ -49,7 +49,7 @@ typedef enum WOPN_VolumeModel
 typedef enum WOPN_InstrumentFlags
 {
     /* Is pseudo eight-operator (two 4-operator voices) instrument */
-    WOPL_Ins_Pseudo8op  = 0x01,
+    WOPN_Ins_Pseudo8op  = 0x01,
     /* Is a blank instrument entry */
     WOPN_Ins_IsBlank    = 0x02,
 

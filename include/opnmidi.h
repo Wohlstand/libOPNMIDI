@@ -490,7 +490,8 @@ enum
  */
 typedef enum OPN2_InstrumentFlags
 {
-    OPNMIDI_Ins_IsBlank    = 0x01
+    OPNMIDI_Ins_Pseudo8op  = 0x01, /*Reserved for future use, not implemented yet*/
+    OPNMIDI_Ins_IsBlank    = 0x02
 } OPN2_InstrumentFlags;
 
 /**
