@@ -24,6 +24,8 @@
 #ifndef ADLMIDI_PRIVATE_HPP
 #define ADLMIDI_PRIVATE_HPP
 
+#define OPNMIDI_UNSTABLE_API
+
 // Setup compiler defines useful for exporting required public API symbols in gme.cpp
 #ifndef OPNMIDI_EXPORT
 #   if defined (_WIN32) && defined(OPNMIDI_BUILD_DLL)

@@ -134,4 +134,14 @@ inline opnInstMeta2::opnInstMeta2(const opnInstMeta &d)
 }
 #endif
 
+/**
+ * @brief Convert external instrument to internal instrument
+ */
+void cvt_OPNI_to_FMIns(opnInstMeta2 &dst, const struct OPN2_Instrument &src);
+
+/**
+ * @brief Convert internal instrument to external instrument
+ */
+void cvt_FMIns_to_OPNI(struct OPN2_Instrument &dst, const opnInstMeta2 &src);
+
 #endif  // OPNMIDI_OPNBANK_H

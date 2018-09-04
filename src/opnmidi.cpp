@@ -107,6 +107,142 @@ OPNMIDI_EXPORT int opn2_getNumChips(struct OPN2_MIDIPlayer *device)
     return -2;
 }
 
+OPNMIDI_EXPORT int opn2_reserveBanks(OPN2_MIDIPlayer *device, unsigned banks)
+{
+    if(!device)
+        return -1;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    OPN2::BankMap &map = play->m_synth.m_insBanks;
+    map.reserve(banks);
+    return (int)map.capacity();
+}
+
+OPNMIDI_EXPORT int opn2_getBank(OPN2_MIDIPlayer *device, const OPN2_BankId *idp, int flags, OPN2_Bank *bank)
+{
+    if(!device || !idp || !bank)
+        return -1;
+
+    OPN2_BankId id = *idp;
+    if(id.lsb > 127 || id.msb > 127 || id.percussive > 1)
+        return -1;
+    size_t idnumber = ((id.msb << 8) | id.lsb | (id.percussive ? size_t(OPN2::PercussionTag) : 0));
+
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    OPN2::BankMap &map = play->m_synth.m_insBanks;
+
+    OPN2::BankMap::iterator it;
+    if(!(flags & OPNMIDI_Bank_Create))
+    {
+        it = map.find(idnumber);
+        if(it == map.end())
+            return -1;
+    }
+    else
+    {
+        std::pair<size_t, OPN2::Bank> value;
+        value.first = idnumber;
+        memset(&value.second, 0, sizeof(value.second));
+        for (unsigned i = 0; i < 128; ++i)
+            value.second.ins[i].flags = opnInstMeta::Flag_NoSound;
+
+        std::pair<OPN2::BankMap::iterator, bool> ir;
+        if(flags & OPNMIDI_Bank_CreateRt)
+        {
+            ir = map.insert(value, OPN2::BankMap::do_not_expand_t());
+            if(ir.first == map.end())
+                return -1;
+        }
+        else
+            ir = map.insert(value);
+        it = ir.first;
+    }
+
+    it.to_ptrs(bank->pointer);
+    return 0;
+}
+
+OPNMIDI_EXPORT int opn2_getBankId(OPN2_MIDIPlayer *device, const OPN2_Bank *bank, OPN2_BankId *id)
+{
+    if(!device || !bank)
+        return -1;
+
+    OPN2::BankMap::iterator it = OPN2::BankMap::iterator::from_ptrs(bank->pointer);
+    OPN2::BankMap::key_type idnumber = it->first;
+    id->msb = (idnumber >> 8) & 127;
+    id->lsb = idnumber & 127;
+    id->percussive = (idnumber & OPN2::PercussionTag) ? 1 : 0;
+    return 0;
+}
+
+OPNMIDI_EXPORT int opn2_removeBank(OPN2_MIDIPlayer *device, OPN2_Bank *bank)
+{
+    if(!device || !bank)
+        return -1;
+
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    OPN2::BankMap &map = play->m_synth.m_insBanks;
+    OPN2::BankMap::iterator it = OPN2::BankMap::iterator::from_ptrs(bank->pointer);
+    size_t size = map.size();
+    map.erase(it);
+    return (map.size() != size) ? 0 : -1;
+}
+
+OPNMIDI_EXPORT int opn2_getFirstBank(OPN2_MIDIPlayer *device, OPN2_Bank *bank)
+{
+    if(!device)
+        return -1;
+
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    OPN2::BankMap &map = play->m_synth.m_insBanks;
+
+    OPN2::BankMap::iterator it = map.begin();
+    if(it == map.end())
+        return -1;
+
+    it.to_ptrs(bank->pointer);
+    return 0;
+}
+
+OPNMIDI_EXPORT int opn2_getNextBank(OPN2_MIDIPlayer *device, OPN2_Bank *bank)
+{
+    if(!device)
+        return -1;
+
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    OPN2::BankMap &map = play->m_synth.m_insBanks;
+
+    OPN2::BankMap::iterator it = OPN2::BankMap::iterator::from_ptrs(bank->pointer);
+    if(++it == map.end())
+        return -1;
+
+    it.to_ptrs(bank->pointer);
+    return 0;
+}
+
+OPNMIDI_EXPORT int adl_getInstrument(OPN2_MIDIPlayer *device, const OPN2_Bank *bank, unsigned index, OPN2_Instrument *ins)
+{
+    if(!device || !bank || index > 127 || !ins)
+        return 1;
+
+    OPN2::BankMap::iterator it = OPN2::BankMap::iterator::from_ptrs(bank->pointer);
+    cvt_FMIns_to_OPNI(*ins, it->second.ins[index]);
+    ins->version = 0;
+    return 0;
+}
+
+OPNMIDI_EXPORT int adl_setInstrument(OPN2_MIDIPlayer *device, OPN2_Bank *bank, unsigned index, const OPN2_Instrument *ins)
+{
+    if(!device || !bank || index > 127 || !ins)
+        return 1;
+
+    if(ins->version != 0)
+        return 1;
+
+    OPN2::BankMap::iterator it = OPN2::BankMap::iterator::from_ptrs(bank->pointer);
+    cvt_OPNI_to_FMIns(it->second.ins[index], *ins);
+    return 0;
+}
+
 OPNMIDI_EXPORT int opn2_openBankFile(OPN2_MIDIPlayer *device, const char *filePath)
 {
     if(device && device->opn2_midiPlayer)
