@@ -104,8 +104,12 @@ bool OPNMIDIplay::LoadBank(FileAndMemReader &fr)
         }
     }
 
-    m_synth.m_regLFOSetup = wopn->lfo_freq;
-    m_setup.VolumeModel = wopn->volume_model;
+    m_synth.m_insBankSetup.volumeModel = wopn->volume_model;
+    m_synth.m_insBankSetup.lfoEnable = (wopn->lfo_freq & 8) != 0;
+    m_synth.m_insBankSetup.lfoFrequency = wopn->lfo_freq & 7;
+    m_setup.VolumeModel = OPNMIDI_VolumeModel_AUTO;
+    m_setup.lfoEnable = -1;
+    m_setup.lfoFrequency = -1;
 
     m_synth.m_insBanks.clear();
 

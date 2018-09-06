@@ -224,6 +224,18 @@ extern OPNMIDI_DECLSPEC int opn2_setInstrument(struct OPN2_MIDIPlayer *device, O
 
 
 
+/*Override Enable(1) or Disable(0) LFO. -1 - use bank default state*/
+extern OPNMIDI_DECLSPEC void opn2_setLfoEnabled(struct OPN2_MIDIPlayer *device, int lfoEnable);
+
+/*Get the LFO state*/
+extern OPNMIDI_DECLSPEC int opn2_getLfoEnabled(struct OPN2_MIDIPlayer *device);
+
+/*Override LFO frequency. -1 - use bank default state*/
+extern OPNMIDI_DECLSPEC void opn2_setLfoFrequency(struct OPN2_MIDIPlayer *device, int lfoFrequency);
+
+/*Get the LFO frequency*/
+extern OPNMIDI_DECLSPEC int opn2_getLfoFrequency(struct OPN2_MIDIPlayer *device);
+
 /*Enable or disable Enables scaling of modulator volumes*/
 extern OPNMIDI_DECLSPEC void opn2_setScaleModulators(struct OPN2_MIDIPlayer *device, int smod);
 
@@ -241,6 +253,9 @@ extern OPNMIDI_DECLSPEC void opn2_setLogarithmicVolumes(struct OPN2_MIDIPlayer *
 
 /*Set different volume range model */
 extern OPNMIDI_DECLSPEC void opn2_setVolumeRangeModel(struct OPN2_MIDIPlayer *device, int volumeModel);
+
+/*Get the volume range model */
+extern OPNMIDI_DECLSPEC int opn2_getVolumeRangeModel(struct OPN2_MIDIPlayer *device);
 
 /*Load WOPN bank file from File System. Is recommended to call adl_reset() to apply changes to already-loaded file player or real-time.*/
 extern OPNMIDI_DECLSPEC int opn2_openBankFile(struct OPN2_MIDIPlayer *device, const char *filePath);

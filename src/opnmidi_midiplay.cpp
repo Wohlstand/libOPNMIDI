@@ -101,6 +101,8 @@ OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
     m_setup.NumCards   = 2;
     m_setup.LogarithmicVolumes  = false;
     m_setup.VolumeModel = OPNMIDI_VolumeModel_AUTO;
+    m_setup.lfoEnable = -1;
+    m_setup.lfoFrequency = -1;
     //m_setup.SkipForward = 0;
     m_setup.ScaleModulators     = 0;
     m_setup.fullRangeBrightnessCC74 = false;
@@ -132,9 +134,19 @@ void OPNMIDIplay::applySetup()
         m_synth.setVolumeScaleModel(static_cast<OPNMIDI_VolumeModels>(m_setup.VolumeModel));
 
     if(m_setup.VolumeModel == OPNMIDI_VolumeModel_AUTO)
-        m_synth.m_volumeScale = OPN2::VOLUME_Generic;
+        m_synth.m_volumeScale = (OPN2::VolumesScale)m_synth.m_insBankSetup.volumeModel;
 
     m_synth.m_numChips    = m_setup.NumCards;
+
+    if(m_setup.lfoEnable < 0)
+        m_synth.m_lfoEnable = m_synth.m_insBankSetup.lfoEnable;
+    else
+        m_synth.m_lfoEnable = m_setup.lfoEnable;
+
+    if(m_setup.lfoFrequency < 0)
+        m_synth.m_lfoFrequency = m_synth.m_insBankSetup.lfoFrequency;
+    else
+        m_synth.m_lfoFrequency = m_setup.lfoFrequency;
 
     m_synth.reset(m_setup.emulator, m_setup.PCM_RATE, this);
     m_chipChannels.clear();

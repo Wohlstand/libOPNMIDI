@@ -120,6 +120,16 @@ OPNDATA_BYTE_COMPARABLE(struct opnInstMeta2)
 #undef OPNDATA_BYTE_COMPARABLE
 #pragma pack(pop)
 
+/**
+ * @brief Bank global setup
+ */
+struct OpnBankSetup
+{
+    int volumeModel;
+    int lfoEnable;
+    int lfoFrequency;
+};
+
 #if 0
 /**
  * @brief Conversion of storage formats
