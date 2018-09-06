@@ -219,7 +219,7 @@ OPNMIDI_EXPORT int opn2_getNextBank(OPN2_MIDIPlayer *device, OPN2_Bank *bank)
     return 0;
 }
 
-OPNMIDI_EXPORT int adl_getInstrument(OPN2_MIDIPlayer *device, const OPN2_Bank *bank, unsigned index, OPN2_Instrument *ins)
+OPNMIDI_EXPORT int opn2_getInstrument(OPN2_MIDIPlayer *device, const OPN2_Bank *bank, unsigned index, OPN2_Instrument *ins)
 {
     if(!device || !bank || index > 127 || !ins)
         return 1;
@@ -230,7 +230,7 @@ OPNMIDI_EXPORT int adl_getInstrument(OPN2_MIDIPlayer *device, const OPN2_Bank *b
     return 0;
 }
 
-OPNMIDI_EXPORT int adl_setInstrument(OPN2_MIDIPlayer *device, OPN2_Bank *bank, unsigned index, const OPN2_Instrument *ins)
+OPNMIDI_EXPORT int opn2_setInstrument(OPN2_MIDIPlayer *device, OPN2_Bank *bank, unsigned index, const OPN2_Instrument *ins)
 {
     if(!device || !bank || index > 127 || !ins)
         return 1;
