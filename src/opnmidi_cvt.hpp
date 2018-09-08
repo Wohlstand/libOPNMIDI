@@ -35,7 +35,7 @@ static void cvt_generic_to_FMIns(opnInstMeta2 &ins, const WOPNI &in)
     ins.opn[0].fbalg = in.fbalg;
     ins.opn[0].lfosens = in.lfosens;
     ins.opn[0].finetune = in.note_offset;
-    /* TODO in.midi_velocity_offset */
+    ins.midi_velocity_offset = in.midi_velocity_offset;
 
     for(size_t op = 0; op < 4; op++)
     {
@@ -64,7 +64,7 @@ static void cvt_FMIns_to_generic(WOPNI &ins, const opnInstMeta2 &in)
     ins.lfosens = in.opn[0].lfosens;
     ins.note_offset = in.opn[0].finetune;
 
-    ins.midi_velocity_offset = 0; /* TODO */
+    ins.midi_velocity_offset = in.midi_velocity_offset;
 
     for(size_t op = 0; op < 4; op++)
     {
