@@ -219,7 +219,7 @@ OPNMIDI_EXPORT int opn2_getNextBank(OPN2_MIDIPlayer *device, OPN2_Bank *bank)
     return 0;
 }
 
-OPNMIDI_EXPORT int adl_getInstrument(OPN2_MIDIPlayer *device, const OPN2_Bank *bank, unsigned index, OPN2_Instrument *ins)
+OPNMIDI_EXPORT int opn2_getInstrument(OPN2_MIDIPlayer *device, const OPN2_Bank *bank, unsigned index, OPN2_Instrument *ins)
 {
     if(!device || !bank || index > 127 || !ins)
         return 1;
@@ -230,7 +230,7 @@ OPNMIDI_EXPORT int adl_getInstrument(OPN2_MIDIPlayer *device, const OPN2_Bank *b
     return 0;
 }
 
-OPNMIDI_EXPORT int adl_setInstrument(OPN2_MIDIPlayer *device, OPN2_Bank *bank, unsigned index, const OPN2_Instrument *ins)
+OPNMIDI_EXPORT int opn2_setInstrument(OPN2_MIDIPlayer *device, OPN2_Bank *bank, unsigned index, const OPN2_Instrument *ins)
 {
     if(!device || !bank || index > 127 || !ins)
         return 1;
@@ -280,6 +280,42 @@ OPNMIDI_EXPORT int opn2_openBankData(OPN2_MIDIPlayer *device, const void *mem, l
 
     OPN2MIDI_ErrorString = "Can't load file: OPN2 MIDI is not initialized";
     return -1;
+}
+
+OPNMIDI_EXPORT void opn2_setLfoEnabled(struct OPN2_MIDIPlayer *device, int lfoEnable)
+{
+    if(!device) return;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    play->m_setup.lfoEnable = lfoEnable;
+    play->m_synth.m_lfoEnable = lfoEnable < 0 ?
+                                play->m_synth.m_insBankSetup.lfoEnable :
+                                (play->m_setup.lfoEnable != 0);
+    play->m_synth.commitLFOSetup();
+}
+
+OPNMIDI_EXPORT int opn2_getLfoEnabled(struct OPN2_MIDIPlayer *device)
+{
+    if(!device) return -1;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    return play->m_synth.m_lfoEnable;
+}
+
+OPNMIDI_EXPORT void opn2_setLfoFrequency(struct OPN2_MIDIPlayer *device, int lfoFrequency)
+{
+    if(!device) return;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    play->m_setup.lfoFrequency = lfoFrequency;
+    play->m_synth.m_lfoFrequency = lfoFrequency < 0 ?
+                                   play->m_synth.m_insBankSetup.lfoFrequency :
+                                   (uint8_t)play->m_setup.lfoFrequency;
+    play->m_synth.commitLFOSetup();
+}
+
+OPNMIDI_EXPORT int opn2_getLfoFrequency(struct OPN2_MIDIPlayer *device)
+{
+    if(!device) return -1;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    return play->m_synth.m_lfoFrequency;
 }
 
 OPNMIDI_EXPORT void opn2_setScaleModulators(OPN2_MIDIPlayer *device, int smod)
@@ -340,7 +376,20 @@ OPNMIDI_EXPORT void opn2_setVolumeRangeModel(OPN2_MIDIPlayer *device, int volume
     if(!play)
         return;
     play->m_setup.VolumeModel = volumeModel;
-    play->m_synth.setVolumeScaleModel(static_cast<OPNMIDI_VolumeModels>(volumeModel));
+    if(play->m_setup.VolumeModel == OPNMIDI_VolumeModel_AUTO)//Use bank default volume model
+        play->m_synth.m_volumeScale = (OPN2::VolumesScale)play->m_synth.m_insBankSetup.volumeModel;
+    else
+        play->m_synth.setVolumeScaleModel(static_cast<OPNMIDI_VolumeModels>(volumeModel));
+}
+
+OPNMIDI_EXPORT int opn2_getVolumeRangeModel(struct OPN2_MIDIPlayer *device)
+{
+    if(!device)
+        return -1;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    if(!play)
+        return -1;
+    return play->m_synth.getVolumeScaleModel();
 }
 
 OPNMIDI_EXPORT int opn2_openFile(OPN2_MIDIPlayer *device, const char *filePath)
