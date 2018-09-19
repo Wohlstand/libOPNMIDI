@@ -66,6 +66,7 @@ typedef int32_t ssize_t;
 #include <string>
 #include <map>
 #include <set>
+#include <new> // nothrow
 #include <cstdlib>
 #include <cstring>
 #include <cmath>

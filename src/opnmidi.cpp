@@ -55,7 +55,7 @@ OPNMIDI_EXPORT struct OPN2_MIDIPlayer *opn2_init(long sample_rate)
         return NULL;
     }
 
-    OPNMIDIplay *player = new OPNMIDIplay(static_cast<unsigned long>(sample_rate));
+    OPNMIDIplay *player = new(std::nothrow) OPNMIDIplay(static_cast<unsigned long>(sample_rate));
     if(!player)
     {
         free(midi_device);
@@ -72,8 +72,7 @@ OPNMIDI_EXPORT int opn2_setDeviceIdentifier(OPN2_MIDIPlayer *device, unsigned id
     if(!device || id > 0x0f)
         return -1;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return -1;
+    assert(play);
     play->setDeviceId(static_cast<uint8_t>(id));
     return 0;
 }
@@ -84,6 +83,7 @@ OPNMIDI_EXPORT int opn2_setNumChips(OPN2_MIDIPlayer *device, int numCards)
         return -2;
 
     MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
     play->m_setup.NumCards = static_cast<unsigned int>(numCards);
     if(play->m_setup.NumCards < 1 || play->m_setup.NumCards > MaxCards)
     {
@@ -102,9 +102,8 @@ OPNMIDI_EXPORT int opn2_getNumChips(struct OPN2_MIDIPlayer *device)
     if(device == NULL)
         return -2;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(play)
-        return (int)play->m_setup.NumCards;
-    return -2;
+    assert(play);
+    return (int)play->m_setup.NumCards;
 }
 
 OPNMIDI_EXPORT int opn2_reserveBanks(OPN2_MIDIPlayer *device, unsigned banks)
@@ -112,6 +111,7 @@ OPNMIDI_EXPORT int opn2_reserveBanks(OPN2_MIDIPlayer *device, unsigned banks)
     if(!device)
         return -1;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
     OPN2::BankMap &map = play->m_synth.m_insBanks;
     map.reserve(banks);
     return (int)map.capacity();
@@ -128,6 +128,7 @@ OPNMIDI_EXPORT int opn2_getBank(OPN2_MIDIPlayer *device, const OPN2_BankId *idp,
     size_t idnumber = ((id.msb << 8) | id.lsb | (id.percussive ? size_t(OPN2::PercussionTag) : 0));
 
     MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
     OPN2::BankMap &map = play->m_synth.m_insBanks;
 
     OPN2::BankMap::iterator it;
@@ -180,6 +181,7 @@ OPNMIDI_EXPORT int opn2_removeBank(OPN2_MIDIPlayer *device, OPN2_Bank *bank)
         return -1;
 
     MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
     OPN2::BankMap &map = play->m_synth.m_insBanks;
     OPN2::BankMap::iterator it = OPN2::BankMap::iterator::from_ptrs(bank->pointer);
     size_t size = map.size();
@@ -193,6 +195,7 @@ OPNMIDI_EXPORT int opn2_getFirstBank(OPN2_MIDIPlayer *device, OPN2_Bank *bank)
         return -1;
 
     MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
     OPN2::BankMap &map = play->m_synth.m_insBanks;
 
     OPN2::BankMap::iterator it = map.begin();
@@ -209,6 +212,7 @@ OPNMIDI_EXPORT int opn2_getNextBank(OPN2_MIDIPlayer *device, OPN2_Bank *bank)
         return -1;
 
     MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
     OPN2::BankMap &map = play->m_synth.m_insBanks;
 
     OPN2::BankMap::iterator it = OPN2::BankMap::iterator::from_ptrs(bank->pointer);
@@ -222,7 +226,7 @@ OPNMIDI_EXPORT int opn2_getNextBank(OPN2_MIDIPlayer *device, OPN2_Bank *bank)
 OPNMIDI_EXPORT int opn2_getInstrument(OPN2_MIDIPlayer *device, const OPN2_Bank *bank, unsigned index, OPN2_Instrument *ins)
 {
     if(!device || !bank || index > 127 || !ins)
-        return 1;
+        return -1;
 
     OPN2::BankMap::iterator it = OPN2::BankMap::iterator::from_ptrs(bank->pointer);
     cvt_FMIns_to_OPNI(*ins, it->second.ins[index]);
@@ -233,10 +237,10 @@ OPNMIDI_EXPORT int opn2_getInstrument(OPN2_MIDIPlayer *device, const OPN2_Bank *
 OPNMIDI_EXPORT int opn2_setInstrument(OPN2_MIDIPlayer *device, OPN2_Bank *bank, unsigned index, const OPN2_Instrument *ins)
 {
     if(!device || !bank || index > 127 || !ins)
-        return 1;
+        return -1;
 
     if(ins->version != 0)
-        return 1;
+        return -1;
 
     OPN2::BankMap::iterator it = OPN2::BankMap::iterator::from_ptrs(bank->pointer);
     cvt_OPNI_to_FMIns(it->second.ins[index], *ins);
@@ -245,9 +249,10 @@ OPNMIDI_EXPORT int opn2_setInstrument(OPN2_MIDIPlayer *device, OPN2_Bank *bank, 
 
 OPNMIDI_EXPORT int opn2_openBankFile(OPN2_MIDIPlayer *device, const char *filePath)
 {
-    if(device && device->opn2_midiPlayer)
+    if(device)
     {
         MidiPlayer *play = GET_MIDI_PLAYER(device);
+        assert(play);
         play->m_setup.tick_skip_samples_delay = 0;
         if(!play->LoadBank(filePath))
         {
@@ -264,9 +269,10 @@ OPNMIDI_EXPORT int opn2_openBankFile(OPN2_MIDIPlayer *device, const char *filePa
 
 OPNMIDI_EXPORT int opn2_openBankData(OPN2_MIDIPlayer *device, const void *mem, long size)
 {
-    if(device && device->opn2_midiPlayer)
+    if(device)
     {
         MidiPlayer *play = GET_MIDI_PLAYER(device);
+        assert(play);
         play->m_setup.tick_skip_samples_delay = 0;
         if(!play->LoadBank(mem, static_cast<size_t>(size)))
         {
@@ -286,6 +292,7 @@ OPNMIDI_EXPORT void opn2_setLfoEnabled(struct OPN2_MIDIPlayer *device, int lfoEn
 {
     if(!device) return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
     play->m_setup.lfoEnable = lfoEnable;
     play->m_synth.m_lfoEnable = lfoEnable < 0 ?
                                 play->m_synth.m_insBankSetup.lfoEnable :
@@ -297,6 +304,7 @@ OPNMIDI_EXPORT int opn2_getLfoEnabled(struct OPN2_MIDIPlayer *device)
 {
     if(!device) return -1;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
     return play->m_synth.m_lfoEnable;
 }
 
@@ -304,6 +312,7 @@ OPNMIDI_EXPORT void opn2_setLfoFrequency(struct OPN2_MIDIPlayer *device, int lfo
 {
     if(!device) return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
     play->m_setup.lfoFrequency = lfoFrequency;
     play->m_synth.m_lfoFrequency = lfoFrequency < 0 ?
                                    play->m_synth.m_insBankSetup.lfoFrequency :
@@ -315,6 +324,7 @@ OPNMIDI_EXPORT int opn2_getLfoFrequency(struct OPN2_MIDIPlayer *device)
 {
     if(!device) return -1;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
     return play->m_synth.m_lfoFrequency;
 }
 
@@ -323,8 +333,7 @@ OPNMIDI_EXPORT void opn2_setScaleModulators(OPN2_MIDIPlayer *device, int smod)
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return;
+    assert(play);
     play->m_setup.ScaleModulators = smod;
     play->m_synth.m_scaleModulators = (play->m_setup.ScaleModulators != 0);
 }
@@ -334,8 +343,7 @@ OPNMIDI_EXPORT void opn2_setFullRangeBrightness(struct OPN2_MIDIPlayer *device, 
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return;
+    assert(play);
     play->m_setup.fullRangeBrightnessCC74 = (fr_brightness != 0);
 }
 
@@ -344,8 +352,7 @@ OPNMIDI_EXPORT void opn2_setLoopEnabled(OPN2_MIDIPlayer *device, int loopEn)
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return;
+    assert(play);
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
     play->m_sequencer.setLoopEnabled(loopEn != 0);
 #else
@@ -359,8 +366,7 @@ OPNMIDI_EXPORT void opn2_setLogarithmicVolumes(struct OPN2_MIDIPlayer *device, i
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return;
+    assert(play);
     play->m_setup.LogarithmicVolumes = static_cast<unsigned int>(logvol);
     if(play->m_setup.LogarithmicVolumes != 0)
         play->m_synth.setVolumeScaleModel(OPNMIDI_VolumeModel_NativeOPN2);
@@ -373,8 +379,7 @@ OPNMIDI_EXPORT void opn2_setVolumeRangeModel(OPN2_MIDIPlayer *device, int volume
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return;
+    assert(play);
     play->m_setup.VolumeModel = volumeModel;
     if(play->m_setup.VolumeModel == OPNMIDI_VolumeModel_AUTO)//Use bank default volume model
         play->m_synth.m_volumeScale = (OPN2::VolumesScale)play->m_synth.m_insBankSetup.volumeModel;
@@ -387,18 +392,16 @@ OPNMIDI_EXPORT int opn2_getVolumeRangeModel(struct OPN2_MIDIPlayer *device)
     if(!device)
         return -1;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return -1;
+    assert(play);
     return play->m_synth.getVolumeScaleModel();
 }
 
 OPNMIDI_EXPORT int opn2_openFile(OPN2_MIDIPlayer *device, const char *filePath)
 {
-    if(device && device->opn2_midiPlayer)
+    if(device)
     {
         MidiPlayer *play = GET_MIDI_PLAYER(device);
-        if(!play)
-            return -1;
+        assert(play);
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
         play->m_setup.tick_skip_samples_delay = 0;
         if(!play->LoadMIDI(filePath))
@@ -422,11 +425,10 @@ OPNMIDI_EXPORT int opn2_openFile(OPN2_MIDIPlayer *device, const char *filePath)
 
 OPNMIDI_EXPORT int opn2_openData(OPN2_MIDIPlayer *device, const void *mem, unsigned long size)
 {
-    if(device && device->opn2_midiPlayer)
+    if(device)
     {
         MidiPlayer *play = GET_MIDI_PLAYER(device);
-        if(!play)
-            return -1;
+        assert(play);
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
         play->m_setup.tick_skip_samples_delay = 0;
         if(!play->LoadMIDI(mem, static_cast<size_t>(size)))
@@ -459,7 +461,8 @@ OPNMIDI_EXPORT const char *opn2_chipEmulatorName(struct OPN2_MIDIPlayer *device)
     if(device)
     {
         MidiPlayer *play = GET_MIDI_PLAYER(device);
-        if(play && !play->m_synth.m_chips.empty())
+        assert(play);
+        if(!play->m_synth.m_chips.empty())
             return play->m_synth.m_chips[0]->emulatorName();
     }
     return "Unknown";
@@ -471,8 +474,6 @@ OPNMIDI_EXPORT int opn2_switchEmulator(struct OPN2_MIDIPlayer *device, int emula
     {
         MidiPlayer *play = GET_MIDI_PLAYER(device);
         assert(play);
-        if(!play)
-            return -1;
         if(opn2_isEmulatorAvailable(emulator))
         {
             play->m_setup.emulator = emulator;
@@ -490,12 +491,10 @@ OPNMIDI_EXPORT int opn2_setRunAtPcmRate(OPN2_MIDIPlayer *device, int enabled)
     if(device)
     {
         MidiPlayer *play = GET_MIDI_PLAYER(device);
-        if(play)
-        {
-            play->m_setup.runAtPcmRate = (enabled != 0);
-            play->partialReset();
-            return 0;
-        }
+        assert(play);
+        play->m_setup.runAtPcmRate = (enabled != 0);
+        play->partialReset();
+        return 0;
     }
     return -1;
 }
@@ -534,9 +533,9 @@ OPNMIDI_EXPORT void opn2_close(OPN2_MIDIPlayer *device)
 {
     if(!device)
         return;
-    OPNMIDIplay * play = reinterpret_cast<OPNMIDIplay *>(device->opn2_midiPlayer);
-    if(play)
-        delete play;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
+    delete play;
     device->opn2_midiPlayer = NULL;
     free(device);
     device = NULL;
@@ -547,6 +546,7 @@ OPNMIDI_EXPORT void opn2_reset(OPN2_MIDIPlayer *device)
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
     play->partialReset();
     play->resetMIDI();
 }
@@ -557,8 +557,7 @@ OPNMIDI_EXPORT double opn2_totalTimeLength(struct OPN2_MIDIPlayer *device)
     if(!device)
         return -1.0;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return -1.0;
+    assert(play);
     return play->m_sequencer.timeLength();
 #else
     ADL_UNUSED(device);
@@ -572,8 +571,7 @@ OPNMIDI_EXPORT double opn2_loopStartTime(struct OPN2_MIDIPlayer *device)
     if(!device)
         return -1.0;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return -1.0;
+    assert(play);
     return play->m_sequencer.getLoopStart();
 #else
     ADL_UNUSED(device);
@@ -587,8 +585,7 @@ OPNMIDI_EXPORT double opn2_loopEndTime(struct OPN2_MIDIPlayer *device)
     if(!device)
         return -1.0;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return -1.0;
+    assert(play);
     return play->m_sequencer.getLoopEnd();
 #else
     ADL_UNUSED(device);
@@ -602,8 +599,7 @@ OPNMIDI_EXPORT double opn2_positionTell(struct OPN2_MIDIPlayer *device)
     if(!device)
         return -1.0;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return -1.0;
+    assert(play);
     return play->m_sequencer.tell();
 #else
     ADL_UNUSED(device);
@@ -619,8 +615,7 @@ OPNMIDI_EXPORT void opn2_positionSeek(struct OPN2_MIDIPlayer *device, double sec
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return;
+    assert(play);
     play->realTime_panic();
     play->m_setup.delay = play->m_sequencer.seek(seconds, play->m_setup.mindelay);
     play->m_setup.carry = 0.0;
@@ -636,8 +631,7 @@ OPNMIDI_EXPORT void opn2_positionRewind(struct OPN2_MIDIPlayer *device)
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return;
+    assert(play);
     play->realTime_panic();
     play->m_sequencer.rewind();
 #else
@@ -651,8 +645,7 @@ OPNMIDI_EXPORT void opn2_setTempo(struct OPN2_MIDIPlayer *device, double tempo)
     if(!device || (tempo <= 0.0))
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return;
+    assert(play);
     play->m_sequencer.setTempo(tempo);
 #else
     ADL_UNUSED(device);
@@ -666,8 +659,7 @@ OPNMIDI_EXPORT int opn2_describeChannels(struct OPN2_MIDIPlayer *device, char *s
     if(!device)
         return -1;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return -1;
+    assert(play);
     play->describeChannels(str, attr, size);
     return 0;
 }
@@ -679,8 +671,7 @@ OPNMIDI_EXPORT const char *opn2_metaMusicTitle(struct OPN2_MIDIPlayer *device)
     if(!device)
         return "";
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return "";
+    assert(play);
     return play->m_sequencer.getMusicTitle().c_str();
 #else
     ADL_UNUSED(device);
@@ -695,8 +686,7 @@ OPNMIDI_EXPORT const char *opn2_metaMusicCopyright(struct OPN2_MIDIPlayer *devic
     if(!device)
         return "";
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return "";
+    assert(play);
     return play->m_sequencer.getMusicCopyright().c_str();
 #else
     ADL_UNUSED(device);
@@ -710,8 +700,7 @@ OPNMIDI_EXPORT size_t opn2_metaTrackTitleCount(struct OPN2_MIDIPlayer *device)
     if(!device)
         return 0;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return 0;
+    assert(play);
     return play->m_sequencer.getTrackTitles().size();
 #else
     ADL_UNUSED(device);
@@ -725,6 +714,7 @@ OPNMIDI_EXPORT const char *opn2_metaTrackTitle(struct OPN2_MIDIPlayer *device, s
     if(!device)
         return "";
     MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
     const std::vector<std::string> &titles = play->m_sequencer.getTrackTitles();
     if(index >= titles.size())
         return "INVALID";
@@ -743,8 +733,7 @@ OPNMIDI_EXPORT size_t opn2_metaMarkerCount(struct OPN2_MIDIPlayer *device)
     if(!device)
         return 0;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return 0;
+    assert(play);
     return play->m_sequencer.getMarkers().size();
 #else
     ADL_UNUSED(device);
@@ -755,23 +744,32 @@ OPNMIDI_EXPORT size_t opn2_metaMarkerCount(struct OPN2_MIDIPlayer *device)
 OPNMIDI_EXPORT Opn2_MarkerEntry opn2_metaMarker(struct OPN2_MIDIPlayer *device, size_t index)
 {
     struct Opn2_MarkerEntry marker;
+
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
-    MidiPlayer *play = GET_MIDI_PLAYER(device);
-    const std::vector<MidiSequencer::MIDI_MarkerEntry> &markers = play->m_sequencer.getMarkers();
-    if(!device || !play || (index >= markers.size()))
+    if(!device)
     {
         marker.label = "INVALID";
         marker.pos_time = 0.0;
         marker.pos_ticks = 0;
         return marker;
     }
-    else
+
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
+
+    const std::vector<MidiSequencer::MIDI_MarkerEntry> &markers = play->m_sequencer.getMarkers();
+    if(index >= markers.size())
     {
-        const MidiSequencer::MIDI_MarkerEntry &mk = markers[index];
-        marker.label = mk.label.c_str();
-        marker.pos_time = mk.pos_time;
-        marker.pos_ticks = (unsigned long)mk.pos_ticks;
+        marker.label = "INVALID";
+        marker.pos_time = 0.0;
+        marker.pos_ticks = 0;
+        return marker;
     }
+
+    const MidiSequencer::MIDI_MarkerEntry &mk = markers[index];
+    marker.label = mk.label.c_str();
+    marker.pos_time = mk.pos_time;
+    marker.pos_ticks = (unsigned long)mk.pos_ticks;
 #else
     (void)device; (void)index;
     marker.label = "NOT SUPPORTED";
@@ -787,6 +785,7 @@ OPNMIDI_EXPORT void opn2_setRawEventHook(struct OPN2_MIDIPlayer *device, OPN2_Ra
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
     play->m_sequencerInterface.onEvent = rawEventHook;
     play->m_sequencerInterface.onEvent_userData = userData;
 #else
@@ -802,6 +801,7 @@ OPNMIDI_EXPORT void opn2_setNoteHook(struct OPN2_MIDIPlayer *device, OPN2_NoteHo
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
     play->hooks.onNote = noteHook;
     play->hooks.onNote_userData = userData;
 }
@@ -812,6 +812,7 @@ OPNMIDI_EXPORT void opn2_setDebugMessageHook(struct OPN2_MIDIPlayer *device, OPN
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
     play->hooks.onDebugMessage = debugMessageHook;
     play->hooks.onDebugMessage_userData = userData;
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
@@ -972,6 +973,7 @@ OPNMIDI_EXPORT int opn2_playFormat(OPN2_MIDIPlayer *device, int sampleCount,
         return 0;
 
     MidiPlayer *player = GET_MIDI_PLAYER(device);
+    assert(player);
     MidiPlayer::Setup &setup = player->m_setup;
 
     ssize_t gotten_len = 0;
@@ -1065,6 +1067,7 @@ OPNMIDI_EXPORT int opn2_generateFormat(struct OPN2_MIDIPlayer *device, int sampl
         return 0;
 
     MidiPlayer *player = GET_MIDI_PLAYER(device);
+    assert(player);
     MidiPlayer::Setup &setup = player->m_setup;
 
     ssize_t gotten_len = 0;
@@ -1124,8 +1127,7 @@ OPNMIDI_EXPORT double opn2_tickEvents(struct OPN2_MIDIPlayer *device, double sec
     if(!device)
         return -1.0;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return -1.0;
+    assert(play);
     return play->Tick(seconds, granuality);
 #else
     ADL_UNUSED(device);
@@ -1141,8 +1143,7 @@ OPNMIDI_EXPORT int opn2_atEnd(struct OPN2_MIDIPlayer *device)
     if(!device)
         return 1;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return 1;
+    assert(play);
     return (int)play->m_sequencer.positionAtEnd();
 #else
     ADL_UNUSED(device);
@@ -1156,8 +1157,7 @@ OPNMIDI_EXPORT size_t opn2_trackCount(struct OPN2_MIDIPlayer *device)
     if(!device)
         return 0;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return 0;
+    assert(play);
     return play->m_sequencer.getTrackCount();
 #else
     ADL_UNUSED(device);
@@ -1171,8 +1171,7 @@ OPNMIDI_EXPORT int opn2_setTrackOptions(struct OPN2_MIDIPlayer *device, size_t t
     if(!device)
         return -1;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return -1;
+    assert(play);
     MidiSequencer &seq = play->m_sequencer;
 
     unsigned enableFlag = trackOptions & 3;
@@ -1212,8 +1211,7 @@ OPNMIDI_EXPORT void opn2_panic(struct OPN2_MIDIPlayer *device)
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return;
+    assert(play);
     play->realTime_panic();
 }
 
@@ -1222,8 +1220,7 @@ OPNMIDI_EXPORT void opn2_rt_resetState(struct OPN2_MIDIPlayer *device)
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return;
+    assert(play);
     play->realTime_ResetState();
 }
 
@@ -1232,8 +1229,7 @@ OPNMIDI_EXPORT int opn2_rt_noteOn(struct OPN2_MIDIPlayer *device, OPN2_UInt8 cha
     if(!device)
         return 0;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return 0;
+    assert(play);
     return (int)play->realTime_NoteOn(channel, note, velocity);
 }
 
@@ -1242,8 +1238,7 @@ OPNMIDI_EXPORT void opn2_rt_noteOff(struct OPN2_MIDIPlayer *device, OPN2_UInt8 c
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return;
+    assert(play);
     play->realTime_NoteOff(channel, note);
 }
 
@@ -1252,8 +1247,7 @@ OPNMIDI_EXPORT void opn2_rt_noteAfterTouch(struct OPN2_MIDIPlayer *device, OPN2_
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return;
+    assert(play);
     play->realTime_NoteAfterTouch(channel, note, atVal);
 }
 
@@ -1262,8 +1256,7 @@ OPNMIDI_EXPORT void opn2_rt_channelAfterTouch(struct OPN2_MIDIPlayer *device, OP
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return;
+    assert(play);
     play->realTime_ChannelAfterTouch(channel, atVal);
 }
 
@@ -1272,8 +1265,7 @@ OPNMIDI_EXPORT void opn2_rt_controllerChange(struct OPN2_MIDIPlayer *device, OPN
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return;
+    assert(play);
     play->realTime_Controller(channel, type, value);
 }
 
@@ -1282,8 +1274,7 @@ OPNMIDI_EXPORT void opn2_rt_patchChange(struct OPN2_MIDIPlayer *device, OPN2_UIn
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return;
+    assert(play);
     play->realTime_PatchChange(channel, patch);
 }
 
@@ -1292,8 +1283,7 @@ OPNMIDI_EXPORT void opn2_rt_pitchBend(struct OPN2_MIDIPlayer *device, OPN2_UInt8
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return;
+    assert(play);
     play->realTime_PitchBend(channel, pitch);
 }
 
@@ -1302,8 +1292,7 @@ OPNMIDI_EXPORT void opn2_rt_pitchBendML(struct OPN2_MIDIPlayer *device, OPN2_UIn
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return;
+    assert(play);
     play->realTime_PitchBend(channel, msb, lsb);
 }
 
@@ -1312,8 +1301,7 @@ OPNMIDI_EXPORT void opn2_rt_bankChangeLSB(struct OPN2_MIDIPlayer *device, OPN2_U
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return;
+    assert(play);
     play->realTime_BankChangeLSB(channel, lsb);
 }
 
@@ -1322,8 +1310,7 @@ OPNMIDI_EXPORT void opn2_rt_bankChangeMSB(struct OPN2_MIDIPlayer *device, OPN2_U
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return;
+    assert(play);
     play->realTime_BankChangeMSB(channel, msb);
 }
 
@@ -1332,8 +1319,7 @@ OPNMIDI_EXPORT void opn2_rt_bankChange(struct OPN2_MIDIPlayer *device, OPN2_UInt
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return;
+    assert(play);
     play->realTime_BankChange(channel, (uint16_t)bank);
 }
 
@@ -1342,7 +1328,6 @@ OPNMIDI_EXPORT int opn2_rt_systemExclusive(struct OPN2_MIDIPlayer *device, const
     if(!device)
         return -1;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
-    if(!play)
-        return -1;
+    assert(play);
     return play->realTime_SysEx(msg, size);
 }
