@@ -220,7 +220,7 @@ extern OPNMIDI_DECLSPEC int opn2_getInstrument(struct OPN2_MIDIPlayer *device, c
  */
 extern OPNMIDI_DECLSPEC int opn2_setInstrument(struct OPN2_MIDIPlayer *device, OPN2_Bank *bank, unsigned index, const OPN2_Instrument *ins);
 
-#endif  // OPNMIDI_UNSTABLE_API
+#endif  /* OPNMIDI_UNSTABLE_API */
 
 
 
