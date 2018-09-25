@@ -24,11 +24,13 @@
 #ifndef ADLMIDI_PRIVATE_HPP
 #define ADLMIDI_PRIVATE_HPP
 
+#define OPNMIDI_UNSTABLE_API
+
 // Setup compiler defines useful for exporting required public API symbols in gme.cpp
 #ifndef OPNMIDI_EXPORT
-#   if defined (_WIN32) && defined(ADLMIDI_BUILD_DLL)
+#   if defined (_WIN32) && defined(OPNMIDI_BUILD_DLL)
 #       define OPNMIDI_EXPORT __declspec(dllexport)
-#   elif defined (LIBADLMIDI_VISIBILITY) && defined (__GNUC__)
+#   elif defined (LIBOPNMIDI_VISIBILITY) && defined (__GNUC__)
 #       define OPNMIDI_EXPORT __attribute__((visibility ("default")))
 #   else
 #       define OPNMIDI_EXPORT
@@ -64,6 +66,7 @@ typedef int32_t ssize_t;
 #include <string>
 #include <map>
 #include <set>
+#include <new> // nothrow
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
@@ -119,7 +122,10 @@ typedef BW_MidiSequencer MidiSequencer;
 #include "chips/opn_chip_base.h"
 
 #include "opnbank.h"
-#include "opnmidi.h"
+
+#define OPNMIDI_BUILD
+#include "opnmidi.h"    //Main API
+
 #include "opnmidi_ptr.hpp"
 #include "opnmidi_bankmap.h"
 
@@ -212,6 +218,8 @@ public:
     typedef BasicBankMap<Bank> BankMap;
     //! MIDI bank instruments data
     BankMap         m_insBanks;
+    //! MIDI bank-wide setup
+    OpnBankSetup    m_insBankSetup;
 
 public:
     //! Blank instrument template
@@ -260,7 +268,8 @@ public:
     } m_volumeScale;
 
     //! Reserved
-    char _padding3[8];
+    bool m_lfoEnable;
+    uint8_t m_lfoFrequency;
 
     //! Category of the channel
     /*! 1 = DAC, 0 = regular
@@ -337,10 +346,20 @@ public:
     void silenceAll();
 
     /**
+     * @brief commit LFO enable and frequency
+     */
+    void commitLFOSetup();
+
+    /**
      * @brief Set the volume scaling model
      * @param volumeModel Type of volume scale model scale
      */
     void setVolumeScaleModel(OPNMIDI_VolumeModels volumeModel);
+
+    /**
+     * @brief Get the volume scaling model
+     */
+    OPNMIDI_VolumeModels getVolumeScaleModel();
 
     /**
      * @brief Clean up all running emulated chip instances
@@ -451,7 +470,7 @@ public:
         //! Vibrato depth value
                 vibdepth;
         //! Vibrato delay time
-        int64_t vibdelay;
+        int64_t vibdelay_us;
         //! Last LSB part of RPN value received
         uint8_t lastlrpn,
         //! Last MSB poart of RPN value received
@@ -691,7 +710,7 @@ public:
             noteAfterTouchInUse = false;
             vibspeed = 2 * 3.141592653 * 5.0;
             vibdepth = 0.5 / 127;
-            vibdelay = 0;
+            vibdelay_us = 0;
             panning = OPN_PANNING_BOTH;
             portamento = 0;
             portamentoEnable = false;
@@ -757,12 +776,12 @@ public:
             //! Has fixed sustain, don't iterate "on" timeout
             bool    fixed_sustain;
             //! Timeout until note will be allowed to be killed by channel manager while it is on
-            int64_t kon_time_until_neglible;
-            int64_t vibdelay;
+            int64_t kon_time_until_neglible_us;
+            int64_t vibdelay_us;
         };
 
         //! Time left until sounding will be muted after key off
-        int64_t koff_time_until_neglible;
+        int64_t koff_time_until_neglible_us;
 
         enum { users_max = 128 };
         LocationData *users_first, *users_free_cells;
@@ -779,12 +798,12 @@ public:
         void users_assign(const LocationData *users, size_t count);
 
         // For channel allocation:
-        OpnChannel(): koff_time_until_neglible(0)
+        OpnChannel(): koff_time_until_neglible_us(0)
         {
             users_clear();
         }
 
-        OpnChannel(const OpnChannel &oth): koff_time_until_neglible(oth.koff_time_until_neglible)
+        OpnChannel(const OpnChannel &oth): koff_time_until_neglible_us(oth.koff_time_until_neglible_us)
         {
             if(oth.users_first)
             {
@@ -797,16 +816,16 @@ public:
 
         OpnChannel &operator=(const OpnChannel &oth)
         {
-            koff_time_until_neglible = oth.koff_time_until_neglible;
+            koff_time_until_neglible_us = oth.koff_time_until_neglible_us;
             users_assign(oth.users_first, oth.users_size);
             return *this;
         }
 
         /**
-         * @brief Increases age of active note in milliseconds time
-         * @param ms Amount time in milliseconds
+         * @brief Increases age of active note in microseconds time
+         * @param us Amount time in microseconds
          */
-        void addAge(int64_t ms);
+        void addAge(int64_t us);
     };
 
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
@@ -834,6 +853,8 @@ public:
         unsigned int NumCards;
         unsigned int LogarithmicVolumes;
         int     VolumeModel;
+        int     lfoEnable;
+        int     lfoFrequency;
         //unsigned int SkipForward;
         int     ScaleModulators;
         bool    fullRangeBrightnessCC74;

@@ -54,6 +54,19 @@ typedef char            OPN2_SInt8;
 typedef short           OPN2_SInt16;
 #endif
 
+#ifdef OPNMIDI_BUILD
+#   ifndef OPNMIDI_DECLSPEC
+#       if defined (_WIN32) && defined(OPNMIDI_BUILD_DLL)
+#           define OPNMIDI_DECLSPEC __declspec(dllexport)
+#       else
+#           define OPNMIDI_DECLSPEC
+#       endif
+#   endif
+#else
+#   define OPNMIDI_DECLSPEC
+#endif
+
+
 enum OPNMIDI_VolumeModels
 {
     OPNMIDI_VolumeModel_AUTO = 0,
@@ -95,41 +108,167 @@ struct OPN2_MIDIPlayer
 #define opn2_setNumCards opn2_setNumChips
 
 /* Sets number of emulated sound cards (from 1 to 100). Emulation of multiple sound cards exchanges polyphony limits*/
-extern int  opn2_setNumChips(struct OPN2_MIDIPlayer *device, int numCards);
+extern OPNMIDI_DECLSPEC int  opn2_setNumChips(struct OPN2_MIDIPlayer *device, int numCards);
 
 /* Get current number of emulated chips */
-extern int  opn2_getNumChips(struct OPN2_MIDIPlayer *device);
+extern OPNMIDI_DECLSPEC int  opn2_getNumChips(struct OPN2_MIDIPlayer *device);
+
+/**
+ * @brief Reference to dynamic bank
+ */
+typedef struct OPN2_Bank
+{
+    void *pointer[3];
+} OPN2_Bank;
+
+/**
+ * @brief Identifier of dynamic bank
+ */
+typedef struct OPN2_BankId
+{
+    /*! 0 if bank is melodic set, or 1 if bank is a percussion set */
+    OPN2_UInt8 percussive;
+    /*! Assign to MSB bank number */
+    OPN2_UInt8 msb;
+    /*! Assign to LSB bank number */
+    OPN2_UInt8 lsb;
+} OPN2_BankId;
+
+/**
+ * @brief Flags for dynamic bank access
+ */
+enum OPN2_BankAccessFlags
+{
+    /*! create bank, allocating memory as needed */
+    OPNMIDI_Bank_Create = 1,
+    /*! create bank, never allocating memory */
+    OPNMIDI_Bank_CreateRt = 1|2
+};
+
+typedef struct OPN2_Instrument OPN2_Instrument;
+
+
+
+
+/* ======== Setup ======== */
+
+#ifdef OPNMIDI_UNSTABLE_API
+
+/**
+ * @brief Preallocates a minimum number of bank slots. Returns the actual capacity
+ * @param device Instance of the library
+ * @param banks Count of bank slots to pre-allocate.
+ * @return actual capacity of reserved bank slots.
+ */
+extern OPNMIDI_DECLSPEC int opn2_reserveBanks(struct OPN2_MIDIPlayer *device, unsigned banks);
+/**
+ * @brief Gets the bank designated by the identifier, optionally creating if it does not exist
+ * @param device Instance of the library
+ * @param id Identifier of dynamic bank
+ * @param flags Flags for dynamic bank access (OPN2_BankAccessFlags)
+ * @param bank Reference to dynamic bank
+ * @return 0 on success, <0 when any error has occurred
+ */
+extern OPNMIDI_DECLSPEC int opn2_getBank(struct OPN2_MIDIPlayer *device, const OPN2_BankId *id, int flags, OPN2_Bank *bank);
+/**
+ * @brief Gets the identifier of a bank
+ * @param device Instance of the library
+ * @param bank Reference to dynamic bank.
+ * @param id Identifier of dynamic bank
+ * @return 0 on success, <0 when any error has occurred
+ */
+extern OPNMIDI_DECLSPEC int opn2_getBankId(struct OPN2_MIDIPlayer *device, const OPN2_Bank *bank, OPN2_BankId *id);
+/**
+ * @brief Removes a bank
+ * @param device Instance of the library
+ * @param bank Reference to dynamic bank
+ * @return 0 on success, <0 when any error has occurred
+ */
+extern OPNMIDI_DECLSPEC int opn2_removeBank(struct OPN2_MIDIPlayer *device, OPN2_Bank *bank);
+/**
+ * @brief Gets the first bank
+ * @param device Instance of the library
+ * @param bank Reference to dynamic bank
+ * @return 0 on success, <0 when any error has occurred
+ */
+extern OPNMIDI_DECLSPEC int opn2_getFirstBank(struct OPN2_MIDIPlayer *device, OPN2_Bank *bank);
+/**
+ * @brief Iterates to the next bank
+ * @param device Instance of the library
+ * @param bank Reference to dynamic bank
+ * @return 0 on success, <0 when any error has occurred or end has been reached.
+ */
+extern OPNMIDI_DECLSPEC int opn2_getNextBank(struct OPN2_MIDIPlayer *device, OPN2_Bank *bank);
+/**
+ * @brief Gets the nth intrument in the bank [0..127]
+ * @param device Instance of the library
+ * @param bank Reference to dynamic bank
+ * @param index Index of the instrument
+ * @param ins Instrument entry
+ * @return 0 on success, <0 when any error has occurred
+ */
+extern OPNMIDI_DECLSPEC int opn2_getInstrument(struct OPN2_MIDIPlayer *device, const OPN2_Bank *bank, unsigned index, OPN2_Instrument *ins);
+/**
+ * @brief Sets the nth intrument in the bank [0..127]
+ * @param device Instance of the library
+ * @param bank Reference to dynamic bank
+ * @param index Index of the instrument
+ * @param ins Instrument structure pointer
+ * @return 0 on success, <0 when any error has occurred
+ *
+ * This function allows to override an instrument on the fly
+ */
+extern OPNMIDI_DECLSPEC int opn2_setInstrument(struct OPN2_MIDIPlayer *device, OPN2_Bank *bank, unsigned index, const OPN2_Instrument *ins);
+
+#endif  /* OPNMIDI_UNSTABLE_API */
+
+
+
+/*Override Enable(1) or Disable(0) LFO. -1 - use bank default state*/
+extern OPNMIDI_DECLSPEC void opn2_setLfoEnabled(struct OPN2_MIDIPlayer *device, int lfoEnable);
+
+/*Get the LFO state*/
+extern OPNMIDI_DECLSPEC int opn2_getLfoEnabled(struct OPN2_MIDIPlayer *device);
+
+/*Override LFO frequency. -1 - use bank default state*/
+extern OPNMIDI_DECLSPEC void opn2_setLfoFrequency(struct OPN2_MIDIPlayer *device, int lfoFrequency);
+
+/*Get the LFO frequency*/
+extern OPNMIDI_DECLSPEC int opn2_getLfoFrequency(struct OPN2_MIDIPlayer *device);
 
 /*Enable or disable Enables scaling of modulator volumes*/
-extern void opn2_setScaleModulators(struct OPN2_MIDIPlayer *device, int smod);
+extern OPNMIDI_DECLSPEC void opn2_setScaleModulators(struct OPN2_MIDIPlayer *device, int smod);
 
 /*Enable(1) or Disable(0) full-range brightness (MIDI CC74 used in XG music to filter result sounding) scaling.
     By default, brightness affects sound between 0 and 64.
     When this option is enabled, the range will use a full range from 0 up to 127.
 */
-extern void opn2_setFullRangeBrightness(struct OPN2_MIDIPlayer *device, int fr_brightness);
+extern OPNMIDI_DECLSPEC void opn2_setFullRangeBrightness(struct OPN2_MIDIPlayer *device, int fr_brightness);
 
 /*Enable or disable built-in loop (built-in loop supports 'loopStart' and 'loopEnd' tags to loop specific part)*/
-extern void opn2_setLoopEnabled(struct OPN2_MIDIPlayer *device, int loopEn);
+extern OPNMIDI_DECLSPEC void opn2_setLoopEnabled(struct OPN2_MIDIPlayer *device, int loopEn);
 
 /* !!!DEPRECATED!!! */
-extern void opn2_setLogarithmicVolumes(struct OPN2_MIDIPlayer *device, int logvol);
+extern OPNMIDI_DECLSPEC void opn2_setLogarithmicVolumes(struct OPN2_MIDIPlayer *device, int logvol);
 
 /*Set different volume range model */
-extern void opn2_setVolumeRangeModel(struct OPN2_MIDIPlayer *device, int volumeModel);
+extern OPNMIDI_DECLSPEC void opn2_setVolumeRangeModel(struct OPN2_MIDIPlayer *device, int volumeModel);
+
+/*Get the volume range model */
+extern OPNMIDI_DECLSPEC int opn2_getVolumeRangeModel(struct OPN2_MIDIPlayer *device);
 
 /*Load WOPN bank file from File System. Is recommended to call adl_reset() to apply changes to already-loaded file player or real-time.*/
-extern int opn2_openBankFile(struct OPN2_MIDIPlayer *device, const char *filePath);
+extern OPNMIDI_DECLSPEC int opn2_openBankFile(struct OPN2_MIDIPlayer *device, const char *filePath);
 
 /*Load WOPN bank file from memory data*/
-extern int opn2_openBankData(struct OPN2_MIDIPlayer *device, const void *mem, long size);
+extern OPNMIDI_DECLSPEC int opn2_openBankData(struct OPN2_MIDIPlayer *device, const void *mem, long size);
 
 
 /* DEPRECATED */
-extern const char *opn2_emulatorName();
+extern OPNMIDI_DECLSPEC const char *opn2_emulatorName();
 
 /*Returns chip emulator name string*/
-extern const char *opn2_chipEmulatorName(struct OPN2_MIDIPlayer *device);
+extern OPNMIDI_DECLSPEC const char *opn2_chipEmulatorName(struct OPN2_MIDIPlayer *device);
 
 enum Opn2_Emulator
 {
@@ -141,7 +280,7 @@ enum Opn2_Emulator
 };
 
 /* Switch the emulation core */
-extern int opn2_switchEmulator(struct OPN2_MIDIPlayer *device, int emulator);
+extern OPNMIDI_DECLSPEC int opn2_switchEmulator(struct OPN2_MIDIPlayer *device, int emulator);
 
 typedef struct {
     OPN2_UInt16 major;
@@ -150,77 +289,77 @@ typedef struct {
 } OPN2_Version;
 
 /*Run emulator with PCM rate to reduce CPU usage on slow devices. May decrease sounding accuracy.*/
-extern int opn2_setRunAtPcmRate(struct OPN2_MIDIPlayer *device, int enabled);
+extern OPNMIDI_DECLSPEC int opn2_setRunAtPcmRate(struct OPN2_MIDIPlayer *device, int enabled);
 
 /*Returns string which contains a version number*/
-extern const char *opn2_linkedLibraryVersion();
+extern OPNMIDI_DECLSPEC const char *opn2_linkedLibraryVersion();
 
 /*Returns structure which contains a version number of library */
-extern const OPN2_Version *opn2_linkedVersion();
+extern OPNMIDI_DECLSPEC const OPN2_Version *opn2_linkedVersion();
 
 /*Returns string which contains last error message*/
-extern const char *opn2_errorString();
+extern OPNMIDI_DECLSPEC const char *opn2_errorString();
 
 /*Returns string which contains last error message on specific device*/
-extern const char *opn2_errorInfo(struct OPN2_MIDIPlayer *device);
+extern OPNMIDI_DECLSPEC const char *opn2_errorInfo(struct OPN2_MIDIPlayer *device);
 
 /*Initialize ADLMIDI Player device*/
-extern struct OPN2_MIDIPlayer *opn2_init(long sample_rate);
+extern OPNMIDI_DECLSPEC struct OPN2_MIDIPlayer *opn2_init(long sample_rate);
 
 /*Set 4-bit device identifier*/
-extern int opn2_setDeviceIdentifier(struct OPN2_MIDIPlayer *device, unsigned id);
+extern OPNMIDI_DECLSPEC int opn2_setDeviceIdentifier(struct OPN2_MIDIPlayer *device, unsigned id);
 
 /*Load MIDI file from File System*/
-extern int opn2_openFile(struct OPN2_MIDIPlayer *device, const char *filePath);
+extern OPNMIDI_DECLSPEC int opn2_openFile(struct OPN2_MIDIPlayer *device, const char *filePath);
 
 /*Load MIDI file from memory data*/
-extern int opn2_openData(struct OPN2_MIDIPlayer *device, const void *mem, unsigned long size);
+extern OPNMIDI_DECLSPEC int opn2_openData(struct OPN2_MIDIPlayer *device, const void *mem, unsigned long size);
 
 /*Resets MIDI player*/
-extern void opn2_reset(struct OPN2_MIDIPlayer *device);
+extern OPNMIDI_DECLSPEC void opn2_reset(struct OPN2_MIDIPlayer *device);
 
 /*Get total time length of current song*/
-extern double opn2_totalTimeLength(struct OPN2_MIDIPlayer *device);
+extern OPNMIDI_DECLSPEC double opn2_totalTimeLength(struct OPN2_MIDIPlayer *device);
 
 /*Get loop start time if presented. -1 means MIDI file has no loop points */
-extern double opn2_loopStartTime(struct OPN2_MIDIPlayer *device);
+extern OPNMIDI_DECLSPEC double opn2_loopStartTime(struct OPN2_MIDIPlayer *device);
 
 /*Get loop end time if presented. -1 means MIDI file has no loop points */
-extern double opn2_loopEndTime(struct OPN2_MIDIPlayer *device);
+extern OPNMIDI_DECLSPEC double opn2_loopEndTime(struct OPN2_MIDIPlayer *device);
 
 /*Get current time position in seconds*/
-extern double opn2_positionTell(struct OPN2_MIDIPlayer *device);
+extern OPNMIDI_DECLSPEC double opn2_positionTell(struct OPN2_MIDIPlayer *device);
 
 /*Jump to absolute time position in seconds*/
-extern void opn2_positionSeek(struct OPN2_MIDIPlayer *device, double seconds);
+extern OPNMIDI_DECLSPEC void opn2_positionSeek(struct OPN2_MIDIPlayer *device, double seconds);
 
 /*Reset MIDI track position to begin */
-extern void opn2_positionRewind(struct OPN2_MIDIPlayer *device);
+extern OPNMIDI_DECLSPEC void opn2_positionRewind(struct OPN2_MIDIPlayer *device);
 
 /*Set tempo multiplier: 1.0 - original tempo, >1 - play faster, <1 - play slower */
-extern void opn2_setTempo(struct OPN2_MIDIPlayer *device, double tempo);
+extern OPNMIDI_DECLSPEC void opn2_setTempo(struct OPN2_MIDIPlayer *device, double tempo);
 
 /*Get a textual description of the chip channel state. For display only.*/
-extern int opn2_describeChannels(struct OPN2_MIDIPlayer *device, char *text, char *attr, size_t size);
+extern OPNMIDI_DECLSPEC int opn2_describeChannels(struct OPN2_MIDIPlayer *device, char *text, char *attr, size_t size);
 
 /*Close and delete OPNMIDI device*/
-extern void opn2_close(struct OPN2_MIDIPlayer *device);
+extern OPNMIDI_DECLSPEC void opn2_close(struct OPN2_MIDIPlayer *device);
 
 
 
 /**META**/
 
 /*Returns string which contains a music title*/
-extern const char *opn2_metaMusicTitle(struct OPN2_MIDIPlayer *device);
+extern OPNMIDI_DECLSPEC const char *opn2_metaMusicTitle(struct OPN2_MIDIPlayer *device);
 
 /*Returns string which contains a copyright string*/
-extern const char *opn2_metaMusicCopyright(struct OPN2_MIDIPlayer *device);
+extern OPNMIDI_DECLSPEC const char *opn2_metaMusicCopyright(struct OPN2_MIDIPlayer *device);
 
 /*Returns count of available track titles: NOTE: there are CAN'T be associated with channel in any of event or note hooks */
-extern size_t opn2_metaTrackTitleCount(struct OPN2_MIDIPlayer *device);
+extern OPNMIDI_DECLSPEC size_t opn2_metaTrackTitleCount(struct OPN2_MIDIPlayer *device);
 
 /*Get track title by index*/
-extern const char *opn2_metaTrackTitle(struct OPN2_MIDIPlayer *device, size_t index);
+extern OPNMIDI_DECLSPEC const char *opn2_metaTrackTitle(struct OPN2_MIDIPlayer *device, size_t index);
 
 struct Opn2_MarkerEntry
 {
@@ -230,25 +369,25 @@ struct Opn2_MarkerEntry
 };
 
 /*Returns count of available markers*/
-extern size_t opn2_metaMarkerCount(struct OPN2_MIDIPlayer *device);
+extern OPNMIDI_DECLSPEC size_t opn2_metaMarkerCount(struct OPN2_MIDIPlayer *device);
 
 /*Returns the marker entry*/
-extern struct Opn2_MarkerEntry opn2_metaMarker(struct OPN2_MIDIPlayer *device, size_t index);
+extern OPNMIDI_DECLSPEC struct Opn2_MarkerEntry opn2_metaMarker(struct OPN2_MIDIPlayer *device, size_t index);
 
 
 
 
 /*Take a sample buffer and iterate MIDI timers */
-extern int  opn2_play(struct OPN2_MIDIPlayer *device, int sampleCount, short *out);
+extern OPNMIDI_DECLSPEC int  opn2_play(struct OPN2_MIDIPlayer *device, int sampleCount, short *out);
 
 /*Take a sample buffer and iterate MIDI timers */
-extern int  opn2_playFormat(struct OPN2_MIDIPlayer *device, int sampleCount, OPN2_UInt8 *left, OPN2_UInt8 *right, const struct OPNMIDI_AudioFormat *format);
+extern OPNMIDI_DECLSPEC int  opn2_playFormat(struct OPN2_MIDIPlayer *device, int sampleCount, OPN2_UInt8 *left, OPN2_UInt8 *right, const struct OPNMIDI_AudioFormat *format);
 
 /*Generate audio output from chip emulators without iteration of MIDI timers.*/
-extern int  opn2_generate(struct OPN2_MIDIPlayer *device, int sampleCount, short *out);
+extern OPNMIDI_DECLSPEC int  opn2_generate(struct OPN2_MIDIPlayer *device, int sampleCount, short *out);
 
 /*Generate audio output from chip emulators without iteration of MIDI timers.*/
-extern int  opn2_generateFormat(struct OPN2_MIDIPlayer *device, int sampleCount, OPN2_UInt8 *left, OPN2_UInt8 *right, const struct OPNMIDI_AudioFormat *format);
+extern OPNMIDI_DECLSPEC int  opn2_generateFormat(struct OPN2_MIDIPlayer *device, int sampleCount, OPN2_UInt8 *left, OPN2_UInt8 *right, const struct OPNMIDI_AudioFormat *format);
 
 /**
  * @brief Periodic tick handler.
@@ -260,17 +399,17 @@ extern int  opn2_generateFormat(struct OPN2_MIDIPlayer *device, int sampleCount,
  * Use it for Hardware OPL3 mode or when you want to process events differently from opn2_play() function.
  * DON'T USE IT TOGETHER WITH opn2_play()!!!
  */
-extern double opn2_tickEvents(struct OPN2_MIDIPlayer *device, double seconds, double granuality);
+extern OPNMIDI_DECLSPEC double opn2_tickEvents(struct OPN2_MIDIPlayer *device, double seconds, double granuality);
 
 /*Returns 1 if music position has reached end*/
-extern int opn2_atEnd(struct OPN2_MIDIPlayer *device);
+extern OPNMIDI_DECLSPEC int opn2_atEnd(struct OPN2_MIDIPlayer *device);
 
 /**
  * @brief Returns the number of tracks of the current sequence
  * @param device Instance of the library
  * @return Count of tracks in the current sequence
  */
-extern size_t opn2_trackCount(struct OPN2_MIDIPlayer *device);
+extern OPNMIDI_DECLSPEC size_t opn2_trackCount(struct OPN2_MIDIPlayer *device);
 
 /**
  * @brief Track options
@@ -291,47 +430,47 @@ enum OPNMIDI_TrackOptions
  * @param trackNumber Identifier of the designated track.
  * @return 0 on success, <0 when any error has occurred
  */
-extern int opn2_setTrackOptions(struct OPN2_MIDIPlayer *device, size_t trackNumber, unsigned trackOptions);
+extern OPNMIDI_DECLSPEC int opn2_setTrackOptions(struct OPN2_MIDIPlayer *device, size_t trackNumber, unsigned trackOptions);
 
 /**RealTime**/
 
 /*Force Off all notes on all channels*/
-extern void opn2_panic(struct OPN2_MIDIPlayer *device);
+extern OPNMIDI_DECLSPEC void opn2_panic(struct OPN2_MIDIPlayer *device);
 
 /*Reset states of all controllers on all MIDI channels*/
-extern void opn2_rt_resetState(struct OPN2_MIDIPlayer *device);
+extern OPNMIDI_DECLSPEC void opn2_rt_resetState(struct OPN2_MIDIPlayer *device);
 
 /*Turn specific MIDI note ON*/
-extern int opn2_rt_noteOn(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 note, OPN2_UInt8 velocity);
+extern OPNMIDI_DECLSPEC int opn2_rt_noteOn(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 note, OPN2_UInt8 velocity);
 
 /*Turn specific MIDI note OFF*/
-extern void opn2_rt_noteOff(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 note);
+extern OPNMIDI_DECLSPEC void opn2_rt_noteOff(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 note);
 
 /*Set note after-touch*/
-extern void opn2_rt_noteAfterTouch(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 note, OPN2_UInt8 atVal);
+extern OPNMIDI_DECLSPEC void opn2_rt_noteAfterTouch(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 note, OPN2_UInt8 atVal);
 /*Set channel after-touch*/
-extern void opn2_rt_channelAfterTouch(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 atVal);
+extern OPNMIDI_DECLSPEC void opn2_rt_channelAfterTouch(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 atVal);
 
 /*Apply controller change*/
-extern void opn2_rt_controllerChange(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 type, OPN2_UInt8 value);
+extern OPNMIDI_DECLSPEC void opn2_rt_controllerChange(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 type, OPN2_UInt8 value);
 
 /*Apply patch change*/
-extern void opn2_rt_patchChange(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 patch);
+extern OPNMIDI_DECLSPEC void opn2_rt_patchChange(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 patch);
 
 /*Apply pitch bend change*/
-extern void opn2_rt_pitchBend(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt16 pitch);
+extern OPNMIDI_DECLSPEC void opn2_rt_pitchBend(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt16 pitch);
 /*Apply pitch bend change*/
-extern void opn2_rt_pitchBendML(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 msb, OPN2_UInt8 lsb);
+extern OPNMIDI_DECLSPEC void opn2_rt_pitchBendML(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 msb, OPN2_UInt8 lsb);
 
 /*Change LSB of the bank*/
-extern void opn2_rt_bankChangeLSB(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 lsb);
+extern OPNMIDI_DECLSPEC void opn2_rt_bankChangeLSB(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 lsb);
 /*Change MSB of the bank*/
-extern void opn2_rt_bankChangeMSB(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 msb);
+extern OPNMIDI_DECLSPEC void opn2_rt_bankChangeMSB(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_UInt8 msb);
 /*Change bank by absolute signed value*/
-extern void opn2_rt_bankChange(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_SInt16 bank);
+extern OPNMIDI_DECLSPEC void opn2_rt_bankChange(struct OPN2_MIDIPlayer *device, OPN2_UInt8 channel, OPN2_SInt16 bank);
 
 /*Perform a system exclusive message*/
-extern int opn2_rt_systemExclusive(struct OPN2_MIDIPlayer *device, const OPN2_UInt8 *msg, size_t size);
+extern OPNMIDI_DECLSPEC int opn2_rt_systemExclusive(struct OPN2_MIDIPlayer *device, const OPN2_UInt8 *msg, size_t size);
 
 /**Hooks**/
 
@@ -340,13 +479,83 @@ typedef void (*OPN2_NoteHook)(void *userdata, int adlchn, int note, int ins, int
 typedef void (*OPN2_DebugMessageHook)(void *userdata, const char *fmt, ...);
 
 /* Set raw MIDI event hook */
-extern void opn2_setRawEventHook(struct OPN2_MIDIPlayer *device, OPN2_RawEventHook rawEventHook, void *userData);
+extern OPNMIDI_DECLSPEC void opn2_setRawEventHook(struct OPN2_MIDIPlayer *device, OPN2_RawEventHook rawEventHook, void *userData);
 
 /* Set note hook */
-extern void opn2_setNoteHook(struct OPN2_MIDIPlayer *device, OPN2_NoteHook noteHook, void *userData);
+extern OPNMIDI_DECLSPEC void opn2_setNoteHook(struct OPN2_MIDIPlayer *device, OPN2_NoteHook noteHook, void *userData);
 
 /* Set debug message hook */
-extern void opn2_setDebugMessageHook(struct OPN2_MIDIPlayer *device, OPN2_DebugMessageHook debugMessageHook, void *userData);
+extern OPNMIDI_DECLSPEC void opn2_setDebugMessageHook(struct OPN2_MIDIPlayer *device, OPN2_DebugMessageHook debugMessageHook, void *userData);
+
+
+
+
+/* ======== Instrument structures ======== */
+
+/**
+ * @brief Version of the instrument data format
+ */
+enum
+{
+    OPNMIDI_InstrumentVersion = 0
+};
+
+/**
+ * @brief Instrument flags
+ */
+typedef enum OPN2_InstrumentFlags
+{
+    OPNMIDI_Ins_Pseudo8op  = 0x01, /*Reserved for future use, not implemented yet*/
+    OPNMIDI_Ins_IsBlank    = 0x02
+} OPN2_InstrumentFlags;
+
+/**
+ * @brief Operator structure, part of Instrument structure
+ */
+typedef struct OPN2_Operator
+{
+    /* Detune and frequency multiplication register data */
+    OPN2_UInt8 dtfm_30;
+    /* Total level register data */
+    OPN2_UInt8 level_40;
+    /* Rate scale and attack register data */
+    OPN2_UInt8 rsatk_50;
+    /* Amplitude modulation enable and Decay-1 register data */
+    OPN2_UInt8 amdecay1_60;
+    /* Decay-2 register data */
+    OPN2_UInt8 decay2_70;
+    /* Sustain and Release register data */
+    OPN2_UInt8 susrel_80;
+    /* SSG-EG register data */
+    OPN2_UInt8 ssgeg_90;
+} OPN2_Operator;
+
+/**
+ * @brief Instrument structure
+ */
+typedef struct OPN2_Instrument
+{
+    /*! Version of the instrument object */
+    int version;
+    /* MIDI note key (half-tone) offset for an instrument (or a first voice in pseudo-4-op mode) */
+    OPN2_SInt16 note_offset;
+    /* Reserved */
+    OPN2_SInt8  midi_velocity_offset;
+    /* Percussion MIDI base tone number at which this drum will be played */
+    OPN2_UInt8 percussion_key_number;
+    /* Instrument flags */
+    OPN2_UInt8 inst_flags;
+    /* Feedback and Algorithm register data */
+    OPN2_UInt8 fbalg;
+    /* LFO Sensitivity register data */
+    OPN2_UInt8 lfosens;
+    /* Operators register data */
+    OPN2_Operator operators[4];
+    /* Millisecond delay of sounding while key is on */
+    OPN2_UInt16 delay_on_ms;
+    /* Millisecond delay of sounding after key off */
+    OPN2_UInt16 delay_off_ms;
+} OPN2_Instrument;
 
 #ifdef __cplusplus
 }

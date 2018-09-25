@@ -10,6 +10,7 @@ TARGET=opnplay
 # LIBS += -Wl,-Bstatic -lSDL2 -Wl,-Bdynamic -lpthread -ldl
 LIBS += -lSDL2 -lpthread -ldl
 
+DEFINES += ENABLE_END_SILENCE_SKIPPING
 # DEFINES += DEBUG_DUMP_RAW_STREAM
 # DEFINES += DEBUG_TRACE_ALL_CHANNELS
 
@@ -38,7 +39,8 @@ HEADERS += \
     src/midi_sequencer_impl.hpp \
     src/fraction.hpp \
     src/opnbank.h \
-    src/opnmidi_private.hpp
+    src/opnmidi_private.hpp \
+    src/wopn/wopn_file.h
 
 SOURCES += \
     src/chips/gens_opn2.cpp \
@@ -55,4 +57,5 @@ SOURCES += \
     src/opnmidi_opn2.cpp \
     src/opnmidi_private.cpp \
     src/opnmidi_sequencer.cpp \
+    src/wopn/wopn_file.c \
     utils/midiplay/opnplay.cpp

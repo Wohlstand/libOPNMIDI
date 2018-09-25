@@ -118,8 +118,14 @@ OPN2::OPN2() :
     m_regLFOSetup(0),
     m_numChips(1),
     m_musicMode(MODE_MIDI),
-    m_volumeScale(VOLUME_Generic)
+    m_volumeScale(VOLUME_Generic),
+    m_lfoEnable(false),
+    m_lfoFrequency(0)
 {
+    m_insBankSetup.volumeModel = OPN2::VOLUME_Generic;
+    m_insBankSetup.lfoEnable = false;
+    m_insBankSetup.lfoFrequency = 0;
+
     // Initialize blank instruments banks
     m_insBanks.clear();
 }
@@ -301,6 +307,14 @@ void OPN2::silenceAll() // Silence all OPL channels.
     }
 }
 
+void OPN2::commitLFOSetup()
+{
+    uint8_t regLFOSetup = (m_lfoEnable ? 8 : 0) | (m_lfoFrequency & 7);
+    m_regLFOSetup = regLFOSetup;
+    for(size_t chip = 0; chip < m_numChips; ++chip)
+        writeReg(chip, 0, 0x22, regLFOSetup);
+}
+
 void OPN2::setVolumeScaleModel(OPNMIDI_VolumeModels volumeModel)
 {
     switch(volumeModel)
@@ -327,6 +341,24 @@ void OPN2::setVolumeScaleModel(OPNMIDI_VolumeModels volumeModel)
     case OPNMIDI_VolumeModel_9X:
         m_volumeScale = OPN2::VOLUME_9X;
         break;
+    }
+}
+
+OPNMIDI_VolumeModels OPN2::getVolumeScaleModel()
+{
+    switch(m_volumeScale)
+    {
+    default:
+    case OPN2::VOLUME_Generic:
+        return OPNMIDI_VolumeModel_Generic;
+    case OPN2::VOLUME_NATIVE:
+        return OPNMIDI_VolumeModel_NativeOPN2;
+    case OPN2::VOLUME_DMX:
+        return OPNMIDI_VolumeModel_DMX;
+    case OPN2::VOLUME_APOGEE:
+        return OPNMIDI_VolumeModel_APOGEE;
+    case OPN2::VOLUME_9X:
+        return OPNMIDI_VolumeModel_9X;
     }
 }
 
@@ -391,9 +423,12 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, void *audioTickHandler)
     m_insCache.resize(m_numChannels,   m_emptyInstrument.opn[0]);
     m_regLFOSens.resize(m_numChannels,    0);
 
+    uint8_t regLFOSetup = (m_lfoEnable ? 8 : 0) | (m_lfoFrequency & 7);
+    m_regLFOSetup = regLFOSetup;
+
     for(size_t card = 0; card < m_numChips; ++card)
     {
-        writeReg(card, 0, 0x22, m_regLFOSetup);//push current LFO state
+        writeReg(card, 0, 0x22, regLFOSetup);//push current LFO state
         writeReg(card, 0, 0x27, 0x00);  //set Channel 3 normal mode
         writeReg(card, 0, 0x2B, 0x00);  //Disable DAC
         //Shut up all channels
