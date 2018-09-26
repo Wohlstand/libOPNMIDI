@@ -22,6 +22,8 @@
  */
 
 #include "opnmidi_private.hpp"
+#include "opnmidi_cvt.hpp"
+#include "wopn/wopn_file.h"
 
 bool OPNMIDIplay::LoadBank(const std::string &filename)
 {
@@ -37,209 +39,104 @@ bool OPNMIDIplay::LoadBank(const void *data, size_t size)
     return LoadBank(file);
 }
 
-size_t readU16BE(FileAndMemReader &fr, uint16_t &out)
+void cvt_OPNI_to_FMIns(opnInstMeta2 &ins, const OPN2_Instrument &in)
 {
-    uint8_t arr[2];
-    size_t ret = fr.read(arr, 1, 2);
-    out = arr[1];
-    out |= ((arr[0] << 8) & 0xFF00);
-    return ret;
+    return cvt_generic_to_FMIns(ins, in);
 }
 
-size_t readS16BE(FileAndMemReader &fr, int16_t &out)
+void cvt_FMIns_to_OPNI(OPN2_Instrument &ins, const opnInstMeta2 &in)
 {
-    uint8_t arr[2];
-    size_t ret = fr.read(arr, 1, 2);
-    out = *reinterpret_cast<signed char *>(&arr[0]);
-    out *= 1 << 8;
-    out |= arr[1];
-    return ret;
+    cvt_FMIns_to_generic(ins, in);
 }
-
-int16_t toSint16BE(uint8_t *arr)
-{
-    int16_t num = *reinterpret_cast<const int8_t *>(&arr[0]);
-    num *= 1 << 8;
-    num |= arr[1];
-    return num;
-}
-
-static uint16_t toUint16LE(const uint8_t *arr)
-{
-    uint16_t num = arr[0];
-    num |= ((arr[1] << 8) & 0xFF00);
-    return num;
-}
-
-static uint16_t toUint16BE(const uint8_t *arr)
-{
-    uint16_t num = arr[1];
-    num |= ((arr[0] << 8) & 0xFF00);
-    return num;
-}
-
-
-static const char *wopn2_magic1 = "WOPN2-BANK\0";
-static const char *wopn2_magic2 = "WOPN2-B2NK\0";
-
-#define WOPL_INST_SIZE_V1 65
-#define WOPL_INST_SIZE_V2 69
-
-static const uint16_t latest_version = 2;
 
 bool OPNMIDIplay::LoadBank(FileAndMemReader &fr)
 {
+    int err = 0;
+    WOPNFile *wopn = NULL;
+    char *raw_file_data = NULL;
     size_t  fsize;
-    ADL_UNUSED(fsize);
     if(!fr.isValid())
     {
-        errorStringOut = "Can't load bank file: Invalid data stream!";
+        errorStringOut = "Custom bank: Invalid data stream!";
         return false;
     }
 
-    char magic[32];
-    std::memset(magic, 0, 32);
-    uint16_t version = 1;
-
-    uint16_t count_melodic_banks     = 1;
-    uint16_t count_percussive_banks   = 1;
-
-    if(fr.read(magic, 1, 11) != 11)
+    // Read complete bank file into the memory
+    fsize = fr.fileSize();
+    fr.seek(0, FileAndMemReader::SET);
+    // Allocate necessary memory block
+    raw_file_data = (char*)malloc(fsize);
+    if(!raw_file_data)
     {
-        errorStringOut = "Can't load bank file: Can't read magic number!";
+        errorStringOut = "Custom bank: Out of memory before of read!";
         return false;
     }
+    fr.read(raw_file_data, 1, fsize);
 
-    bool is1 = std::strncmp(magic, wopn2_magic1, 11) == 0;
-    bool is2 = std::strncmp(magic, wopn2_magic2, 11) == 0;
+    // Parse bank file from the memory
+    wopn = WOPN_LoadBankFromMem((void*)raw_file_data, fsize, &err);
+    //Free the buffer no more needed
+    free(raw_file_data);
 
-    if(!is1 && !is2)
+    // Check for any erros
+    if(!wopn)
     {
-        errorStringOut = "Can't load bank file: Invalid magic number!";
-        return false;
-    }
-
-    if(is2)
-    {
-        uint8_t ver[2];
-        if(fr.read(ver, 1, 2) != 2)
+        switch(err)
         {
-            errorStringOut = "Can't load bank file: Can't read version number!";
+        case WOPN_ERR_BAD_MAGIC:
+            errorStringOut = "Custom bank: Invalid magic!";
+            return false;
+        case WOPN_ERR_UNEXPECTED_ENDING:
+            errorStringOut = "Custom bank: Unexpected ending!";
+            return false;
+        case WOPN_ERR_INVALID_BANKS_COUNT:
+            errorStringOut = "Custom bank: Invalid banks count!";
+            return false;
+        case WOPN_ERR_NEWER_VERSION:
+            errorStringOut = "Custom bank: Version is newer than supported by this library!";
+            return false;
+        case WOPN_ERR_OUT_OF_MEMORY:
+            errorStringOut = "Custom bank: Out of memory!";
+            return false;
+        default:
+            errorStringOut = "Custom bank: Unknown error!";
             return false;
         }
-        version = toUint16LE(ver);
-        if(version < 2 || version > latest_version)
-        {
-            errorStringOut = "Can't load bank file: unsupported WOPN version!";
-            return false;
-        }
     }
 
-    m_synth.m_insBanks.clear();
-    if((readU16BE(fr, count_melodic_banks) != 2) || (readU16BE(fr, count_percussive_banks) != 2))
-    {
-        errorStringOut = "Can't load bank file: Can't read count of banks!";
-        return false;
-    }
-
-    if((count_melodic_banks < 1) || (count_percussive_banks < 1))
-    {
-        errorStringOut = "Custom bank: Too few banks in this file!";
-        return false;
-    }
-
-    if(fr.read(&m_synth.m_regLFOSetup, 1, 1) != 1)
-    {
-        errorStringOut = "Can't load bank file: Can't read LFO registry state!";
-        return false;
-    }
+    m_synth.m_insBankSetup.volumeModel = wopn->volume_model;
+    m_synth.m_insBankSetup.lfoEnable = (wopn->lfo_freq & 8) != 0;
+    m_synth.m_insBankSetup.lfoFrequency = wopn->lfo_freq & 7;
+    m_setup.VolumeModel = OPNMIDI_VolumeModel_AUTO;
+    m_setup.lfoEnable = -1;
+    m_setup.lfoFrequency = -1;
 
     m_synth.m_insBanks.clear();
 
-    std::vector<OPN2::Bank *> banks;
-    banks.reserve(count_melodic_banks + count_percussive_banks);
+    uint16_t slots_counts[2] = {wopn->banks_count_melodic, wopn->banks_count_percussion};
+    WOPNBank *slots_src_ins[2] = { wopn->banks_melodic, wopn->banks_percussive };
 
-    if(version >= 2)//Read bank meta-entries
+    for(size_t ss = 0; ss < 2; ss++)
     {
-        for(uint16_t i = 0; i < count_melodic_banks; i++)
+        for(size_t i = 0; i < slots_counts[ss]; i++)
         {
-            uint8_t bank_meta[34];
-            if(fr.read(bank_meta, 1, 34) != 34)
-            {
-                m_synth.m_insBanks.clear();
-                errorStringOut = "Custom bank: Fail to read melodic bank meta-data!";
-                return false;
-            }
-            size_t bankno = size_t(bank_meta[33]) * 256 + size_t(bank_meta[32]);
+            size_t bankno = (slots_src_ins[ss][i].bank_midi_msb * 256) +
+                            (slots_src_ins[ss][i].bank_midi_lsb) +
+                            (ss ? size_t(OPN2::PercussionTag) : 0);
             OPN2::Bank &bank = m_synth.m_insBanks[bankno];
-            //strncpy(bank.name, char_p(bank_meta), 32);
-            banks.push_back(&bank);
-        }
-
-        for(uint16_t i = 0; i < count_percussive_banks; i++)
-        {
-            uint8_t bank_meta[34];
-            if(fr.read(bank_meta, 1, 34) != 34)
+            for(int j = 0; j < 128; j++)
             {
-                m_synth.m_insBanks.clear();
-                errorStringOut = "Custom bank: Fail to read percussion bank meta-data!";
-                return false;
+                opnInstMeta2 &ins = bank.ins[j];
+                std::memset(&ins, 0, sizeof(opnInstMeta2));
+                WOPNInstrument &inIns = slots_src_ins[ss][i].ins[j];
+                cvt_generic_to_FMIns(ins, inIns);
             }
-            size_t bankno = size_t(bank_meta[33]) * 256 + size_t(bank_meta[32]) + OPN2::PercussionTag;
-            OPN2::Bank &bank = m_synth.m_insBanks[bankno];
-            //strncpy(bank.name, char_p(bank_meta), 32);
-            banks.push_back(&bank);
         }
-    }
-
-    size_t total = 128 * m_synth.m_insBanks.size();
-
-    for(size_t i = 0; i < total; i++)
-    {
-        opnInstMeta2 &meta = banks[i / 128]->ins[i % 128];
-        opnInstData &data = meta.opn[0];
-        uint8_t idata[WOPL_INST_SIZE_V2];
-
-        size_t readSize = version >= 2 ? WOPL_INST_SIZE_V2 : WOPL_INST_SIZE_V1;
-        if(fr.read(idata, 1, readSize) != readSize)
-        {
-            m_synth.m_insBanks.clear();
-            errorStringOut = "Can't load bank file: Failed to read instrument data";
-            return false;
-        }
-        data.finetune = toSint16BE(idata + 32);
-        //Percussion instrument note number or a "fixed note sound"
-        meta.tone  = idata[34];
-        data.fbalg = idata[35];
-        data.lfosens = idata[36];
-        for(size_t op = 0; op < 4; op++)
-        {
-            size_t off = 37 + op * 7;
-            std::memcpy(data.OPS[op].data, idata + off, 7);
-        }
-
-        meta.flags = 0;
-        if(version >= 2)
-        {
-            meta.ms_sound_kon   = toUint16BE(idata + 65);
-            meta.ms_sound_koff  = toUint16BE(idata + 67);
-            if((meta.ms_sound_kon == 0) && (meta.ms_sound_koff == 0))
-                meta.flags |= opnInstMeta::Flag_NoSound;
-        }
-        else
-        {
-            meta.ms_sound_kon   = 1000;
-            meta.ms_sound_koff  = 500;
-        }
-
-        meta.opn[1] = meta.opn[0];
-
-        /* Junk, delete later */
-        meta.fine_tune      = 0.0;
-        /* Junk, delete later */
     }
 
     applySetup();
+
+    WOPN_Free(wopn);
 
     return true;
 }

@@ -24,6 +24,8 @@
 #ifndef ADLMIDI_PRIVATE_HPP
 #define ADLMIDI_PRIVATE_HPP
 
+#define OPNMIDI_UNSTABLE_API
+
 // Setup compiler defines useful for exporting required public API symbols in gme.cpp
 #ifndef OPNMIDI_EXPORT
 #   if defined (_WIN32) && defined(OPNMIDI_BUILD_DLL)
@@ -64,6 +66,7 @@ typedef int32_t ssize_t;
 #include <string>
 #include <map>
 #include <set>
+#include <new> // nothrow
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
@@ -215,6 +218,8 @@ public:
     typedef BasicBankMap<Bank> BankMap;
     //! MIDI bank instruments data
     BankMap         m_insBanks;
+    //! MIDI bank-wide setup
+    OpnBankSetup    m_insBankSetup;
 
 public:
     //! Blank instrument template
@@ -263,7 +268,8 @@ public:
     } m_volumeScale;
 
     //! Reserved
-    char _padding3[8];
+    bool m_lfoEnable;
+    uint8_t m_lfoFrequency;
 
     //! Category of the channel
     /*! 1 = DAC, 0 = regular
@@ -340,10 +346,20 @@ public:
     void silenceAll();
 
     /**
+     * @brief commit LFO enable and frequency
+     */
+    void commitLFOSetup();
+
+    /**
      * @brief Set the volume scaling model
      * @param volumeModel Type of volume scale model scale
      */
     void setVolumeScaleModel(OPNMIDI_VolumeModels volumeModel);
+
+    /**
+     * @brief Get the volume scaling model
+     */
+    OPNMIDI_VolumeModels getVolumeScaleModel();
 
     /**
      * @brief Clean up all running emulated chip instances
@@ -837,6 +853,8 @@ public:
         unsigned int NumCards;
         unsigned int LogarithmicVolumes;
         int     VolumeModel;
+        int     lfoEnable;
+        int     lfoFrequency;
         //unsigned int SkipForward;
         int     ScaleModulators;
         bool    fullRangeBrightnessCC74;

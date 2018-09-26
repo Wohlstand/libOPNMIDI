@@ -101,6 +101,8 @@ OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
     m_setup.NumCards   = 2;
     m_setup.LogarithmicVolumes  = false;
     m_setup.VolumeModel = OPNMIDI_VolumeModel_AUTO;
+    m_setup.lfoEnable = -1;
+    m_setup.lfoFrequency = -1;
     //m_setup.SkipForward = 0;
     m_setup.ScaleModulators     = 0;
     m_setup.fullRangeBrightnessCC74 = false;
@@ -132,9 +134,19 @@ void OPNMIDIplay::applySetup()
         m_synth.setVolumeScaleModel(static_cast<OPNMIDI_VolumeModels>(m_setup.VolumeModel));
 
     if(m_setup.VolumeModel == OPNMIDI_VolumeModel_AUTO)
-        m_synth.m_volumeScale = OPN2::VOLUME_Generic;
+        m_synth.m_volumeScale = (OPN2::VolumesScale)m_synth.m_insBankSetup.volumeModel;
 
     m_synth.m_numChips    = m_setup.NumCards;
+
+    if(m_setup.lfoEnable < 0)
+        m_synth.m_lfoEnable = m_synth.m_insBankSetup.lfoEnable;
+    else
+        m_synth.m_lfoEnable = m_setup.lfoEnable;
+
+    if(m_setup.lfoFrequency < 0)
+        m_synth.m_lfoFrequency = m_synth.m_insBankSetup.lfoFrequency;
+    else
+        m_synth.m_lfoFrequency = m_setup.lfoFrequency;
 
     m_synth.reset(m_setup.emulator, m_setup.PCM_RATE, this);
     m_chipChannels.clear();
@@ -210,6 +222,8 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
         MIDIchannel::activenoteiterator i = m_midiChannels[channel].activenotes_find(note);
         if(i)
         {
+            const int veloffset = i->ains->midi_velocity_offset;
+            velocity = (uint8_t)std::min(127, std::max(1, (int)velocity + veloffset));
             i->vol = velocity;
             noteUpdate(channel, i, Upd_Volume);
             return false;
@@ -298,6 +312,9 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
         if(bnk)
             ains = &bnk->ins[midiins];
     }
+
+    const int veloffset = ains->midi_velocity_offset;
+    velocity = (uint8_t)std::min(127, std::max(1, (int)velocity + veloffset));
 
     int32_t tone = note;
     if(!isPercussion && (bank > 0)) // For non-zero banks

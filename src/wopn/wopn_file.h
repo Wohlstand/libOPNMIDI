@@ -43,8 +43,19 @@ typedef unsigned short int uint16_t;
 /* Volume scaling model implemented in the libOPNMIDI */
 typedef enum WOPN_VolumeModel
 {
-    WOPN_VM_Generic = 0,
+    WOPN_VM_Generic = 0
 } WOPN_VolumeModel;
+
+typedef enum WOPN_InstrumentFlags
+{
+    /* Is pseudo eight-operator (two 4-operator voices) instrument */
+    WOPN_Ins_Pseudo8op  = 0x01,
+    /* Is a blank instrument entry */
+    WOPN_Ins_IsBlank    = 0x02,
+
+    /* Mask of the flags range */
+    WOPN_Ins_ALL_MASK   = 0x03
+} WOPN_InstrumentFlags;
 
 /* Error codes */
 typedef enum WOPN_ErrorCodes
@@ -94,7 +105,7 @@ typedef struct WOPNInstrument
     int8_t  midi_velocity_offset;
     /* Percussion MIDI base tone number at which this drum will be played */
     uint8_t percussion_key_number;
-    /* Reserved (no sound/pseudo-8op?) */
+    /* Enum WOPN_InstrumentFlags */
     uint8_t inst_flags;
     /* Feedback and Algorithm register data */
     uint8_t fbalg;

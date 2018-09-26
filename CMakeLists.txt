@@ -112,6 +112,7 @@ list(APPEND libOPNMIDI_SOURCES
     ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_midiplay.cpp
     ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_opn2.cpp
     ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_private.cpp
+    ${libOPNMIDI_SOURCE_DIR}/src/wopn/wopn_file.c
 )
 
 if(WITH_MIDI_SEQUENCER)

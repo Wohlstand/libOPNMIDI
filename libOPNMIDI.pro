@@ -37,7 +37,8 @@ HEADERS += \
     src/midi_sequencer_impl.hpp \
     src/fraction.hpp \
     src/opnbank.h \
-    src/opnmidi_private.hpp
+    src/opnmidi_private.hpp \
+    src/wopn/wopn_file.h
 
 SOURCES += \
     src/chips/gens_opn2.cpp \
@@ -53,5 +54,5 @@ SOURCES += \
     src/opnmidi_midiplay.cpp \
     src/opnmidi_opn2.cpp \
     src/opnmidi_private.cpp \
-    src/opnmidi_sequencer.cpp
-
+    src/opnmidi_sequencer.cpp \
+    src/wopn/wopn_file.c
