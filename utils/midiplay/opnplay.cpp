@@ -120,7 +120,7 @@ int main(int argc, char **argv)
     if(argc < 3 || std::string(argv[1]) == "--help" || std::string(argv[1]) == "-h")
     {
         std::printf(
-            "Usage: opnmidi [-s] [-w] [-nl] [--emu-mame|--emu-nuked|--emu-gens|--emu-gx] <bankfile>.wopn <midifilename>\n"
+            "Usage: opnmidi [-s] [-w] [-nl] [--emu-mame|--emu-nuked|--emu-gens|--emu-gx] [--chips <count>] <bankfile>.wopn <midifilename>\n"
             //" -p Enables adlib percussion instrument mode\n"
             //" -t Enables tremolo amplification mode\n"
             //" -v Enables vibrato amplification mode\n"
@@ -132,6 +132,7 @@ int main(int argc, char **argv)
             " --emu-gens Use GENS 2.10 Emulator\n"
             " --emu-nuked Use Nuked OPN2 Emulator\n"
             " --emu-gx Use Genesis Plus GX Emulator\n"
+            " --chips <count> Choose a count of emulated concurrent chips\n"
         );
         std::fflush(stdout);
 
@@ -170,6 +171,7 @@ int main(int argc, char **argv)
     int loopEnabled = 1;
     int emulator = OPNMIDI_EMU_MAME;
     size_t soloTrack = ~(size_t)0;
+    int chipsCount = -1;//Auto-choose chips count by emulator (Nuked 3, others 8)
 
     int arg = 1;
     for(arg = 1; arg < argc; arg++)
@@ -190,6 +192,15 @@ int main(int argc, char **argv)
             emulator = OPNMIDI_EMU_GX;
         else if(!std::strcmp("-s", argv[arg]))
             scaleModulators = true;
+        else if(!std::strcmp("--chips", argv[arg]))
+        {
+            if(arg + 1 >= argc)
+            {
+                printError("The option --chips requires an argument!\n");
+                return 1;
+            }
+            chipsCount = (int)std::strtoul(argv[++arg], NULL, 0);
+        }
         else if(!std::strcmp("--solo", argv[arg]))
         {
             if(arg + 1 >= argc)
@@ -277,10 +288,11 @@ int main(int argc, char **argv)
     }
     std::fprintf(stdout, "OK!\n");
 
-    if(emulator == OPNMIDI_EMU_NUKED)
-        opn2_setNumChips(myDevice, 3);//Too slow emulator to process so much chips
-    else
-        opn2_setNumChips(myDevice, 8);
+    if(emulator == OPNMIDI_EMU_NUKED && (chipsCount < 0))
+        chipsCount = 3;
+    else if(chipsCount < 0)
+        chipsCount = 8;
+    opn2_setNumChips(myDevice, chipsCount);
 
     std::fprintf(stdout, " - Number of chips %d\n", opn2_getNumChips(myDevice));
 
