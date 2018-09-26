@@ -64,12 +64,14 @@ void OPNMIDIplay::OpnChannel::addAge(int64_t us)
 {
     const int64_t neg = 1000 * static_cast<int64_t>(-0x1FFFFFFFl);
     if(users_empty())
-        koff_time_until_neglible_us =
-            std::max(koff_time_until_neglible_us - us, neg);
+    {
+        koff_time_until_neglible_us = std::max(koff_time_until_neglible_us - us, neg);
+        if(koff_time_until_neglible_us < 0)
+            koff_time_until_neglible_us = 0;
+    }
     else
     {
         koff_time_until_neglible_us = 0;
-
         for(LocationData *i = users_first; i; i = i->next)
         {
             if(!i->fixed_sustain)
@@ -490,6 +492,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
         int32_t c = adlchannel[ccount];
         if(c < 0)
             continue;
+        m_chipChannels[c].recent_ins = voices[ccount];
         m_chipChannels[c].addAge(0);
     }
 
@@ -1056,7 +1059,7 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
                     }
                     else
                     {
-                        m_chipChannels[c].koff_time_until_neglible_us = 1000 * ains.ms_sound_koff;
+                        m_chipChannels[c].koff_time_until_neglible_us = 1000 * int64_t(ains.ms_sound_koff);
                     }
                 }
             }
@@ -1231,14 +1234,24 @@ void OPNMIDIplay::setErrorString(const std::string &err)
 
 int64_t OPNMIDIplay::calculateChipChannelGoodness(size_t c, const MIDIchannel::NoteInfo::Phys &ins) const
 {
-    int64_t koff_ms = m_chipChannels[c].koff_time_until_neglible_us / 1000;
+    const OpnChannel &chan = m_chipChannels[c];
+    int64_t koff_ms = chan.koff_time_until_neglible_us / 1000;
     int64_t s = -koff_ms;
 
-    // Same midi-instrument = some stability
-    //if(c == MidCh) s += 4;
-    for (OpnChannel::LocationData *j = m_chipChannels[c].users_first; j; j = j->next)
+    // Rate channel with a releasing note
+    if(s < 0 && chan.users_empty())
     {
-        s -= 4000;
+        s -= 40000;
+        // If it's same instrument, better chance to get it when no free channels
+        if(chan.recent_ins == ins)
+            s = (m_synth.m_musicMode == OPN2::MODE_CMF) ? 0 : -koff_ms;
+        return s;
+    }
+
+    // Same midi-instrument = some stability
+    for(OpnChannel::LocationData *j = chan.users_first; j; j = j->next)
+    {
+        s -= 4000000;
 
         int64_t kon_ms = j->kon_time_until_neglible_us / 1000;
         s -= (j->sustained == OpnChannel::LocationData::Sustain_None) ?
@@ -1256,7 +1269,7 @@ int64_t OPNMIDIplay::calculateChipChannelGoodness(size_t c, const MIDIchannel::N
                 // Arpeggio candidate = even better
                 if(j->vibdelay_us < 70000
                    || j->kon_time_until_neglible_us > 20000000)
-                    s += 0;
+                    s += 10;
             }
 
             // Percussion is inferior to melody
