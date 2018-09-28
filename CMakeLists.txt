@@ -265,25 +265,28 @@ if(WITH_VLC_PLUGIN)
     list(APPEND opnmidi_vlc_src
         ${libOPNMIDI_SOURCE_DIR}/utils/vlc_codec/libopnmidi.c)
 
-    add_library(opnmidi_plugin MODULE ${opnmidi_vlc_src})
-    target_compile_options(opnmidi_plugin PUBLIC
+    add_library(opnmidi_vlc_plugin MODULE ${opnmidi_vlc_src})
+    set_target_properties(opnmidi_vlc_plugin PROPERTIES OUTPUT_NAME opnmidi_plugin)
+    target_compile_options(opnmidi_vlc_plugin PUBLIC
                 "-DVLC_MODULE_COPYRIGHT=\"Copyright \(c\) Vitaly Novichkov\""
                 "-DVLC_MODULE_LICENSE=\"GPLv3\""
                 "-DMODULE_STRING=\"opnmidi\""
                 ${VLCPLUGIN_DEFINITIONS})
-    target_include_directories(opnmidi_plugin PRIVATE
+    target_include_directories(opnmidi_vlc_plugin PRIVATE
             ${LIBVLC_INCLUDE_DIR}/vlc/plugins
             ${LIBVLC_INCLUDE_DIR}/vlc)
-    target_link_libraries(opnmidi_plugin OPNMIDI_IF vlccore m stdc++)
-    # target_link_libraries(opnmidi_plugin INTERFACE "-export-symbol-regex ^vlc_entry")
+    target_link_libraries(opnmidi_vlc_plugin OPNMIDI_IF vlccore m stdc++)
+    # target_link_libraries(opnmidi_vlc_plugin INTERFACE "-export-symbol-regex ^vlc_entry")
+
+    install(TARGETS opnmidi_vlc_plugin DESTINATION "${VLCPLUGIN_CODEC_INSTALL_PATH}")
 
     if(libOPNMIDI_SHARED)
-        add_dependencies(opnmidi_plugin OPNMIDI_shared)
+        add_dependencies(opnmidi_vlc_plugin OPNMIDI_shared)
     else()
         if(NOT libOPNMIDI_STATIC)
             message(FATAL_ERROR "libOPNMIDI is required to be built!")
         endif()
-        add_dependencies(opnmidi_plugin OPNMIDI_static)
+        add_dependencies(opnmidi_vlc_plugin OPNMIDI_static)
     endif()
 
 endif()
