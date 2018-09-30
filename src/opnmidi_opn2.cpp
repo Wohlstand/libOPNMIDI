@@ -135,6 +135,13 @@ OPN2::~OPN2()
     clearChips();
 }
 
+bool OPN2::setupLocked()
+{
+    return (m_musicMode == MODE_CMF ||
+            m_musicMode == MODE_IMF ||
+            m_musicMode == MODE_RSXX);
+}
+
 void OPN2::writeReg(size_t chip, uint8_t port, uint8_t index, uint8_t value)
 {
     m_chips[chip]->writeReg(port, index, value);

@@ -135,6 +135,9 @@ typedef BW_MidiSequencer MidiSequencer;
 #define OPN_PANNING_RIGHT   0x40
 #define OPN_PANNING_BOTH    0xC0
 
+#define OPN_MAX_CHIPS 100
+#define OPN_MAX_CHIPS_STR "100"
+
 extern std::string OPN2MIDI_ErrorString;
 
 /*
@@ -286,6 +289,12 @@ public:
      * @brief C.O. Destructor
      */
     ~OPN2();
+
+    /**
+     * @brief Checks are setup locked to be changed on the fly or not
+     * @return true when setup on the fly is locked
+     */
+    bool setupLocked();
 
     /**
      * @brief Write data to OPN2 chip register
@@ -854,7 +863,7 @@ public:
         int     emulator;
         bool    runAtPcmRate;
         unsigned int OpnBank;
-        unsigned int NumCards;
+        unsigned int numChips;
         unsigned int LogarithmicVolumes;
         int     VolumeModel;
         int     lfoEnable;
@@ -1345,7 +1354,6 @@ public:
 #if defined(ADLMIDI_AUDIO_TICK_HANDLER)
 extern void opn2_audioTickHandler(void *instance, uint32_t chipId, uint32_t rate);
 #endif
-extern int opn2RefreshNumCards(OPN2_MIDIPlayer *device);
 
 /**
  * @brief Check emulator availability
