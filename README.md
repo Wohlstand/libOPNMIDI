@@ -34,6 +34,7 @@ Library is based on core of the [libADLMIDI](https://github.com/Wohlstand/libADL
 * CC74 "Brightness" affects a modulator scale (to simulate frequency cut-off on WT synths)
 * Portamento support (CC5, CC37, and CC65)
 * SysEx support that supports some generic, GS, and XG features
+* Full-panning stereo option (works for emulators only)
 
 # How to build
 To build libOPNMIDI you need to use CMake:
@@ -143,6 +144,7 @@ To remove MIDI Sequecer, define `OPNMIDI_DISABLE_MIDI_SEQUENCER` macro and remov
  * Resolved a trouble which sometimes makes a junk noise sound and unnecessary overuse of chip channels
  * Volume models support taken from libADLMIDI has been adapted to OPN2's chip speficis
  * Fixed inability to play high notes due physical tone frequency out of range on the OPN2 chip
+ * Added support for full-panning stereo option
 
 ## 1.3.0   2018-06-19
  * Optimizing the MIDI banks management system for MultiBanks (Thanks to [Jean Pierre Cimalando](https://github.com/jpcima) for a work!)
