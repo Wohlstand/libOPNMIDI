@@ -117,6 +117,9 @@ const opnInstMeta2 OPN2::m_emptyInstrument = makeEmptyInstrument();
 OPN2::OPN2() :
     m_regLFOSetup(0),
     m_numChips(1),
+    m_scaleModulators(false),
+    m_runAtPcmRate(false),
+    m_softPanning(false),
     m_musicMode(MODE_MIDI),
     m_volumeScale(VOLUME_Generic),
     m_lfoEnable(false),
@@ -150,6 +153,11 @@ void OPN2::writeReg(size_t chip, uint8_t port, uint8_t index, uint8_t value)
 void OPN2::writeRegI(size_t chip, uint8_t port, uint32_t index, uint32_t value)
 {
     m_chips[chip]->writeReg(port, static_cast<uint8_t>(index), static_cast<uint8_t>(value));
+}
+
+void OPN2::writePan(size_t chip, uint32_t index, uint32_t value)
+{
+    m_chips[chip]->writePan(static_cast<uint16_t>(index), static_cast<uint8_t>(value));
 }
 
 void OPN2::noteOff(size_t c)
@@ -300,9 +308,23 @@ void OPN2::setPan(size_t c, uint8_t value)
     uint32_t    cc;
     getOpnChannel(c, chip, port, cc);
     const opnInstData &adli = m_insCache[c];
-    uint8_t val = (value & 0xC0) | (adli.lfosens & 0x3F);
+    uint8_t val = 0;
+    if(m_softPanning)
+    {
+        val = (OPN_PANNING_BOTH & 0xC0) | (adli.lfosens & 0x3F);
+        writePan(chip, c % 6, value);
+        writeRegI(chip, port, 0xB4 + cc, val);
+    }
+    else
+    {
+        int panning = 0;
+        if(value  < 64 + 32) panning |= OPN_PANNING_LEFT;
+        if(value >= 64 - 32) panning |= OPN_PANNING_RIGHT;
+        val = (panning & 0xC0) | (adli.lfosens & 0x3F);
+        writePan(chip, c % 6, 64);
+        writeRegI(chip, port, 0xB4 + cc, val);
+    }
     m_regLFOSens[c] = val;
-    writeRegI(chip, port, 0xB4 + cc, val);
 }
 
 void OPN2::silenceAll() // Silence all OPL channels.

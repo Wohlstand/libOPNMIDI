@@ -128,6 +128,7 @@ int main(int argc, char **argv)
             " -frb Enables full-ranged CC74 XG Brightness controller\n"
             " -nl Quit without looping\n"
             " -w Write WAV file rather than playing\n"
+            " -fp Enables full-panning stereo support\n"
             " --emu-mame Use MAME YM2612 Emulator\n"
             " --emu-gens Use GENS 2.10 Emulator\n"
             " --emu-nuked Use Nuked OPN2 Emulator\n"
@@ -169,6 +170,7 @@ int main(int argc, char **argv)
     bool scaleModulators = false;
     bool fullRangedBrightness = false;
     int loopEnabled = 1;
+    bool fullPanEnabled = false;
     int emulator = OPNMIDI_EMU_MAME;
     size_t soloTrack = ~(size_t)0;
     int chipsCount = -1;//Auto-choose chips count by emulator (Nuked 3, others 8)
@@ -190,6 +192,8 @@ int main(int argc, char **argv)
             emulator = OPNMIDI_EMU_MAME;
         else if(!std::strcmp("--emu-gx", argv[arg]))
             emulator = OPNMIDI_EMU_GX;
+        else if(!std::strcmp("-fp", argv[arg]))
+            fullPanEnabled = true;
         else if(!std::strcmp("-s", argv[arg]))
             scaleModulators = true;
         else if(!std::strcmp("--chips", argv[arg]))
@@ -255,6 +259,8 @@ int main(int argc, char **argv)
         opn2_setScaleModulators(myDevice, 1);//Turn on modulators scaling by volume
     if(fullRangedBrightness)
         opn2_setFullRangeBrightness(myDevice, 1);//Turn on a full-ranged XG CC74 Brightness
+    if(fullPanEnabled)
+        opn2_setSoftPanEnabled(myDevice, 1);
     opn2_setLoopEnabled(myDevice, recordWave ? 0 : loopEnabled);
     opn2_setVolumeRangeModel(myDevice, OPNMIDI_VolumeModel_Generic);
     #ifdef DEBUG_TRACE_ALL_EVENTS

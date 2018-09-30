@@ -234,6 +234,8 @@ public:
     bool m_scaleModulators;
     //! Run emulator at PCM rate if that possible. Reduces sounding accuracy, but decreases CPU usage on lower rates.
     bool m_runAtPcmRate;
+    //! Enable soft panning
+    bool m_softPanning;
 
     //! Just a padding. Reserved.
     char _padding2[3];
@@ -313,6 +315,14 @@ public:
      * @param value Value to write
      */
     void writeRegI(size_t chip, uint8_t port, uint32_t index, uint32_t value);
+
+    /**
+     * @brief Write to soft panning control of OPN2 chip emulator
+     * @param chip Index of emulated chip.
+     * @param address Register of channel to write
+     * @param value Value to write
+     */
+    void writePan(size_t chip, uint32_t index, uint32_t value);
 
     /**
      * @brief Off the note in specified chip channel
@@ -720,7 +730,7 @@ public:
             vibspeed = 2 * 3.141592653 * 5.0;
             vibdepth = 0.5 / 127;
             vibdelay_us = 0;
-            panning = OPN_PANNING_BOTH;
+            panning = 64;
             portamento = 0;
             portamentoEnable = false;
             portamentoSource = -1;
