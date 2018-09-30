@@ -2831,12 +2831,12 @@ int ym2612_write(void *chip, int a, UINT8 v)
 	return F2612->OPN.ST.irq;
 }
 
-void ym2612_write_pan(void *chip, int a, unsigned char v)
+void ym2612_write_pan(void *chip, int c, unsigned char v)
 {
 	YM2612 *F2612 = (YM2612 *)chip;
-	assert((a >= 0) && (a < 6));
-	F2612->CH[a].pan_volume_l = panlawtable[v & 0x7F];
-	F2612->CH[a].pan_volume_r = panlawtable[0x7F - (v & 0x7F)];
+	assert((c >= 0) && (c < 6));
+	F2612->CH[c].pan_volume_l = panlawtable[v & 0x7F];
+	F2612->CH[c].pan_volume_r = panlawtable[0x7F - (v & 0x7F)];
 }
 
 UINT8 ym2612_read(void *chip,int a)

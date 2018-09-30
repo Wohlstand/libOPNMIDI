@@ -43,6 +43,7 @@ extern void YM2612GXPreGenerate(YM2612GX *ym2612);
 extern void YM2612GXPostGenerate(YM2612GX *ym2612, unsigned int count);
 extern void YM2612GXGenerateOneNative(YM2612GX *ym2612, FMSAMPLE *frame);
 extern void YM2612GXWrite(YM2612GX *ym2612, unsigned int a, unsigned int v);
+extern void YM2612GXWritePan(YM2612GX *chip, int c, unsigned char v);
 extern unsigned int YM2612GXRead(YM2612GX *ym2612);
 
 #if defined(__cplusplus)

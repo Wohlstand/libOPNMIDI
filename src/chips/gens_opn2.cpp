@@ -60,6 +60,11 @@ void GensOPN2::writeReg(uint32_t port, uint16_t addr, uint8_t data)
     }
 }
 
+void GensOPN2::writePan(uint16_t chan, uint8_t data)
+{
+    chip->write_pan(static_cast<int>(chan), static_cast<int>(data));
+}
+
 void GensOPN2::nativeGenerateN(int16_t *output, size_t frames)
 {
     std::memset(output, 0, frames * sizeof(int16_t) * 2);

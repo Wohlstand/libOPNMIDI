@@ -497,6 +497,32 @@ static INT32 lfo_pm_table[128*8*32]; /* 128 combinations of 7 bits meaningful (o
 #define SLOT3 1
 #define SLOT4 3
 
+/*
+ * Pan law table
+ */
+
+static const UINT16 panlawtable[] =
+{
+    65535, 65529, 65514, 65489, 65454, 65409, 65354, 65289,
+    65214, 65129, 65034, 64929, 64814, 64689, 64554, 64410,
+    64255, 64091, 63917, 63733, 63540, 63336, 63123, 62901,
+    62668, 62426, 62175, 61914, 61644, 61364, 61075, 60776,
+    60468, 60151, 59825, 59489, 59145, 58791, 58428, 58057,
+    57676, 57287, 56889, 56482, 56067, 55643, 55211, 54770,
+    54320, 53863, 53397, 52923, 52441, 51951, 51453, 50947,
+    50433, 49912, 49383, 48846, 48302, 47750, 47191,
+    46340, /* Center left */
+    46340, /* Center right */
+    45472, 44885, 44291, 43690, 43083, 42469, 41848, 41221,
+    40588, 39948, 39303, 38651, 37994, 37330, 36661, 35986,
+    35306, 34621, 33930, 33234, 32533, 31827, 31116, 30400,
+    29680, 28955, 28225, 27492, 26754, 26012, 25266, 24516,
+    23762, 23005, 22244, 21480, 20713, 19942, 19169, 18392,
+    17613, 16831, 16046, 15259, 14469, 13678, 12884, 12088,
+    11291, 10492, 9691, 8888, 8085, 7280, 6473, 5666,
+    4858, 4050, 3240, 2431, 1620, 810, 0
+};
+
 /* struct describing a single operator (SLOT) */
 typedef struct
 {
@@ -561,6 +587,9 @@ typedef struct
   UINT32  fc;           /* fnum,blk */
   UINT8   kcode;        /* key code */
   UINT32  block_fnum;   /* blk/fnum value (for LFO PM calculations) */
+
+  INT32	  pan_volume_l;
+  INT32	  pan_volume_r;
 } FM_CH;
 
 
@@ -1922,6 +1951,12 @@ void YM2612GXInit(YM2612 *ym2612)
     }
   }
 
+  for (i = 0; i < 6; i++)
+  {
+    ym2612->CH[i].pan_volume_l = 46340;
+    ym2612->CH[i].pan_volume_r = 46340;
+  }
+
   init_tables();
 }
 
@@ -2012,6 +2047,12 @@ void YM2612GXWrite(YM2612 *ym2612, unsigned int a, unsigned int v)
       break;
     }
   }
+}
+
+void YM2612GXWritePan(YM2612GX *chip, int c, unsigned char v)
+{
+    chip->CH[c].pan_volume_l = panlawtable[v & 0x7F];
+    chip->CH[c].pan_volume_r = panlawtable[0x7F - (v & 0x7F)];
 }
 
 unsigned int YM2612GXRead(YM2612 *ym2612)
@@ -2115,19 +2156,25 @@ void YM2612GXGenerateOneNative(YM2612GX *ym2612, FMSAMPLE *frame)
   if (out_fm[5] > 8191) out_fm[5] = 8191;
   else if (out_fm[5] < -8192) out_fm[5] = -8192;
 
+#define PANLAW_L(ch, chpan) ((out_fm[ch] * ym2612->CH[ch].pan_volume_l / 65535) & ym2612->OPN.pan[chpan]);
+#define PANLAW_R(ch, chpan) ((out_fm[ch] * ym2612->CH[ch].pan_volume_r / 65535) & ym2612->OPN.pan[chpan]);
+
   /* stereo DAC output panning & mixing  */
-  lt  = ((out_fm[0]) & ym2612->OPN.pan[0]);
-  rt  = ((out_fm[0]) & ym2612->OPN.pan[1]);
-  lt += ((out_fm[1]) & ym2612->OPN.pan[2]);
-  rt += ((out_fm[1]) & ym2612->OPN.pan[3]);
-  lt += ((out_fm[2]) & ym2612->OPN.pan[4]);
-  rt += ((out_fm[2]) & ym2612->OPN.pan[5]);
-  lt += ((out_fm[3]) & ym2612->OPN.pan[6]);
-  rt += ((out_fm[3]) & ym2612->OPN.pan[7]);
-  lt += ((out_fm[4]) & ym2612->OPN.pan[8]);
-  rt += ((out_fm[4]) & ym2612->OPN.pan[9]);
-  lt += ((out_fm[5]) & ym2612->OPN.pan[10]);
-  rt += ((out_fm[5]) & ym2612->OPN.pan[11]);
+  lt  = PANLAW_L(0, 0);
+  rt  = PANLAW_R(0, 1);
+  lt += PANLAW_L(1, 2);
+  rt += PANLAW_R(1, 3);
+  lt += PANLAW_L(2, 4);
+  rt += PANLAW_R(2, 5);
+  lt += PANLAW_L(3, 6);
+  rt += PANLAW_R(3, 7);
+  lt += PANLAW_L(4, 8);
+  rt += PANLAW_R(4, 9);
+  lt += PANLAW_L(5, 10);
+  rt += PANLAW_R(5, 11);
+
+#undef PANLAW_L
+#undef PANLAW_R
 
   /* discrete YM2612 DAC */
   if (ym2612->chip_type == YM2612_DISCRETE)

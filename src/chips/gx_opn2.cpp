@@ -55,6 +55,11 @@ void GXOPN2::writeReg(uint32_t port, uint16_t addr, uint8_t data)
     YM2612GXWrite(m_chip, 1 + port * 2, data);
 }
 
+void GXOPN2::writePan(uint16_t chan, uint8_t data)
+{
+    YM2612GXWritePan(m_chip, chan, data);
+}
+
 void GXOPN2::nativePreGenerate()
 {
     YM2612GXPreGenerate(m_chip);
