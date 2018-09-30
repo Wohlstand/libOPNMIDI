@@ -23,9 +23,6 @@
 
 #include "opnmidi_private.hpp"
 
-#define MaxCards 100
-#define MaxCards_STR "100"
-
 /* Unify MIDI player casting and interface between ADLMIDI and OPNMIDI */
 #define GET_MIDI_PLAYER(device) reinterpret_cast<OPNMIDIplay *>((device)->opn2_midiPlayer)
 typedef OPNMIDIplay MidiPlayer;
@@ -63,7 +60,6 @@ OPNMIDI_EXPORT struct OPN2_MIDIPlayer *opn2_init(long sample_rate)
         return NULL;
     }
     midi_device->opn2_midiPlayer = player;
-    opn2RefreshNumCards(midi_device);
     return midi_device;
 }
 
@@ -84,17 +80,20 @@ OPNMIDI_EXPORT int opn2_setNumChips(OPN2_MIDIPlayer *device, int numCards)
 
     MidiPlayer *play = GET_MIDI_PLAYER(device);
     assert(play);
-    play->m_setup.NumCards = static_cast<unsigned int>(numCards);
-    if(play->m_setup.NumCards < 1 || play->m_setup.NumCards > MaxCards)
+    play->m_setup.numChips = static_cast<unsigned int>(numCards);
+    if(play->m_setup.numChips < 1 || play->m_setup.numChips > OPN_MAX_CHIPS)
     {
-        play->setErrorString("number of chips may only be 1.." MaxCards_STR ".\n");
+        play->setErrorString("number of chips may only be 1.." OPN_MAX_CHIPS_STR ".\n");
         return -1;
     }
 
-    play->m_synth.m_numChips = play->m_setup.NumCards;
-    play->partialReset();
+    if(!play->m_synth.setupLocked())
+    {
+        play->m_synth.m_numChips = play->m_setup.numChips;
+        play->partialReset();
+    }
 
-    return opn2RefreshNumCards(device);
+    return 0;
 }
 
 OPNMIDI_EXPORT int opn2_getNumChips(struct OPN2_MIDIPlayer *device)
@@ -103,8 +102,18 @@ OPNMIDI_EXPORT int opn2_getNumChips(struct OPN2_MIDIPlayer *device)
         return -2;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
     assert(play);
-    return (int)play->m_setup.NumCards;
+    return (int)play->m_setup.numChips;
 }
+
+OPNMIDI_EXPORT int opn2_getNumChipsObtained(struct OPN2_MIDIPlayer *device)
+{
+    if(device == NULL)
+        return -2;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
+    return (int)play->m_synth.m_numChips;
+}
+
 
 OPNMIDI_EXPORT int opn2_reserveBanks(OPN2_MIDIPlayer *device, unsigned banks)
 {
@@ -261,7 +270,8 @@ OPNMIDI_EXPORT int opn2_openBankFile(OPN2_MIDIPlayer *device, const char *filePa
                 play->setErrorString("OPN2 MIDI: Can't load file");
             return -1;
         }
-        else return opn2RefreshNumCards(device);
+        else
+            return 0;
     }
     OPN2MIDI_ErrorString = "Can't load file: OPN2 MIDI is not initialized";
     return -1;
@@ -368,10 +378,13 @@ OPNMIDI_EXPORT void opn2_setLogarithmicVolumes(struct OPN2_MIDIPlayer *device, i
     MidiPlayer *play = GET_MIDI_PLAYER(device);
     assert(play);
     play->m_setup.LogarithmicVolumes = static_cast<unsigned int>(logvol);
-    if(play->m_setup.LogarithmicVolumes != 0)
-        play->m_synth.setVolumeScaleModel(OPNMIDI_VolumeModel_NativeOPN2);
-    else
-        play->m_synth.setVolumeScaleModel(static_cast<OPNMIDI_VolumeModels>(play->m_setup.VolumeModel));
+    if(!play->m_synth.setupLocked())
+    {
+        if(play->m_setup.LogarithmicVolumes != 0)
+            play->m_synth.setVolumeScaleModel(OPNMIDI_VolumeModel_NativeOPN2);
+        else
+            play->m_synth.setVolumeScaleModel(static_cast<OPNMIDI_VolumeModels>(play->m_setup.VolumeModel));
+    }
 }
 
 OPNMIDI_EXPORT void opn2_setVolumeRangeModel(OPN2_MIDIPlayer *device, int volumeModel)
@@ -381,10 +394,13 @@ OPNMIDI_EXPORT void opn2_setVolumeRangeModel(OPN2_MIDIPlayer *device, int volume
     MidiPlayer *play = GET_MIDI_PLAYER(device);
     assert(play);
     play->m_setup.VolumeModel = volumeModel;
-    if(play->m_setup.VolumeModel == OPNMIDI_VolumeModel_AUTO)//Use bank default volume model
-        play->m_synth.m_volumeScale = (OPN2::VolumesScale)play->m_synth.m_insBankSetup.volumeModel;
-    else
-        play->m_synth.setVolumeScaleModel(static_cast<OPNMIDI_VolumeModels>(volumeModel));
+    if(!play->m_synth.setupLocked())
+    {
+        if(play->m_setup.VolumeModel == OPNMIDI_VolumeModel_AUTO)//Use bank default volume model
+            play->m_synth.m_volumeScale = (OPN2::VolumesScale)play->m_synth.m_insBankSetup.volumeModel;
+        else
+            play->m_synth.setVolumeScaleModel(static_cast<OPNMIDI_VolumeModels>(volumeModel));
+    }
 }
 
 OPNMIDI_EXPORT int opn2_getVolumeRangeModel(struct OPN2_MIDIPlayer *device)
@@ -493,7 +509,8 @@ OPNMIDI_EXPORT int opn2_setRunAtPcmRate(OPN2_MIDIPlayer *device, int enabled)
         MidiPlayer *play = GET_MIDI_PLAYER(device);
         assert(play);
         play->m_setup.runAtPcmRate = (enabled != 0);
-        play->partialReset();
+        if(!play->m_synth.setupLocked())
+            play->partialReset();
         return 0;
     }
     return -1;

@@ -100,7 +100,7 @@ OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
     m_setup.maxdelay = 512.0 / (double)m_setup.PCM_RATE;
 
     m_setup.OpnBank    = 0;
-    m_setup.NumCards   = 2;
+    m_setup.numChips   = 2;
     m_setup.LogarithmicVolumes  = false;
     m_setup.VolumeModel = OPNMIDI_VolumeModel_AUTO;
     m_setup.lfoEnable = -1;
@@ -138,7 +138,7 @@ void OPNMIDIplay::applySetup()
     if(m_setup.VolumeModel == OPNMIDI_VolumeModel_AUTO)
         m_synth.m_volumeScale = (OPN2::VolumesScale)m_synth.m_insBankSetup.volumeModel;
 
-    m_synth.m_numChips    = m_setup.NumCards;
+    m_synth.m_numChips    = m_setup.numChips;
 
     if(m_setup.lfoEnable < 0)
         m_synth.m_lfoEnable = m_synth.m_insBankSetup.lfoEnable;
@@ -1351,6 +1351,8 @@ void OPNMIDIplay::killOrEvacuate(size_t from_channel,
                                  OpnChannel::LocationData *j,
                                  OPNMIDIplay::MIDIchannel::activenoteiterator i)
 {
+    uint32_t maxChannels = OPN_MAX_CHIPS * 6;
+
     // Before killing the note, check if it can be
     // evacuated to another channel as an arpeggio
     // instrument. This helps if e.g. all channels
@@ -1360,7 +1362,7 @@ void OPNMIDIplay::killOrEvacuate(size_t from_channel,
     {
         uint16_t cs = static_cast<uint16_t>(c);
 
-        if(c > std::numeric_limits<uint32_t>::max())
+        if(c >= maxChannels)
             break;
         if(c == from_channel)
             continue;

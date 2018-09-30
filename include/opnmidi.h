@@ -107,11 +107,27 @@ struct OPN2_MIDIPlayer
 /* DEPRECATED */
 #define opn2_setNumCards opn2_setNumChips
 
-/* Sets number of emulated sound cards (from 1 to 100). Emulation of multiple sound cards exchanges polyphony limits*/
+/**
+ * @brief Sets number of emulated chips (from 1 to 100). Emulation of multiple chips extends polyphony limits
+ * @param device Instance of the library
+ * @param numChips Count of virtual chips to emulate
+ * @return 0 on success, <0 when any error has occurred
+ */
 extern OPNMIDI_DECLSPEC int  opn2_setNumChips(struct OPN2_MIDIPlayer *device, int numCards);
 
-/* Get current number of emulated chips */
+/**
+ * @brief Get current number of emulated chips
+ * @param device Instance of the library
+ * @return Count of working chip emulators
+ */
 extern OPNMIDI_DECLSPEC int  opn2_getNumChips(struct OPN2_MIDIPlayer *device);
+
+/**
+ * @brief Get obtained number of emulated chips
+ * @param device Instance of the library
+ * @return Count of working chip emulators
+ */
+extern OPNMIDI_DECLSPEC int opn2_getNumChipsObtained(struct OPN2_MIDIPlayer *device);
 
 /**
  * @brief Reference to dynamic bank

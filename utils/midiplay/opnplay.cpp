@@ -294,14 +294,13 @@ int main(int argc, char **argv)
         chipsCount = 8;
     opn2_setNumChips(myDevice, chipsCount);
 
-    std::fprintf(stdout, " - Number of chips %d\n", opn2_getNumChips(myDevice));
-
     if(opn2_openFile(myDevice, musPath.c_str()) != 0)
     {
         printError(opn2_errorInfo(myDevice));
         return 2;
     }
 
+    std::fprintf(stdout, " - Number of chips %d\n", opn2_getNumChipsObtained(myDevice));
     std::fprintf(stdout, " - Track count: %lu\n", (unsigned long)opn2_trackCount(myDevice));
 
     if(soloTrack != ~(size_t)0)

@@ -169,9 +169,9 @@ bool OPNMIDIplay::LoadMIDI_post()
     }
     else if(format == MidiSequencer::Format_RSXX)
     {
-        //opl.CartoonersVolumes = true;
         m_synth.m_musicMode     = OPN2::MODE_RSXX;
         m_synth.m_volumeScale   = OPN2::VOLUME_Generic;
+        m_synth.m_numChips = 2;
     }
     else if(format == MidiSequencer::Format_IMF)
     {
@@ -180,6 +180,7 @@ bool OPNMIDIplay::LoadMIDI_post()
         return false;
     }
 
+    m_setup.tick_skip_samples_delay = 0;
     m_synth.reset(m_setup.emulator, m_setup.PCM_RATE, this); // Reset OPN2 chip
     m_chipChannels.clear();
     m_chipChannels.resize(m_synth.m_numChannels);
