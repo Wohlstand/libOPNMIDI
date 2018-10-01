@@ -213,6 +213,9 @@ typedef struct
     Bit32s oldsamples[2];
     Bit32s samples[2];
 
+    Bit32u pan_volume_l[6];
+    Bit32u pan_volume_r[6];
+
     Bit64u writebuf_samplecnt;
     Bit32u writebuf_cur;
     Bit32u writebuf_last;
@@ -231,6 +234,7 @@ Bit32u OPN2_ReadIRQPin(ym3438_t *chip);
 Bit8u OPN2_Read(ym3438_t *chip, Bit32u port);
 
 /*EXTRA*/
+void OPN2_WritePan(ym3438_t *chip, Bit32u channel, Bit8u data);
 void OPN2_WriteBuffered(ym3438_t *chip, Bit32u port, Bit8u data);
 void OPN2_Generate(ym3438_t *chip, Bit16s *buf);
 void OPN2_GenerateResampled(ym3438_t *chip, Bit16s *buf);

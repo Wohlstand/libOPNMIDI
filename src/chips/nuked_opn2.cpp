@@ -57,6 +57,12 @@ void NukedOPN2::writeReg(uint32_t port, uint16_t addr, uint8_t data)
     //qDebug() << QString("%1: 0x%2 => 0x%3").arg(port).arg(addr, 2, 16, QChar('0')).arg(data, 2, 16, QChar('0'));
 }
 
+void NukedOPN2::writePan(uint16_t chan, uint8_t data)
+{
+    ym3438_t *chip_r = reinterpret_cast<ym3438_t*>(chip);
+    OPN2_WritePan(chip_r, (Bit32u)chan, data);
+}
+
 void NukedOPN2::nativeGenerate(int16_t *frame)
 {
     ym3438_t *chip_r = reinterpret_cast<ym3438_t*>(chip);

@@ -56,6 +56,11 @@ void MameOPN2::writeReg(uint32_t port, uint16_t addr, uint8_t data)
     ym2612_write(chip, 1 + (int)(port) * 2, data);
 }
 
+void MameOPN2::writePan(uint16_t chan, uint8_t data)
+{
+    ym2612_write_pan(chip, (int)chan, data);
+}
+
 void MameOPN2::nativePreGenerate()
 {
     void *chip = this->chip;
