@@ -98,6 +98,12 @@ You need to make in the any IDE a library project and put into it next files
 * opnmidi_opn2.cpp	- OPN2 chips manager
 * opnmidi_private.cpp	- some internal functions sources
 
+* opnmidi_bankmap.h - MIDI bank hash table
+* opnmidi_bankmap.tcc - MIDI bank hash table (Implementation)
+* opnmidi_cvt.hpp - Instrument conversion template
+* opnmidi_ptr.hpp - Custom implementations of smart pointers for C++98
+* file_reader.hpp - Generic file and memory reader
+
 * `chips/opn_chip_base.h`   - Header of base class over all emulation cores
 * `chips/opn_chip_base.tcc` - Code of base class over all emulation cores
 
@@ -115,6 +121,8 @@ You need to make in the any IDE a library project and put into it next files
 * chips/nuked_opn2.cpp  - Code of emulator frontent over Nuked OPN2 emulator
 * chips/nuked/ym3438.h  - Nuked OPN2 Emulation header
 * chips/nuked/ym3438.cpp   - Code of Nuked OPN2 emulator by Stéphane Dallongeville, improved by Shay Green
+
+* wopn/*        - WOPN bank format library
 
 #### MIDI Sequencer
 To remove MIDI Sequecer, define `OPNMIDI_DISABLE_MIDI_SEQUENCER` macro and remove all those files
@@ -134,7 +142,7 @@ To remove MIDI Sequecer, define `OPNMIDI_DISABLE_MIDI_SEQUENCER` macro and remov
 * [OPNMIDI Player for Android](https://github.com/Wohlstand/OPNMIDI-Player-Java/) - a little MIDI-player for Android which uses libOPNMIDI to play MIDI files and provides flexible GUI with ability to change bank, flags, number of emulated chips, etc.
 
 # Changelog
-## 1.4.0   <dev>
+## 1.4.0   2018-10-01
  * Implemented a full support for Portamento! (Thanks to [Jean Pierre Cimalando](https://github.com/jpcima) for a work!)
  * Added support for SysEx event handling! (Thanks to [Jean Pierre Cimalando](https://github.com/jpcima) for a work!)
  * Added support for GS way of custom drum channels (through SysEx events)
