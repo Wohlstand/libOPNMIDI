@@ -141,9 +141,9 @@ void OPNMIDIplay::applySetup()
     m_synth.m_numChips    = m_setup.numChips;
 
     if(m_setup.lfoEnable < 0)
-        m_synth.m_lfoEnable = m_synth.m_insBankSetup.lfoEnable;
+        m_synth.m_lfoEnable = (m_synth.m_insBankSetup.lfoEnable != 0);
     else
-        m_synth.m_lfoEnable = m_setup.lfoEnable;
+        m_synth.m_lfoEnable = (m_setup.lfoEnable != 0);
 
     if(m_setup.lfoFrequency < 0)
         m_synth.m_lfoFrequency = m_synth.m_insBankSetup.lfoFrequency;

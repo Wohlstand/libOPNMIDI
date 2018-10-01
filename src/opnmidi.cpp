@@ -304,9 +304,9 @@ OPNMIDI_EXPORT void opn2_setLfoEnabled(struct OPN2_MIDIPlayer *device, int lfoEn
     MidiPlayer *play = GET_MIDI_PLAYER(device);
     assert(play);
     play->m_setup.lfoEnable = lfoEnable;
-    play->m_synth.m_lfoEnable = lfoEnable < 0 ?
+    play->m_synth.m_lfoEnable = (lfoEnable < 0 ?
                                 play->m_synth.m_insBankSetup.lfoEnable :
-                                (play->m_setup.lfoEnable != 0);
+                                play->m_setup.lfoEnable) != 0;
     play->m_synth.commitLFOSetup();
 }
 

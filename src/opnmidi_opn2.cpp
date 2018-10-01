@@ -201,7 +201,7 @@ void OPN2::noteOn(size_t c, double hertz) // Hertz range: 0..131071
     for(size_t op = 0; op < 4; op++)
     {
         uint32_t reg = adli.OPS[op].data[0];
-        uint16_t address = 0x30 + (op * 4) + cc;
+        uint16_t address = static_cast<uint16_t>(0x30 + (op * 4) + cc);
         if(mul_offset > 0) // Increase frequency multiplication value
         {
             uint32_t dt  = reg & 0xF0;
