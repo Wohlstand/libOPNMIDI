@@ -1,6 +1,8 @@
 cmake_minimum_required (VERSION 3.2)
 project(libOPNMIDI C CXX)
 
+include(GNUInstallDirs)
+
 #===========================================================================================
 # Strip garbage
 if(APPLE)
@@ -202,6 +204,7 @@ if(libOPNMIDI_SHARED)
     if(WIN32)
         target_compile_definitions(OPNMIDI_shared PRIVATE "-DOPNMIDI_BUILD_DLL")
     endif()
+    set_target_properties(OPNMIDI_shared PROPERTIES SOVERSION "1")
 endif()
 
 if(NOT libOPNMIDI_STATIC AND NOT libOPNMIDI_SHARED)
@@ -318,15 +321,15 @@ if(WITH_HQ_RESAMPLER)
 endif()
 
 install(TARGETS ${libOPNMIDI_INSTALLS}
-        RUNTIME DESTINATION "bin"
-        LIBRARY DESTINATION "lib"
-        ARCHIVE DESTINATION "lib"
-        INCLUDES DESTINATION "include")
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
 install(FILES
         include/opnmidi.h
         #include/opnmidi.hpp # WIP
-        DESTINATION include/)
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
 option(WITH_UNIT_TESTS   "Enable unit testing" OFF)
 if(WITH_UNIT_TESTS)
