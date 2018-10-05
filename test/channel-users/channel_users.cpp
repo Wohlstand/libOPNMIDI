@@ -2,6 +2,8 @@
 #include <string>
 #include <vector>
 
+#include "opnmidi_midiplay.hpp"
+#include "opnmidi_opn2.hpp"
 #include "opnmidi_private.hpp"
 
 typedef OPNMIDIplay::OpnChannel Channel;
