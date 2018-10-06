@@ -21,6 +21,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "opnmidi_opn2.hpp"
 #include "opnmidi_private.hpp"
 
 #if defined(OPNMIDI_DISABLE_NUKED_EMULATOR) && defined(OPNMIDI_DISABLE_MAME_EMULATOR) && \
@@ -103,6 +104,13 @@ static inline void getOpnChannel(size_t     in_channel,
     out_port = ((ch4 < 3) ? 0 : 1);
     out_ch = static_cast<uint32_t>(ch4 % 3);
 }
+
+enum
+{
+    OPN_PANNING_LEFT  = 0x80,
+    OPN_PANNING_RIGHT = 0x40,
+    OPN_PANNING_BOTH  = 0xC0
+};
 
 static opnInstMeta2 makeEmptyInstrument()
 {

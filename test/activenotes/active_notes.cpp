@@ -2,6 +2,8 @@
 #include <string>
 #include <vector>
 
+#include "opnmidi_midiplay.hpp"
+#include "opnmidi_opn2.hpp"
 #include "opnmidi_private.hpp"
 
 TEST_CASE( "MIDI Channel manipulating", "[OPNMIDIplay::MIDIchannel]" )
@@ -21,7 +23,7 @@ TEST_CASE( "MIDI Channel manipulating", "[OPNMIDIplay::MIDIchannel]" )
                     midi_ch.activenotes_erase(i);
             }
 
-            const opnInstMeta2 &ains = OPN2::m_emptyInstrument;
+            const opnInstMeta2 &ains = Synth::m_emptyInstrument;
 
             OPNMIDIplay::MIDIchannel::NoteInfo::Phys voices[OPNMIDIplay::MIDIchannel::NoteInfo::MaxNumPhysChans] = {
                 {0, ains.opn[0], /*false*/},

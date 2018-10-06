@@ -21,8 +21,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "opnmidi_midiplay.hpp"
+#include "opnmidi_opn2.hpp"
 #include "opnmidi_private.hpp"
 #include "opnmidi_cvt.hpp"
+#include "file_reader.hpp"
+#include "midi_sequencer.hpp"
 #include "wopn/wopn_file.h"
 
 bool OPNMIDIplay::LoadBank(const std::string &filename)
@@ -104,14 +108,15 @@ bool OPNMIDIplay::LoadBank(FileAndMemReader &fr)
         }
     }
 
-    m_synth.m_insBankSetup.volumeModel = wopn->volume_model;
-    m_synth.m_insBankSetup.lfoEnable = (wopn->lfo_freq & 8) != 0;
-    m_synth.m_insBankSetup.lfoFrequency = wopn->lfo_freq & 7;
+    Synth &synth = *m_synth;
+    synth.m_insBankSetup.volumeModel = wopn->volume_model;
+    synth.m_insBankSetup.lfoEnable = (wopn->lfo_freq & 8) != 0;
+    synth.m_insBankSetup.lfoFrequency = wopn->lfo_freq & 7;
     m_setup.VolumeModel = OPNMIDI_VolumeModel_AUTO;
     m_setup.lfoEnable = -1;
     m_setup.lfoFrequency = -1;
 
-    m_synth.m_insBanks.clear();
+    synth.m_insBanks.clear();
 
     uint16_t slots_counts[2] = {wopn->banks_count_melodic, wopn->banks_count_percussion};
     WOPNBank *slots_src_ins[2] = { wopn->banks_melodic, wopn->banks_percussive };
@@ -122,8 +127,8 @@ bool OPNMIDIplay::LoadBank(FileAndMemReader &fr)
         {
             size_t bankno = (slots_src_ins[ss][i].bank_midi_msb * 256) +
                             (slots_src_ins[ss][i].bank_midi_lsb) +
-                            (ss ? size_t(OPN2::PercussionTag) : 0);
-            OPN2::Bank &bank = m_synth.m_insBanks[bankno];
+                            (ss ? size_t(Synth::PercussionTag) : 0);
+            Synth::Bank &bank = synth.m_insBanks[bankno];
             for(int j = 0; j < 128; j++)
             {
                 opnInstMeta2 &ins = bank.ins[j];
@@ -145,7 +150,8 @@ bool OPNMIDIplay::LoadBank(FileAndMemReader &fr)
 
 bool OPNMIDIplay::LoadMIDI_pre()
 {
-    if(m_synth.m_insBanks.empty())
+    Synth &synth = *m_synth;
+    if(synth.m_insBanks.empty())
     {
         errorStringOut = "Bank is not set! Please load any instruments bank by using of adl_openBankFile() or adl_openBankData() functions!";
         return false;
@@ -160,7 +166,9 @@ bool OPNMIDIplay::LoadMIDI_pre()
 
 bool OPNMIDIplay::LoadMIDI_post()
 {
-    MidiSequencer::FileFormat format = m_sequencer.getFormat();
+    Synth &synth = *m_synth;
+    MidiSequencer &seq = *m_sequencer;
+    MidiSequencer::FileFormat format = seq.getFormat();
     if(format == MidiSequencer::Format_CMF)
     {
         errorStringOut = "OPNMIDI doesn't supports CMF, use ADLMIDI to play this file!";
@@ -169,9 +177,9 @@ bool OPNMIDIplay::LoadMIDI_post()
     }
     else if(format == MidiSequencer::Format_RSXX)
     {
-        m_synth.m_musicMode     = OPN2::MODE_RSXX;
-        m_synth.m_volumeScale   = OPN2::VOLUME_Generic;
-        m_synth.m_numChips = 2;
+        synth.m_musicMode     = Synth::MODE_RSXX;
+        synth.m_volumeScale   = Synth::VOLUME_Generic;
+        synth.m_numChips = 2;
     }
     else if(format == MidiSequencer::Format_IMF)
     {
@@ -181,9 +189,9 @@ bool OPNMIDIplay::LoadMIDI_post()
     }
 
     m_setup.tick_skip_samples_delay = 0;
-    m_synth.reset(m_setup.emulator, m_setup.PCM_RATE, this); // Reset OPN2 chip
+    synth.reset(m_setup.emulator, m_setup.PCM_RATE, this); // Reset OPN2 chip
     m_chipChannels.clear();
-    m_chipChannels.resize(m_synth.m_numChannels);
+    m_chipChannels.resize(synth.m_numChannels);
 
     return true;
 }
@@ -195,9 +203,10 @@ bool OPNMIDIplay::LoadMIDI(const std::string &filename)
     file.openFile(filename.c_str());
     if(!LoadMIDI_pre())
         return false;
-    if(!m_sequencer.loadMIDI(file))
+    MidiSequencer &seq = *m_sequencer;
+    if(!seq.loadMIDI(file))
     {
-        errorStringOut = m_sequencer.getErrorString();
+        errorStringOut = seq.getErrorString();
         return false;
     }
     if(!LoadMIDI_post())
@@ -211,9 +220,10 @@ bool OPNMIDIplay::LoadMIDI(const void *data, size_t size)
     file.openData(data, size);
     if(!LoadMIDI_pre())
         return false;
-    if(!m_sequencer.loadMIDI(file))
+    MidiSequencer &seq = *m_sequencer;
+    if(!seq.loadMIDI(file))
     {
-        errorStringOut = m_sequencer.getErrorString();
+        errorStringOut = seq.getErrorString();
         return false;
     }
     if(!LoadMIDI_post())
