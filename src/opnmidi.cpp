@@ -368,13 +368,14 @@ OPNMIDI_EXPORT void opn2_setFullRangeBrightness(struct OPN2_MIDIPlayer *device, 
 
 OPNMIDI_EXPORT void opn2_setLoopEnabled(OPN2_MIDIPlayer *device, int loopEn)
 {
+#ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
     assert(play);
-#ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
     play->m_sequencer->setLoopEnabled(loopEn != 0);
 #else
+    ADL_UNUSED(device);
     ADL_UNUSED(loopEn);
 #endif
 }
