@@ -203,6 +203,10 @@ if(libOPNMIDI_SHARED)
     list(APPEND libOPNMIDI_INSTALLS OPNMIDI_shared)
     if(WIN32)
         target_compile_definitions(OPNMIDI_shared PRIVATE "-DOPNMIDI_BUILD_DLL")
+        if(CMAKE_COMPILER_IS_GNUCXX)
+            set_property(TARGET OPNMIDI_shared APPEND_STRING PROPERTY LINK_FLAGS " -static-libgcc -static-libstdc++")
+            set_property(TARGET OPNMIDI_shared APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-Bstatic,--whole-archive -lpthread -Wl,-Bdynamic,--no-whole-archive")
+        endif()
     endif()
     set_target_properties(OPNMIDI_shared PROPERTIES SOVERSION "1")
 endif()
@@ -278,7 +282,17 @@ if(WITH_VLC_PLUGIN)
     target_include_directories(opnmidi_vlc_plugin PRIVATE
             ${LIBVLC_INCLUDE_DIR}/vlc/plugins
             ${LIBVLC_INCLUDE_DIR}/vlc)
-    target_link_libraries(opnmidi_vlc_plugin OPNMIDI_IF vlccore m stdc++)
+
+    set(OPNMIDIVLC_LIBS OPNMIDI_IF ${LIBVLCCORE_LIBRARY} m)
+
+    if(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND CMAKE_COMPILER_IS_GNUCXX)
+        set_property(TARGET opnmidi_vlc_plugin APPEND_STRING PROPERTY LINK_FLAGS " -static-libgcc -static-libstdc++")
+        set_property(TARGET opnmidi_vlc_plugin APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-Bstatic,--whole-archive -lpthread -Wl,-Bdynamic,--no-whole-archive")
+    elseif(NOT WIN32)
+        list(APPEND OPNMIDIVLC_LIBS stdc++)
+    endif()
+
+    target_link_libraries(opnmidi_vlc_plugin ${OPNMIDIVLC_LIBS})
     # target_link_libraries(opnmidi_vlc_plugin INTERFACE "-export-symbol-regex ^vlc_entry")
 
     install(TARGETS opnmidi_vlc_plugin DESTINATION "${VLCPLUGIN_CODEC_INSTALL_PATH}")
