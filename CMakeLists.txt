@@ -260,6 +260,10 @@ if(WITH_MIDIPLAY)
         add_dependencies(opnmidiplay OPNMIDI_static)
     endif()
 
+    if(NOT WIN32 AND NOT APPLE)
+        install(FILES ${libOPNMIDI_SOURCE_DIR}/fm_banks/xg.wopn DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/opnmidiplay/)
+    endif()
+
     list(APPEND libOPNMIDI_INSTALLS opnmidiplay)
 endif()
 
