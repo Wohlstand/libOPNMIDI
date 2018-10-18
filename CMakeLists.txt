@@ -94,6 +94,7 @@ option(USE_GX_EMULATOR      "Use Genesis Plus GX emulator (experimental)" OFF)
 
 option(WITH_MIDIPLAY        "Build also demo MIDI player" OFF)
 option(WITH_VLC_PLUGIN      "Build also a plugin for VLC Media Player" OFF)
+option(VLC_PLUGIN_NOINSTALL "Don't install VLC plugin into VLC directory" OFF)
 option(WITH_DAC_UTIL        "Build also OPN2 DAC testing utility" OFF)
 
 if(CMAKE_VERSION VERSION_EQUAL "3.1" OR CMAKE_VERSION VERSION_GREATER "3.1")
@@ -185,15 +186,20 @@ endif()
 #    add_definitions(-DADLMIDI_DISABLE_CPP_EXTRAS)
 #endif()
 
-if(libOPNMIDI_STATIC)
+# === Static library ====
+if(libOPNMIDI_STATIC OR WITH_VLC_PLUGIN)
     add_library(OPNMIDI_static STATIC ${libOPNMIDI_SOURCES})
     set_target_properties(OPNMIDI_static PROPERTIES OUTPUT_NAME OPNMIDI)
     target_include_directories(OPNMIDI_static PUBLIC ${libOPNMIDI_SOURCE_DIR}/include)
     set_legacy_standard(OPNMIDI_static)
     set_visibility_hidden(OPNMIDI_static)
     list(APPEND libOPNMIDI_INSTALLS OPNMIDI_static)
+    if(NOT libOPNMIDI_STATIC)
+        set_target_properties(OPNMIDI_static PROPERTIES EXCLUDE_FROM_ALL TRUE)
+    endif()
 endif()
 
+# === Shared library ====
 if(libOPNMIDI_SHARED)
     add_library(OPNMIDI_shared SHARED ${libOPNMIDI_SOURCES})
     set_target_properties(OPNMIDI_shared PROPERTIES OUTPUT_NAME OPNMIDI)
@@ -217,6 +223,12 @@ You must enable at least one of them!")
 endif()
 
 add_library(OPNMIDI_IF INTERFACE)
+
+if(libOPNMIDI_STATIC OR WITH_VLC_PLUGIN)
+    add_library(OPNMIDI_IF_STATIC INTERFACE)
+    target_link_libraries(OPNMIDI_IF_STATIC INTERFACE OPNMIDI_static)
+endif()
+
 if(libOPNMIDI_SHARED)
   target_link_libraries(OPNMIDI_IF INTERFACE OPNMIDI_shared)
 else()
@@ -287,7 +299,7 @@ if(WITH_VLC_PLUGIN)
             ${LIBVLC_INCLUDE_DIR}/vlc/plugins
             ${LIBVLC_INCLUDE_DIR}/vlc)
 
-    set(OPNMIDIVLC_LIBS OPNMIDI_IF ${LIBVLCCORE_LIBRARY} m)
+    set(OPNMIDIVLC_LIBS OPNMIDI_IF_STATIC ${LIBVLCCORE_LIBRARY} m)
 
     if(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND CMAKE_COMPILER_IS_GNUCXX)
         set_property(TARGET opnmidi_vlc_plugin APPEND_STRING PROPERTY LINK_FLAGS " -static-libgcc -static-libstdc++")
@@ -299,16 +311,13 @@ if(WITH_VLC_PLUGIN)
     target_link_libraries(opnmidi_vlc_plugin ${OPNMIDIVLC_LIBS})
     # target_link_libraries(opnmidi_vlc_plugin INTERFACE "-export-symbol-regex ^vlc_entry")
 
-    install(TARGETS opnmidi_vlc_plugin DESTINATION "${VLCPLUGIN_CODEC_INSTALL_PATH}")
-
-    if(libOPNMIDI_SHARED)
-        add_dependencies(opnmidi_vlc_plugin OPNMIDI_shared)
+    if(NOT VLC_PLUGIN_NOINSTALL)
+        install(TARGETS opnmidi_vlc_plugin DESTINATION "${VLCPLUGIN_CODEC_INSTALL_PATH}")
     else()
-        if(NOT libOPNMIDI_STATIC)
-            message(FATAL_ERROR "libOPNMIDI is required to be built!")
-        endif()
-        add_dependencies(opnmidi_vlc_plugin OPNMIDI_static)
+        install(TARGETS opnmidi_vlc_plugin DESTINATION "${CMAKE_INSTALL_LIBDIR}/vlc-codec/")
     endif()
+
+    add_dependencies(opnmidi_vlc_plugin OPNMIDI_static)
 
 endif()
 
@@ -330,7 +339,7 @@ if(WITH_HQ_RESAMPLER)
     if(libOPNMIDI_SHARED)
         target_link_libraries(OPNMIDI_shared PUBLIC "${ZITA_RESAMPLER_LIBRARY}")
     endif()
-    if(libOPNMIDI_STATIC)
+    if(libADLMIDI_STATIC OR WITH_VLC_PLUGIN)
         target_link_libraries(OPNMIDI_static PUBLIC "${ZITA_RESAMPLER_LIBRARY}")
     endif()
     if(WITH_DAC_UTIL)
