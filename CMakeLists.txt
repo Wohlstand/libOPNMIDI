@@ -370,6 +370,15 @@ if(WITH_UNIT_TESTS)
     add_subdirectory(test)
 endif()
 
+# === Version check ====
+set(VERSION_CHECK_SOURCE "
+    #include \"opnmidi.h\"
+    #if !(OPNMIDI_VERSION_MAJOR == ${PROJECT_VERSION_MAJOR} && OPNMIDI_VERSION_MINOR == ${PROJECT_VERSION_MINOR} && OPNMIDI_VERSION_PATCHLEVEL == ${PROJECT_VERSION_PATCH})
+    #error Project and source code version do not match!
+    #endif")
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/version_check.c" "${VERSION_CHECK_SOURCE}")
+add_library(OPNMIDI_version_check OBJECT "${CMAKE_CURRENT_BINARY_DIR}/version_check.c")
+target_include_directories(OPNMIDI_version_check PRIVATE "include")
 
 message("==== libOPNMIDI options ====")
 message("libOPNMIDI_STATIC        = ${libOPNMIDI_STATIC}")
