@@ -40,3 +40,8 @@ release/*
 # Cmake caches
 build/*
 
+
+# Ignore CLeon's files
+.idea/*
+cmake-build-*/*
+
