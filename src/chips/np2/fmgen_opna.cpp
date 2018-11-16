@@ -486,6 +486,29 @@ void OPNABase::MakeTable2()
 	}
 }
 
+// libOPNMIDI: soft panning
+static const uint16 panlawtable[] =
+{
+    65535, 65529, 65514, 65489, 65454, 65409, 65354, 65289,
+    65214, 65129, 65034, 64929, 64814, 64689, 64554, 64410,
+    64255, 64091, 63917, 63733, 63540, 63336, 63123, 62901,
+    62668, 62426, 62175, 61914, 61644, 61364, 61075, 60776,
+    60468, 60151, 59825, 59489, 59145, 58791, 58428, 58057,
+    57676, 57287, 56889, 56482, 56067, 55643, 55211, 54770,
+    54320, 53863, 53397, 52923, 52441, 51951, 51453, 50947,
+    50433, 49912, 49383, 48846, 48302, 47750, 47191,
+    46340, /* Center left */
+    46340, /* Center right */
+    45472, 44885, 44291, 43690, 43083, 42469, 41848, 41221,
+    40588, 39948, 39303, 38651, 37994, 37330, 36661, 35986,
+    35306, 34621, 33930, 33234, 32533, 31827, 31116, 30400,
+    29680, 28955, 28225, 27492, 26754, 26012, 25266, 24516,
+    23762, 23005, 22244, 21480, 20713, 19942, 19169, 18392,
+    17613, 16831, 16046, 15259, 14469, 13678, 12884, 12088,
+    11291, 10492, 9691, 8888, 8085, 7280, 6473, 5666,
+    4858, 4050, 3240, 2431, 1620, 810, 0
+};
+
 // ---------------------------------------------------------------------------
 //	���Z�b�g
 //
@@ -502,6 +525,7 @@ void OPNABase::Reset()
 	for (i=0; i<6; i++)
 	{
 		pan[i] = 3;
+		panvolume_l[i] = panvolume_r[i] = panlawtable[64];
 		ch[i].Reset();
 	}
 	
@@ -549,10 +573,18 @@ void OPNABase::SetChannelMask(uint mask)
 	rhythmmask_ = (mask >> 10) & ((1 << 6) - 1);
 }
 
+void OPNABase::SetPan(uint c, uint8 p)
+{
+	panvolume_l[c] = panlawtable[p & 0x7f];
+	panvolume_r[c] = panlawtable[0x7f - (p & 0x7f)];
+}
+
 // ---------------------------------------------------------------------------
 void OPNABase::DataSave(struct OPNABaseData* data) {
 	OPNBase::DataSave(&data->opnbase);
 	memcpy(data->pan, pan, 6);
+	memcpy(data->panvolume_l, panvolume_l, sizeof(uint16) * 6);
+	memcpy(data->panvolume_r, panvolume_r, sizeof(uint16) * 6);
 	memcpy(data->fnum2, fnum2, 9);
 	data->reg22 = reg22;
 	data->reg29 = reg29;
@@ -601,6 +633,8 @@ void OPNABase::DataSave(struct OPNABaseData* data) {
 void OPNABase::DataLoad(struct OPNABaseData* data) {
 	OPNBase::DataLoad(&data->opnbase);
 	memcpy(pan, data->pan, 6);
+	memcpy(panvolume_l, data->panvolume_l, sizeof(uint16) * 6);
+	memcpy(panvolume_r, data->panvolume_r, sizeof(uint16) * 6);
 	memcpy(fnum2, data->fnum2, 9);
 	reg22 = data->reg22;
 	reg29 = data->reg29;
@@ -1290,25 +1324,39 @@ inline void OPNABase::LFO()
 void OPNABase::Mix6(Sample* buffer, int nsamples, int activech)
 {
 	// Mix
-	ISample ibuf[4];
-	ISample* idest[6];
-	idest[0] = &ibuf[pan[0]];
-	idest[1] = &ibuf[pan[1]];
-	idest[2] = &ibuf[pan[2]];
-	idest[3] = &ibuf[pan[3]];
-	idest[4] = &ibuf[pan[4]];
-	idest[5] = &ibuf[pan[5]];
+	// libOPNMIDI: rewrite for panning support
+
+	const uint activechmask[6] = {0x001, 0x004, 0x010, 0x040, 0x100, 0x400};
 
 	Sample* limit = buffer + nsamples * 2;
 	for (Sample* dest = buffer; dest < limit; dest+=2)
 	{
-		ibuf[1] = ibuf[2] = ibuf[3] = 0;
+		ISample out[6];
 		if (activech & 0xaaa)
-			LFO(), MixSubSL(activech, idest);
+		{
+			LFO();
+			for (uint c = 0; c<6; ++c)
+				out[c] = (activechmask[c] & activech) ? ch[c].CalcL() : 0;
+		}
 		else
-			MixSubS(activech, idest);
-		StoreSample(dest[0], IStoSample(ibuf[2] + ibuf[3]));
-		StoreSample(dest[1], IStoSample(ibuf[1] + ibuf[3]));
+		{
+			for (uint c = 0; c<6; ++c)
+				out[c] = (activechmask[c] & activech) ? ch[c].Calc() : 0;
+		}
+
+		int lrouts[2] = {0, 0};
+		for (uint c = 0; c<6; ++c)
+		{
+			int panl = panvolume_l[c];
+			int panr = panvolume_r[c];
+			panl = (pan[c] & 2) ? panl : 0;
+			panr = (pan[c] & 1) ? panr : 0;
+			lrouts[0] += out[c] * panl / 65535;
+			lrouts[1] += out[c] * panr / 65535;
+		}
+
+		StoreSample(dest[0], lrouts[0]);
+		StoreSample(dest[1], lrouts[1]);
 	}
 }
 

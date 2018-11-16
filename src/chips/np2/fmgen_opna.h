@@ -136,6 +136,8 @@ namespace FM
 	struct OPNABaseData {
 		struct OPNBaseData opnbase;
 		uint8	pan[6];
+		uint16	panvolume_l[6];  // libOPNMIDI: soft panning
+		uint16	panvolume_r[6];  // libOPNMIDI: soft panning
 		uint8	fnum2[9];
 		uint8	reg22;
 		uint	reg29;
@@ -185,6 +187,9 @@ namespace FM
 		uint	ReadStatus() { return status & 0x03; }
 		uint	ReadStatusEx();
 		void	SetChannelMask(uint mask);
+
+		// libOPNMIDI: soft panning
+		void	SetPan(uint c, uint8 p);
 	
 		void	DataSave(struct OPNABaseData* data);
 		void	DataLoad(struct OPNABaseData* data);
@@ -225,6 +230,8 @@ namespace FM
 		
 	// FM 音源関係
 		uint8	pan[6];
+		uint16	panvolume_l[6];  // libOPNMIDI: soft panning
+		uint16	panvolume_r[6];  // libOPNMIDI: soft panning
 		uint8	fnum2[9];
 		
 		uint8	reg22;

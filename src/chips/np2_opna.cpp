@@ -67,9 +67,7 @@ void NP2OPNA<ChipType>::writeReg(uint32_t port, uint16_t addr, uint8_t data)
 template <class ChipType>
 void NP2OPNA<ChipType>::writePan(uint16_t chan, uint8_t data)
 {
-#pragma message("TODO NP2: panning")
-    (void)chan;
-    (void)data;
+    chip->SetPan(chan, data);
 }
 
 template <class ChipType>
