@@ -419,6 +419,8 @@ enum Opn2_Emulator
     OPNMIDI_EMU_GENS,
     /*! Genesis Plus GX (a fork of Mame YM2612) */
     OPNMIDI_EMU_GX,
+    /*! Neko Project II OPNA */
+    OPNMIDI_EMU_NP2,
     /*! Count instrument on the level */
     OPNMIDI_EMU_end
 };

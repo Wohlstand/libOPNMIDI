@@ -40,7 +40,7 @@ extern void opn2_audioTickHandler(void *instance, uint32_t chipId, uint32_t rate
 class OPNChipBase
 {
 public:
-    enum { nativeRate = 53267 };
+    enum { nativeRate = 53267, nativeClock = 7670454 };
 protected:
     uint32_t m_id;
     uint32_t m_rate;
@@ -48,6 +48,8 @@ protected:
 public:
     OPNChipBase();
     virtual ~OPNChipBase();
+
+    uint32_t clockRate() const;
 
     uint32_t chipId() const { return m_id; }
     void setChipId(uint32_t id) { m_id = id; }
@@ -138,6 +140,7 @@ public:
         : OPNChipBaseT<T>(), m_bufferIndex(0) {}
     virtual ~OPNChipBaseBufferedT()
         {}
+    enum { buffer_size = Buffer };
 public:
     void reset() override;
     void nativeGenerate(int16_t *frame) override;

@@ -22,12 +22,17 @@
 inline OPNChipBase::OPNChipBase() :
     m_id(0),
     m_rate(44100),
-    m_clock(7670454)
+    m_clock(nativeClock)
 {
 }
 
 inline OPNChipBase::~OPNChipBase()
 {
+}
+
+inline uint32_t OPNChipBase::clockRate() const
+{
+    return m_clock;
 }
 
 /* OPNChipBaseT */
@@ -41,6 +46,7 @@ OPNChipBaseT<T>::OPNChipBaseT()
       m_audioTickHandlerInstance(NULL)
 #endif
 {
+    m_clock = T::nativeClock;
 #if defined(OPNMIDI_ENABLE_HQ_RESAMPLER)
     m_resampler = new VResampler;
 #endif
@@ -97,7 +103,7 @@ void OPNChipBaseT<T>::setRate(uint32_t rate, uint32_t clock)
 template <class T>
 uint32_t OPNChipBaseT<T>::effectiveRate() const
 {
-    return m_runningAtPcmRate ? m_rate : (uint32_t)nativeRate;
+    return m_runningAtPcmRate ? m_rate : (uint32_t)T::nativeRate;
 }
 
 template <class T>
@@ -184,7 +190,7 @@ template <class T>
 void OPNChipBaseT<T>::setupResampler(uint32_t rate)
 {
 #if defined(OPNMIDI_ENABLE_HQ_RESAMPLER)
-    m_resampler->setup(rate * (1.0 / 53267), 2, 48);
+    m_resampler->setup(rate * (1.0 / T::nativeRate), 2, 48);
 #else
     m_oldsamples[0] = m_oldsamples[1] = 0;
     m_samples[0] = m_samples[1] = 0;

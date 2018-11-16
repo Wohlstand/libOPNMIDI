@@ -25,7 +25,8 @@
 #include "opnmidi_private.hpp"
 
 #if defined(OPNMIDI_DISABLE_NUKED_EMULATOR) && defined(OPNMIDI_DISABLE_MAME_EMULATOR) && \
-    defined(OPNMIDI_DISABLE_GENS_EMULATOR) && defined(OPNMIDI_DISABLE_GX_EMULATOR)
+    defined(OPNMIDI_DISABLE_GENS_EMULATOR) && defined(OPNMIDI_DISABLE_GX_EMULATOR) && \
+    defined(OPNMIDI_DISABLE_NP2_EMULATOR)
 #error "No emulators enabled. You must enable at least one emulator to use this library!"
 #endif
 
@@ -49,6 +50,11 @@
 #include "chips/gx_opn2.h"
 #endif
 
+// Neko Project II OPNA emulator
+#ifndef OPNMIDI_DISABLE_NP2_EMULATOR
+#include "chips/np2_opna.h"
+#endif
+
 static const unsigned opn2_emulatorSupport = 0
 #ifndef OPNMIDI_DISABLE_NUKED_EMULATOR
     | (1u << OPNMIDI_EMU_NUKED)
@@ -61,6 +67,9 @@ static const unsigned opn2_emulatorSupport = 0
 #endif
 #ifndef OPNMIDI_DISABLE_GX_EMULATOR
     | (1u << OPNMIDI_EMU_GX)
+#endif
+#ifndef OPNMIDI_DISABLE_NP2_EMULATOR
+    | (1u << OPNMIDI_EMU_NP2)
 #endif
 ;
 
@@ -445,10 +454,15 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, void *audioTickHandler)
             chip = new GXOPN2;
             break;
 #endif
+#ifndef OPNMIDI_DISABLE_NP2_EMULATOR
+        case OPNMIDI_EMU_NP2:
+            chip = new NP2OPNA<>;
+            break;
+#endif
         }
         m_chips[i].reset(chip);
         chip->setChipId((uint32_t)i);
-        chip->setRate((uint32_t)PCM_RATE, 7670454);
+        chip->setRate((uint32_t)PCM_RATE, chip->clockRate());
         if(m_runAtPcmRate)
             chip->setRunningAtPcmRate(true);
 #if defined(ADLMIDI_AUDIO_TICK_HANDLER)
