@@ -1638,7 +1638,7 @@ void OPNA::RhythmMix(Sample* buffer, uint count)
 		for (int i=0; i<6; i++)
 		{
 			Rhythm& r = rhythm[i];
-			if ((rhythmkey & (1 << i)) && r.level < 128)
+			if ((rhythmkey & (1 << i)) /*&& r.level < 128*/) // libOPNMIDI: Useless condition, signed int 8t has 127 max
 			{
 				int db = Limit(rhythmtl+rhythmtvol+r.level+r.volume, 127, -31);
 				int vol = tltable[FM_TLPOS+(db << (FM_TLBITS-7))] >> 4;
@@ -2008,7 +2008,7 @@ void OPNB::ADPCMAMix(Sample* buffer, uint count)
 		for (int i=0; i<6; i++)
 		{
 			ADPCMA& r = adpcma[i];
-			if ((adpcmakey & (1 << i)) && r.level < 128)
+			if ((adpcmakey & (1 << i))/* && r.level < 128*/) // libOPNMIDI: Useless condition, signed int 8t has 127 max
 			{
 				uint maskl = r.pan & 2 ? -1 : 0;
 				uint maskr = r.pan & 1 ? -1 : 0;
