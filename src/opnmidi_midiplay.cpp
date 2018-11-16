@@ -1212,7 +1212,8 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
                 if(vibrato && (!d || d->vibdelay_us >= m_midiChannels[midCh].vibdelay_us))
                     bend += static_cast<double>(vibrato) * m_midiChannels[midCh].vibdepth * std::sin(m_midiChannels[midCh].vibpos);
 
-                double coef;
+                // frequency scaling coefficient for this chip
+                double coef; // TODO: move it to a common place
                 switch (synth.chipFamily()) {
                     default:
                     case OPNChip_OPN2:
