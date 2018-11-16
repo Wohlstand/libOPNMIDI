@@ -3,9 +3,6 @@
 
 #include "compiler.h"
 
-#define __stdcall
-#define HANDLE void *
-
 typedef unsigned char uchar;
 typedef unsigned short ushort;
 typedef unsigned int uint;

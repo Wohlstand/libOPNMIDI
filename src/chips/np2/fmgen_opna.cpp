@@ -726,6 +726,7 @@ void OPNABase::SetReg(uint addr, uint data)
 	// F-Number --------------------------------------------------------------
 	case 0x1a0:	case 0x1a1: case 0x1a2:
 		c += 3;
+		// fall through
 	case 0xa0:	case 0xa1: case 0xa2:
 		fnum[c] = data + fnum2[c] * 0x100;
 		ch[c].SetFNum(fnum[c]);
@@ -733,6 +734,7 @@ void OPNABase::SetReg(uint addr, uint data)
 
 	case 0x1a4:	case 0x1a5: case 0x1a6:
 		c += 3;
+		// fall through
 	case 0xa4 : case 0xa5: case 0xa6:
 		fnum2[c] = uint8(data);
 		break;
@@ -749,6 +751,7 @@ void OPNABase::SetReg(uint addr, uint data)
 	
 	case 0x1b0:	case 0x1b1:  case 0x1b2:
 		c += 3;
+		// fall through
 	case 0xb0:	case 0xb1:  case 0xb2:
 		ch[c].SetFB((data >> 3) & 7);
 		ch[c].SetAlgorithm(data & 7);
@@ -756,6 +759,7 @@ void OPNABase::SetReg(uint addr, uint data)
 	
 	case 0x1b4: case 0x1b5: case 0x1b6:
 		c += 3;
+		// fall through
 	case 0xb4: case 0xb5: case 0xb6:
 		pan[c] = (data >> 6) & 3;
 		ch[c].SetMS(data);

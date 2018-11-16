@@ -229,7 +229,6 @@ namespace FM
 
 	//	friends --------------------------------------------------------------
 		friend class Channel4;
-		friend void __stdcall FM_NextPhase(Operator* op);
 
 	public:
 		int		dbgopout_;

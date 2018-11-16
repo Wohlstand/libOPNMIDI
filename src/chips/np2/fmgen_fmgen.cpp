@@ -559,6 +559,7 @@ void Operator::ShiftPhase(EGPhase nextphase)
 			eg_phase_ = attack;
 			break;
 		}
+		// fall through
 	case decay:			// Decay Phase
 		if (sl_)
 		{
@@ -569,6 +570,7 @@ void Operator::ShiftPhase(EGPhase nextphase)
 			eg_phase_ = decay;
 			break;
 		}
+		// fall through
 	case sustain:		// Sustain Phase
 		eg_level_ = sl_ * 8;
 		eg_level_on_next_phase_ = ssg_type_ ? 0x200 : 0x400;
@@ -591,6 +593,7 @@ void Operator::ShiftPhase(EGPhase nextphase)
 			eg_phase_ = release;
 			break;
 		}
+		// fall through
 	case off:			// off
 	default:
 		eg_level_ = FM_EG_BOTTOM;
@@ -978,6 +981,10 @@ ISample Channel4::Calc()
 		r += op[3].Calc(0);
 		r += op[0].CalcFB(fb);
 		break;
+	default:
+		assert(false);
+		r = 0;
+		break;
 	}
 	return r;
 }
@@ -1037,6 +1044,10 @@ ISample Channel4::CalcL()
 		r += op[1].CalcL(0);
 		r += op[3].CalcL(0);
 		r += op[0].CalcFBL(fb);
+		break;
+	default:
+		assert(false);
+		r = 0;
 		break;
 	}
 	return r;

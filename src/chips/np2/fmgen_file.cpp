@@ -104,7 +104,7 @@ int32 FileIO::Read(void* dest, int32 size)
 	if (!(GetFlags() & open))
 		return -1;
 	
-	DWORD readsize;
+	uint32 readsize;
 	if (!(readsize = fread(dest, 1, size, pfile)))
 		return -1;
 	return size;
@@ -119,7 +119,7 @@ int32 FileIO::Write(const void* dest, int32 size)
 	if (!(GetFlags() & open) || (GetFlags() & readonly))
 		return -1;
 	
-	DWORD writtensize;
+	uint32 writtensize;
 	if (!(writtensize = fwrite(dest, 1, size, pfile)))
 		return -1;
 	return writtensize;
