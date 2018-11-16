@@ -1198,10 +1198,11 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
             // Don't bend a sustained note
             if(!d || (d->sustained == OpnChannel::LocationData::Sustain_None))
             {
-                double midibend = m_midiChannels[midCh].bend * m_midiChannels[midCh].bendsense;
+                MIDIchannel &chan = m_midiChannels[midCh];
+                double midibend = chan.bend * chan.bendsense;
                 double bend = midibend + ins.ains.finetune;
                 double phase = 0.0;
-                uint8_t vibrato = std::max(m_midiChannels[midCh].vibrato, m_midiChannels[midCh].aftertouch);
+                uint8_t vibrato = std::max(chan.vibrato, chan.aftertouch);
                 vibrato = std::max(vibrato, i->vibrato);
 
                 if((ains.flags & opnInstMeta::Flag_Pseudo8op) && ins.ains == ains.opn[1])
@@ -1209,18 +1210,20 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
                     phase = ains.fine_tune;//0.125; // Detune the note slightly (this is what Doom does)
                 }
 
-                if(vibrato && (!d || d->vibdelay_us >= m_midiChannels[midCh].vibdelay_us))
-                    bend += static_cast<double>(vibrato) * m_midiChannels[midCh].vibdepth * std::sin(m_midiChannels[midCh].vibpos);
+                if(vibrato && (!d || d->vibdelay_us >= chan.vibdelay_us))
+                    bend += static_cast<double>(vibrato) * chan.vibdepth * std::sin(chan.vibpos);
 
-                // frequency scaling coefficient for this chip
-                double coef; // TODO: move it to a common place
+                double coef;
                 switch (synth.chipFamily()) {
                     default:
                     case OPNChip_OPN2:
                         coef = 321.88557;
                         break;
                     case OPNChip_OPNA:
-                        coef = 309.12412;
+                        if((midCh % 16 == 9) || chan.is_xg_percussion)
+                            coef = 313.02412;
+                        else
+                            coef = 309.12412;
                         break;
                 }
 
