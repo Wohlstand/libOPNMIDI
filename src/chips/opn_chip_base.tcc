@@ -114,13 +114,14 @@ void OPNChipBaseT<T, F>::setRate(uint32_t rate, uint32_t clock)
 template <class T, OPNFamily F>
 uint32_t OPNChipBaseT<T, F>::effectiveRate() const
 {
-    return m_runningAtPcmRate ? m_rate : OPNFamilyTraits<F>::nativeRate;
+    return m_runningAtPcmRate ? m_rate :
+        static_cast<uint32_t>(OPNFamilyTraits<F>::nativeRate);
 }
 
 template <class T, OPNFamily F>
 uint32_t OPNChipBaseT<T, F>::nativeRate() const
 {
-    return OPNFamilyTraits<F>::nativeRate;
+    return static_cast<uint32_t>(OPNFamilyTraits<F>::nativeRate);
 }
 
 template <class T, OPNFamily F>
@@ -207,7 +208,8 @@ template <class T, OPNFamily F>
 void OPNChipBaseT<T, F>::setupResampler(uint32_t rate)
 {
 #if defined(OPNMIDI_ENABLE_HQ_RESAMPLER)
-    m_resampler->setup(rate * (1.0 / OPNFamilyTraits<F>::nativeRate), 2, 48);
+    double ratio = rate * (1.0 / static_cast<uint32_t>(OPNFamilyTraits<F>::nativeRate));
+    m_resampler->setup(ratio, 2, 48);
 #else
     m_oldsamples[0] = m_oldsamples[1] = 0;
     m_samples[0] = m_samples[1] = 0;
