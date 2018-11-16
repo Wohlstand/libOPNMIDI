@@ -21,6 +21,7 @@
 #ifndef ONP_CHIP_BASE_H
 #define ONP_CHIP_BASE_H
 
+#include "opn_chip_family.h"
 #include <stdint.h>
 #include <stddef.h>
 
@@ -39,8 +40,6 @@ extern void opn2_audioTickHandler(void *instance, uint32_t chipId, uint32_t rate
 
 class OPNChipBase
 {
-public:
-    enum { nativeRate = 53267, nativeClock = 7670454 };
 protected:
     uint32_t m_id;
     uint32_t m_rate;
@@ -49,7 +48,9 @@ public:
     OPNChipBase();
     virtual ~OPNChipBase();
 
+    virtual OPNFamily family() const = 0;
     uint32_t clockRate() const;
+    virtual uint32_t nativeClockRate() const = 0;
 
     uint32_t chipId() const { return m_id; }
     void setChipId(uint32_t id) { m_id = id; }
@@ -63,6 +64,7 @@ public:
 
     virtual void setRate(uint32_t rate, uint32_t clock) = 0;
     virtual uint32_t effectiveRate() const = 0;
+    virtual uint32_t nativeRate() const = 0;
     virtual void reset() = 0;
     virtual void writeReg(uint32_t port, uint16_t addr, uint8_t data) = 0;
 
@@ -86,12 +88,15 @@ private:
 
 // A base class providing F-bounded generic and efficient implementations,
 // supporting resampling of chip outputs
-template <class T>
+template <class T, OPNFamily F>
 class OPNChipBaseT : public OPNChipBase
 {
 public:
     OPNChipBaseT();
     virtual ~OPNChipBaseT();
+
+    OPNFamily family() const override;
+    uint32_t nativeClockRate() const override;
 
     bool isRunningAtPcmRate() const override;
     bool setRunningAtPcmRate(bool r) override;
@@ -101,6 +106,7 @@ public:
 
     virtual void setRate(uint32_t rate, uint32_t clock) override;
     uint32_t effectiveRate() const override;
+    uint32_t nativeRate() const override;
     virtual void reset() override;
     void generate(int16_t *output, size_t frames) override;
     void generateAndMix(int16_t *output, size_t frames) override;
@@ -132,12 +138,12 @@ private:
 // A base class which provides frame-by-frame interfaces on emulations which
 // don't have a routine for it. It produces outputs in fixed size buffers.
 // Fast register updates will suffer some latency because of buffering.
-template <class T, unsigned Buffer = 256>
-class OPNChipBaseBufferedT : public OPNChipBaseT<T>
+template <class T, OPNFamily F, unsigned Buffer = 256>
+class OPNChipBaseBufferedT : public OPNChipBaseT<T, F>
 {
 public:
     OPNChipBaseBufferedT()
-        : OPNChipBaseT<T>(), m_bufferIndex(0) {}
+        : OPNChipBaseT<T, F>(), m_bufferIndex(0) {}
     virtual ~OPNChipBaseBufferedT()
         {}
     enum { buffer_size = Buffer };

@@ -25,6 +25,7 @@
 #include "opnmidi_opn2.hpp"
 #include "opnmidi_private.hpp"
 #include "midi_sequencer.hpp"
+#include "chips/opn_chip_base.h"
 
 // Mapping from MIDI volume level to OPL level value.
 
@@ -1211,9 +1212,18 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
                 if(vibrato && (!d || d->vibdelay_us >= m_midiChannels[midCh].vibdelay_us))
                     bend += static_cast<double>(vibrato) * m_midiChannels[midCh].vibdepth * std::sin(m_midiChannels[midCh].vibpos);
 
-#define BEND_COEFFICIENT 321.88557
-                synth.noteOn(c, BEND_COEFFICIENT * std::exp(0.057762265 * (currentTone + bend + phase)));
-#undef BEND_COEFFICIENT
+                double coef;
+                switch (synth.chipFamily()) {
+                    default:
+                    case OPNChip_OPN2:
+                        coef = 321.88557;
+                        break;
+                    case OPNChip_OPNA:
+                        coef = 309.12412;
+                        break;
+                }
+
+                synth.noteOn(c, coef * std::exp(0.057762265 * (currentTone + bend + phase)));
                 if(hooks.onNote)
                     hooks.onNote(hooks.onNote_userData, c, noteTone, (int)midiins, vol, midibend);
             }

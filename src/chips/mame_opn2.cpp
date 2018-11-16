@@ -39,7 +39,7 @@ void MameOPN2::setRate(uint32_t rate, uint32_t clock)
     OPNChipBaseT::setRate(rate, clock);
     if(chip)
         ym2612_shutdown(chip);
-    uint32_t chipRate = isRunningAtPcmRate() ? rate : static_cast<uint32_t>(nativeRate);
+    uint32_t chipRate = isRunningAtPcmRate() ? rate : nativeRate();
     chip = ym2612_init(NULL, (int)clock, (int)chipRate, NULL, NULL);
     ym2612_reset_chip(chip);
 }

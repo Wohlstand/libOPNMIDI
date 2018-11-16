@@ -30,7 +30,7 @@ NP2OPNA<ChipType>::NP2OPNA()
 {
     ChipType *opn = (ChipType *)std::calloc(1, sizeof(ChipType));
     chip = new(opn) ChipType;
-    opn->Init(this->m_clock, this->m_rate);
+    opn->Init(ChipBase::m_clock, ChipBase::m_rate);
 }
 
 template <class ChipType>
@@ -43,15 +43,15 @@ NP2OPNA<ChipType>::~NP2OPNA()
 template <class ChipType>
 void NP2OPNA<ChipType>::setRate(uint32_t rate, uint32_t clock)
 {
-    OPNChipBaseBufferedT< NP2OPNA<ChipType> >::setRate(rate, clock);
-    uint32_t chipRate = this->isRunningAtPcmRate() ? rate : static_cast<uint32_t>(nativeRate);
+    ChipBase::setRate(rate, clock);
+    uint32_t chipRate = ChipBase::isRunningAtPcmRate() ? rate : ChipBase::nativeRate();
     chip->SetRate(clock, chipRate, false);  // implies Reset()
 }
 
 template <class ChipType>
 void NP2OPNA<ChipType>::reset()
 {
-    OPNChipBaseBufferedT< NP2OPNA<ChipType> >::reset();
+    ChipBase::reset();
     chip->Reset();
 }
 
@@ -76,10 +76,16 @@ void NP2OPNA<ChipType>::nativeGenerateN(int16_t *output, size_t frames)
     chip->Mix(output, frames);
 }
 
-template <class ChipType>
-const char *NP2OPNA<ChipType>::emulatorName()
+template <>
+const char *NP2OPNA<FM::OPNA>::emulatorName()
 {
     return "Neko Project II Kai OPNA";  // git 2018-10-28 rev e1c0609
+}
+
+template <>
+const char *NP2OPNA<FM::OPNB>::emulatorName()
+{
+    return "Neko Project II Kai OPNB";  // git 2018-10-28 rev e1c0609
 }
 
 // template class NP2OPNA<FM::OPN2>;

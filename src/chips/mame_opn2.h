@@ -23,7 +23,7 @@
 
 #include "opn_chip_base.h"
 
-class MameOPN2 final : public OPNChipBaseT<MameOPN2>
+class MameOPN2 final : public OPNChipBaseT<MameOPN2, OPNChip_OPN2>
 {
     void *chip;
 public:

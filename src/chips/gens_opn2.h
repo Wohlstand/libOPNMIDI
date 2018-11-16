@@ -24,7 +24,7 @@
 #include "opn_chip_base.h"
 
 class Ym2612_Emu;
-class GensOPN2 final : public OPNChipBaseBufferedT<GensOPN2>
+class GensOPN2 final : public OPNChipBaseBufferedT<GensOPN2, OPNChip_OPN2>
 {
     Ym2612_Emu *chip;
 public:

@@ -28,6 +28,7 @@
 #include "opnmidi_ptr.hpp"
 #include "opnmidi_private.hpp"
 #include "opnmidi_bankmap.h"
+#include "chips/opn_chip_family.h"
 
 /**
  * @brief OPN2 Chip management class
@@ -124,6 +125,8 @@ public:
     */
     std::vector<char> m_channelCategory;
 
+    //! Chip family
+    OPNFamily m_chipFamily;
 
     /**
      * @brief C.O. Constructor
@@ -235,6 +238,12 @@ public:
      * @param audioTickHandler PCM-accurate clock hook
      */
     void reset(int emulator, unsigned long PCM_RATE, void *audioTickHandler);
+
+    /**
+     * @brief Gets the family of current chips
+     * @return the chip family
+     */
+    OPNFamily chipFamily() const;
 };
 
 /**

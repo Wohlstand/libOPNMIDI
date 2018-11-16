@@ -23,7 +23,7 @@
 
 #include "opn_chip_base.h"
 
-class NukedOPN2 final : public OPNChipBaseT<NukedOPN2>
+class NukedOPN2 final : public OPNChipBaseT<NukedOPN2, OPNChip_OPN2>
 {
     void *chip;
 public:

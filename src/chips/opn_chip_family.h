@@ -18,29 +18,34 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef GX_OPN2_H
-#define GX_OPN2_H
+#ifndef OPN_CHIP_FAMILY_H
+#define OPN_CHIP_FAMILY_H
 
-#include "opn_chip_base.h"
-
-struct YM2612GX;
-class GXOPN2 final : public OPNChipBaseT<GXOPN2, OPNChip_OPN2>
+enum OPNFamily
 {
-    YM2612GX *m_chip;
-    unsigned int m_framecount;
-public:
-    GXOPN2();
-    ~GXOPN2() override;
-
-    bool canRunAtPcmRate() const override { return false; }
-    void setRate(uint32_t rate, uint32_t clock) override;
-    void reset() override;
-    void writeReg(uint32_t port, uint16_t addr, uint8_t data) override;
-    void writePan(uint16_t chan, uint8_t data) override;
-    void nativePreGenerate() override;
-    void nativePostGenerate() override;
-    void nativeGenerate(int16_t *frame) override;
-    const char *emulatorName() override;
+    OPNChip_OPN2,
+    OPNChip_OPNA
 };
 
-#endif // GX_OPN2_H
+template <OPNFamily F>
+struct OPNFamilyTraits;
+
+template <>
+struct OPNFamilyTraits<OPNChip_OPN2>
+{
+    enum {
+        nativeRate = 53267,
+        nativeClockRate = 7670454,
+    };
+};
+
+template <>
+struct OPNFamilyTraits<OPNChip_OPNA>
+{
+    enum {
+        nativeRate = 55466,
+        nativeClockRate = 7987200,
+    };
+};
+
+#endif // OPN_CHIP_FAMILY_H

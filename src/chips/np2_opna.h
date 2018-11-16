@@ -25,12 +25,9 @@
 
 namespace FM { class OPN2; class OPNA; class OPNB; }
 template <class ChipType = FM::OPNA>
-class NP2OPNA final : public OPNChipBaseBufferedT< NP2OPNA<ChipType> >
+class NP2OPNA final : public OPNChipBaseBufferedT<NP2OPNA<ChipType>, OPNChip_OPNA>
 {
-public:
-    // enum { nativeRate = 53267, nativeClock = 7987200 };
-    enum { nativeRate = 55466, nativeClock = 7987200 };
-private:
+    typedef OPNChipBaseBufferedT<NP2OPNA<ChipType>, OPNChip_OPNA> ChipBase;
     ChipType *chip;
 public:
     NP2OPNA();

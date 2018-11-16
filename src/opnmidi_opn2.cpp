@@ -140,7 +140,8 @@ OPN2::OPN2() :
     m_musicMode(MODE_MIDI),
     m_volumeScale(VOLUME_Generic),
     m_lfoEnable(false),
-    m_lfoFrequency(0)
+    m_lfoFrequency(0),
+    m_chipFamily(OPNChip_OPN2)
 {
     m_insBankSetup.volumeModel = OPN2::VOLUME_Generic;
     m_insBankSetup.lfoEnable = false;
@@ -424,6 +425,7 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, void *audioTickHandler)
     m_insCache.clear();
     m_regLFOSens.clear();
     m_chips.resize(m_numChips, AdlMIDI_SPtr<OPNChipBase>());
+    OPNFamily family = OPNChip_OPN2;
 
     for(size_t i = 0; i < m_chips.size(); i++)
     {
@@ -462,14 +464,16 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, void *audioTickHandler)
         }
         m_chips[i].reset(chip);
         chip->setChipId((uint32_t)i);
-        chip->setRate((uint32_t)PCM_RATE, chip->clockRate());
+        chip->setRate((uint32_t)PCM_RATE, chip->nativeClockRate());
         if(m_runAtPcmRate)
             chip->setRunningAtPcmRate(true);
 #if defined(ADLMIDI_AUDIO_TICK_HANDLER)
         chip->setAudioTickHandlerInstance(audioTickHandler);
 #endif
+        family = chip->family();
     }
 
+    m_chipFamily = family;
     m_numChannels = m_numChips * 6;
     m_insCache.resize(m_numChannels,   m_emptyInstrument.opn[0]);
     m_regLFOSens.resize(m_numChannels,    0);
@@ -492,4 +496,9 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, void *audioTickHandler)
     }
 
     silenceAll();
+}
+
+OPNFamily OPN2::chipFamily() const
+{
+    return m_chipFamily;
 }

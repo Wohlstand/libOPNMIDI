@@ -32,6 +32,7 @@ HEADERS += \
     src/chips/gx/gx_ym2612.h \
     src/chips/opn_chip_base.h \
     src/chips/opn_chip_base.tcc \
+    src/chips/opn_chip_family.h \
     src/cvt_mus2mid.hpp \
     src/cvt_xmi2mid.hpp \
     src/midi_sequencer.h \
