@@ -31,6 +31,7 @@ NP2OPNA<ChipType>::NP2OPNA()
     ChipType *opn = (ChipType *)std::calloc(1, sizeof(ChipType));
     chip = new(opn) ChipType;
     opn->Init(ChipBase::m_clock, ChipBase::m_rate);
+    opn->SetReg(0x29, 0x9f);  // enable channels 4-6
 }
 
 template <class ChipType>
@@ -46,6 +47,7 @@ void NP2OPNA<ChipType>::setRate(uint32_t rate, uint32_t clock)
     ChipBase::setRate(rate, clock);
     uint32_t chipRate = ChipBase::isRunningAtPcmRate() ? rate : ChipBase::nativeRate();
     chip->SetRate(clock, chipRate, false);  // implies Reset()
+    chip->SetReg(0x29, 0x9f);  // enable channels 4-6
 }
 
 template <class ChipType>
@@ -53,6 +55,7 @@ void NP2OPNA<ChipType>::reset()
 {
     ChipBase::reset();
     chip->Reset();
+    chip->SetReg(0x29, 0x9f);  // enable channels 4-6
 }
 
 template <class ChipType>
