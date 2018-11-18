@@ -409,6 +409,7 @@ message("USE_MAME_EMULATOR        = ${USE_MAME_EMULATOR}")
 message("USE_GENS_EMULATOR        = ${USE_GENS_EMULATOR}")
 message("USE_NUKED_EMULATOR       = ${USE_NUKED_EMULATOR}")
 message("USE_GX_EMULATOR          = ${USE_GX_EMULATOR}")
+message("USE_NP2_EMULATOR         = ${USE_NP2_EMULATOR}")
 
 message("===== Utils and extras =====")
 message("WITH_MIDIPLAY            = ${WITH_MIDIPLAY}")

@@ -95,13 +95,14 @@ static const char * const volume_models_descriptions[] =
     "OPN2 Emulator that will be used to generate final sound.")
 
 /*TODO: Turn on fourth emulator when complete experiments with it */
-static const int emulator_type_values[] = { 0, 1, 2 /*, 3*/ };
+static const int emulator_type_values[] = { 0, 1, 2 /*, 3*/, 4 };
 static const char * const emulator_type_descriptions[] =
 {
     N_("MAME YM2612"),
     N_("Nuked OPN2"),
     N_("Gens 2.10"),
-    /* N_("Genesis Plus GX [Experimental]"), */
+    /* N_("Genesis Plus GX [Experimental]"),*/
+    N_("Neko Project II Kai OPNA"),
     NULL
 };
 
@@ -141,7 +142,7 @@ vlc_module_begin ()
               FULL_RANGE_CC74_LONGTEXT, false )
 
     add_bool( CONFIG_PREFIX "full-panning", false, FULL_PANNING_TEXT,
-              FULL_PANNING_LONGTEXT, false )
+              FULL_PANNING_LONGTEXT, true )
 
 vlc_module_end ()
 
