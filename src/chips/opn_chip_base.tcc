@@ -19,10 +19,11 @@
 #endif
 
 /* OPNChipBase */
-inline OPNChipBase::OPNChipBase() :
+inline OPNChipBase::OPNChipBase(OPNFamily f) :
     m_id(0),
     m_rate(44100),
-    m_clock(7670454)
+    m_clock(7670454),
+    m_family(f)
 {
 }
 
@@ -37,9 +38,10 @@ inline uint32_t OPNChipBase::clockRate() const
 
 /* OPNChipBaseT */
 
-template <class T, OPNFamily F>
-OPNChipBaseT<T, F>::OPNChipBaseT()
-    : m_runningAtPcmRate(false)
+template <class T>
+OPNChipBaseT<T>::OPNChipBaseT(OPNFamily f)
+    : OPNChipBase(f),
+      m_runningAtPcmRate(false)
 #if defined(OPNMIDI_AUDIO_TICK_HANDLER)
     ,
       m_audioTickHandlerInstance(NULL)
@@ -51,34 +53,34 @@ OPNChipBaseT<T, F>::OPNChipBaseT()
     setupResampler(m_rate);
 }
 
-template <class T, OPNFamily F>
-OPNChipBaseT<T, F>::~OPNChipBaseT()
+template <class T>
+OPNChipBaseT<T>::~OPNChipBaseT()
 {
 #if defined(OPNMIDI_ENABLE_HQ_RESAMPLER)
     delete m_resampler;
 #endif
 }
 
-template <class T, OPNFamily F>
-OPNFamily OPNChipBaseT<T, F>::family() const
+template <class T>
+OPNFamily OPNChipBaseT<T>::family() const
 {
-    return F;
+    return m_family;
 }
 
-template <class T, OPNFamily F>
-uint32_t OPNChipBaseT<T, F>::nativeClockRate() const
+template <class T>
+uint32_t OPNChipBaseT<T>::nativeClockRate() const
 {
-    return OPNFamilyTraits<F>::nativeClockRate;
+    return opn2_getNativeClockRate(m_family);
 }
 
-template <class T, OPNFamily F>
-bool OPNChipBaseT<T, F>::isRunningAtPcmRate() const
+template <class T>
+bool OPNChipBaseT<T>::isRunningAtPcmRate() const
 {
     return m_runningAtPcmRate;
 }
 
-template <class T, OPNFamily F>
-bool OPNChipBaseT<T, F>::setRunningAtPcmRate(bool r)
+template <class T>
+bool OPNChipBaseT<T>::setRunningAtPcmRate(bool r)
 {
     if(r != m_runningAtPcmRate)
     {
@@ -91,15 +93,15 @@ bool OPNChipBaseT<T, F>::setRunningAtPcmRate(bool r)
 }
 
 #if defined(OPNMIDI_AUDIO_TICK_HANDLER)
-template <class T, OPNFamily F>
-void OPNChipBaseT<T, F>::setAudioTickHandlerInstance(void *instance)
+template <class T>
+void OPNChipBaseT<T>::setAudioTickHandlerInstance(void *instance)
 {
     m_audioTickHandlerInstance = instance;
 }
 #endif
 
-template <class T, OPNFamily F>
-void OPNChipBaseT<T, F>::setRate(uint32_t rate, uint32_t clock)
+template <class T>
+void OPNChipBaseT<T>::setRate(uint32_t rate, uint32_t clock)
 {
     uint32_t oldRate = m_rate;
     uint32_t oldClock = m_clock;
@@ -111,27 +113,26 @@ void OPNChipBaseT<T, F>::setRate(uint32_t rate, uint32_t clock)
         resetResampler();
 }
 
-template <class T, OPNFamily F>
-uint32_t OPNChipBaseT<T, F>::effectiveRate() const
+template <class T>
+uint32_t OPNChipBaseT<T>::effectiveRate() const
 {
-    return m_runningAtPcmRate ? m_rate :
-        static_cast<uint32_t>(OPNFamilyTraits<F>::nativeRate);
+    return m_runningAtPcmRate ? m_rate : opn2_getNativeRate(m_family);
 }
 
-template <class T, OPNFamily F>
-uint32_t OPNChipBaseT<T, F>::nativeRate() const
+template <class T>
+uint32_t OPNChipBaseT<T>::nativeRate() const
 {
-    return static_cast<uint32_t>(OPNFamilyTraits<F>::nativeRate);
+    return opn2_getNativeRate(m_family);
 }
 
-template <class T, OPNFamily F>
-void OPNChipBaseT<T, F>::reset()
+template <class T>
+void OPNChipBaseT<T>::reset()
 {
     resetResampler();
 }
 
-template <class T, OPNFamily F>
-void OPNChipBaseT<T, F>::generate(int16_t *output, size_t frames)
+template <class T>
+void OPNChipBaseT<T>::generate(int16_t *output, size_t frames)
 {
     static_cast<T *>(this)->nativePreGenerate();
     for(size_t i = 0; i < frames; ++i)
@@ -149,8 +150,8 @@ void OPNChipBaseT<T, F>::generate(int16_t *output, size_t frames)
     static_cast<T *>(this)->nativePostGenerate();
 }
 
-template <class T, OPNFamily F>
-void OPNChipBaseT<T, F>::generateAndMix(int16_t *output, size_t frames)
+template <class T>
+void OPNChipBaseT<T>::generateAndMix(int16_t *output, size_t frames)
 {
     static_cast<T *>(this)->nativePreGenerate();
     for(size_t i = 0; i < frames; ++i)
@@ -168,8 +169,8 @@ void OPNChipBaseT<T, F>::generateAndMix(int16_t *output, size_t frames)
     static_cast<T *>(this)->nativePostGenerate();
 }
 
-template <class T, OPNFamily F>
-void OPNChipBaseT<T, F>::generate32(int32_t *output, size_t frames)
+template <class T>
+void OPNChipBaseT<T>::generate32(int32_t *output, size_t frames)
 {
     static_cast<T *>(this)->nativePreGenerate();
     for(size_t i = 0; i < frames; ++i)
@@ -180,8 +181,8 @@ void OPNChipBaseT<T, F>::generate32(int32_t *output, size_t frames)
     static_cast<T *>(this)->nativePostGenerate();
 }
 
-template <class T, OPNFamily F>
-void OPNChipBaseT<T, F>::generateAndMix32(int32_t *output, size_t frames)
+template <class T>
+void OPNChipBaseT<T>::generateAndMix32(int32_t *output, size_t frames)
 {
     static_cast<T *>(this)->nativePreGenerate();
     for(size_t i = 0; i < frames; ++i)
@@ -195,8 +196,8 @@ void OPNChipBaseT<T, F>::generateAndMix32(int32_t *output, size_t frames)
     static_cast<T *>(this)->nativePostGenerate();
 }
 
-template <class T, OPNFamily F>
-void OPNChipBaseT<T, F>::nativeTick(int16_t *frame)
+template <class T>
+void OPNChipBaseT<T>::nativeTick(int16_t *frame)
 {
 #if defined(OPNMIDI_AUDIO_TICK_HANDLER)
     opn2_audioTickHandler(m_audioTickHandlerInstance, m_id, effectiveRate());
@@ -204,11 +205,11 @@ void OPNChipBaseT<T, F>::nativeTick(int16_t *frame)
     static_cast<T *>(this)->nativeGenerate(frame);
 }
 
-template <class T, OPNFamily F>
-void OPNChipBaseT<T, F>::setupResampler(uint32_t rate)
+template <class T>
+void OPNChipBaseT<T>::setupResampler(uint32_t rate)
 {
 #if defined(OPNMIDI_ENABLE_HQ_RESAMPLER)
-    double ratio = rate * (1.0 / static_cast<uint32_t>(OPNFamilyTraits<F>::nativeRate));
+    double ratio = rate * (1.0 / opn2_getNativeRate(m_family));
     m_resampler->setup(ratio, 2, 48);
 #else
     m_oldsamples[0] = m_oldsamples[1] = 0;
@@ -218,8 +219,8 @@ void OPNChipBaseT<T, F>::setupResampler(uint32_t rate)
 #endif
 }
 
-template <class T, OPNFamily F>
-void OPNChipBaseT<T, F>::resetResampler()
+template <class T>
+void OPNChipBaseT<T>::resetResampler()
 {
 #if defined(OPNMIDI_ENABLE_HQ_RESAMPLER)
     m_resampler->reset();
@@ -231,8 +232,8 @@ void OPNChipBaseT<T, F>::resetResampler()
 }
 
 #if defined(OPNMIDI_ENABLE_HQ_RESAMPLER)
-template <class T, OPNFamily F>
-void OPNChipBaseT<T, F>::resampledGenerate(int32_t *output)
+template <class T>
+void OPNChipBaseT<T>::resampledGenerate(int32_t *output)
 {
     if(UNLIKELY(m_runningAtPcmRate))
     {
@@ -267,8 +268,8 @@ void OPNChipBaseT<T, F>::resampledGenerate(int32_t *output)
     output[1] = static_cast<int32_t>(std::lround(f_out[1]));
 }
 #else
-template <class T, OPNFamily F>
-void OPNChipBaseT<T, F>::resampledGenerate(int32_t *output)
+template <class T>
+void OPNChipBaseT<T>::resampledGenerate(int32_t *output)
 {
     if(UNLIKELY(m_runningAtPcmRate))
     {
@@ -301,15 +302,15 @@ void OPNChipBaseT<T, F>::resampledGenerate(int32_t *output)
 
 /* OPNChipBaseBufferedT */
 
-template <class T, OPNFamily F, unsigned Buffer>
-void OPNChipBaseBufferedT<T, F, Buffer>::reset()
+template <class T, unsigned Buffer>
+void OPNChipBaseBufferedT<T, Buffer>::reset()
 {
-    OPNChipBaseT<T, F>::reset();
+    OPNChipBaseT<T>::reset();
     m_bufferIndex = 0;
 }
 
-template <class T, OPNFamily F, unsigned Buffer>
-void OPNChipBaseBufferedT<T, F, Buffer>::nativeGenerate(int16_t *frame)
+template <class T, unsigned Buffer>
+void OPNChipBaseBufferedT<T, Buffer>::nativeGenerate(int16_t *frame)
 {
     unsigned bufferIndex = m_bufferIndex;
     if(bufferIndex == 0)

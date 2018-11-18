@@ -23,7 +23,8 @@
 #include <cstdlib>
 #include <assert.h>
 
-MameOPN2::MameOPN2()
+MameOPN2::MameOPN2(OPNFamily f)
+    : OPNChipBaseT(f)
 {
     chip = NULL;
     setRate(m_rate, m_clock);

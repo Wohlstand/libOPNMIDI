@@ -129,6 +129,7 @@ struct OpnBankSetup
     int volumeModel;
     int lfoEnable;
     int lfoFrequency;
+    int chipType;
 };
 
 #if 0

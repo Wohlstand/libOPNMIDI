@@ -26,7 +26,8 @@
 #include <cstring>
 
 template <class ChipType>
-NP2OPNA<ChipType>::NP2OPNA()
+NP2OPNA<ChipType>::NP2OPNA(OPNFamily f)
+    : ChipBase(f)
 {
     ChipType *opn = (ChipType *)std::calloc(1, sizeof(ChipType));
     chip = new(opn) ChipType;

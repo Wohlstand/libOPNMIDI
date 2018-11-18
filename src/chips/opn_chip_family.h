@@ -21,10 +21,17 @@
 #ifndef OPN_CHIP_FAMILY_H
 #define OPN_CHIP_FAMILY_H
 
+#include <stdint.h>
+
+#define OPN_FAMILY_EACH(F) \
+    F(OPN2) F(OPNA)
+
 enum OPNFamily
 {
-    OPNChip_OPN2,
-    OPNChip_OPNA
+    #define Each(x) OPNChip_##x,
+    OPN_FAMILY_EACH(Each)
+    #undef Each
+    OPNChip_Count,
 };
 
 template <OPNFamily F>
@@ -33,7 +40,8 @@ struct OPNFamilyTraits;
 template <>
 struct OPNFamilyTraits<OPNChip_OPN2>
 {
-    enum {
+    enum
+    {
         nativeRate = 53267,
         nativeClockRate = 7670454,
     };
@@ -42,10 +50,35 @@ struct OPNFamilyTraits<OPNChip_OPN2>
 template <>
 struct OPNFamilyTraits<OPNChip_OPNA>
 {
-    enum {
+    enum
+    {
         nativeRate = 55466,
         nativeClockRate = 7987200,
     };
 };
+
+inline uint32_t opn2_getNativeRate(OPNFamily f)
+{
+    switch(f)
+    {
+    default:
+    #define Each(x) case OPNChip_##x: \
+        return OPNFamilyTraits<OPNChip_##x>::nativeRate;
+    OPN_FAMILY_EACH(Each)
+    #undef Each
+    }
+}
+
+inline uint32_t opn2_getNativeClockRate(OPNFamily f)
+{
+    switch(f)
+    {
+    default:
+    #define Each(x) case OPNChip_##x: \
+        return OPNFamilyTraits<OPNChip_##x>::nativeClockRate;
+    OPN_FAMILY_EACH(Each)
+    #undef Each
+    }
+}
 
 #endif // OPN_CHIP_FAMILY_H

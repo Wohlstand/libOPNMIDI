@@ -508,6 +508,7 @@ public:
         int     VolumeModel;
         int     lfoEnable;
         int     lfoFrequency;
+        int     chipType;
         //unsigned int SkipForward;
         int     ScaleModulators;
         bool    fullRangeBrightnessCC74;

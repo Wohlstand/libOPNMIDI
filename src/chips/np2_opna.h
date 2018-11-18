@@ -25,12 +25,12 @@
 
 namespace FM { class OPN2; class OPNA; class OPNB; }
 template <class ChipType = FM::OPNA>
-class NP2OPNA final : public OPNChipBaseBufferedT<NP2OPNA<ChipType>, OPNChip_OPNA>
+class NP2OPNA final : public OPNChipBaseBufferedT<NP2OPNA<ChipType>>
 {
-    typedef OPNChipBaseBufferedT<NP2OPNA<ChipType>, OPNChip_OPNA> ChipBase;
+    typedef OPNChipBaseBufferedT<NP2OPNA<ChipType>> ChipBase;
     ChipType *chip;
 public:
-    NP2OPNA();
+    explicit NP2OPNA(OPNFamily f);
     ~NP2OPNA() override;
 
     bool canRunAtPcmRate() const override { return true; }

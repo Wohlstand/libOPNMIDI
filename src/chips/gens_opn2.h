@@ -24,11 +24,11 @@
 #include "opn_chip_base.h"
 
 class Ym2612_Emu;
-class GensOPN2 final : public OPNChipBaseBufferedT<GensOPN2, OPNChip_OPN2>
+class GensOPN2 final : public OPNChipBaseBufferedT<GensOPN2>
 {
     Ym2612_Emu *chip;
 public:
-    GensOPN2();
+    explicit GensOPN2(OPNFamily f);
     ~GensOPN2() override;
 
     bool canRunAtPcmRate() const override { return true; }

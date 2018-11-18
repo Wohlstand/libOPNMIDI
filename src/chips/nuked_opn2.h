@@ -23,11 +23,11 @@
 
 #include "opn_chip_base.h"
 
-class NukedOPN2 final : public OPNChipBaseT<NukedOPN2, OPNChip_OPN2>
+class NukedOPN2 final : public OPNChipBaseT<NukedOPN2>
 {
     void *chip;
 public:
-    NukedOPN2();
+    explicit NukedOPN2(OPNFamily f);
     ~NukedOPN2() override;
 
     bool canRunAtPcmRate() const override { return false; }

@@ -146,6 +146,7 @@ OPN2::OPN2() :
     m_insBankSetup.volumeModel = OPN2::VOLUME_Generic;
     m_insBankSetup.lfoEnable = false;
     m_insBankSetup.lfoFrequency = 0;
+    m_insBankSetup.chipType = OPNChip_OPN2;
 
     // Initialize blank instruments banks
     m_insBanks.clear();
@@ -190,14 +191,24 @@ void OPN2::noteOff(size_t c)
 
 void OPN2::noteOn(size_t c, double hertz) // Hertz range: 0..131071
 {
+    if(hertz < 0) // Avoid infinite loop
+        return;
+
+    double coef;
+    switch(m_chipFamily)
+    {
+    case OPNChip_OPN2: default:
+        coef = 321.88557; break;
+    case OPNChip_OPNA:
+        coef = 309.12412; break;
+    }
+    hertz *= coef;
+
     size_t      chip;
     uint8_t     port;
     uint32_t    cc;
     size_t      ch4 = c % 6;
     getOpnChannel(c, chip, port, cc);
-
-    if(hertz < 0) // Avoid infinite loop
-        return;
 
     uint32_t octave = 0, ftone = 0, mul_offset = 0;
     const opnInstData &adli = m_insCache[c];
@@ -416,7 +427,7 @@ void OPN2::clearChips()
     m_chips.clear();
 }
 
-void OPN2::reset(int emulator, unsigned long PCM_RATE, void *audioTickHandler)
+void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *audioTickHandler)
 {
 #if !defined(ADLMIDI_AUDIO_TICK_HANDLER)
     ADL_UNUSED(audioTickHandler);
@@ -425,7 +436,6 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, void *audioTickHandler)
     m_insCache.clear();
     m_regLFOSens.clear();
     m_chips.resize(m_numChips, AdlMIDI_SPtr<OPNChipBase>());
-    OPNFamily family = OPNChip_OPN2;
 
     for(size_t i = 0; i < m_chips.size(); i++)
     {
@@ -438,27 +448,27 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, void *audioTickHandler)
             abort();
 #ifndef OPNMIDI_DISABLE_MAME_EMULATOR
         case OPNMIDI_EMU_MAME:
-            chip = new MameOPN2;
+            chip = new MameOPN2(family);
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_NUKED_EMULATOR
         case OPNMIDI_EMU_NUKED:
-            chip = new NukedOPN2;
+            chip = new NukedOPN2(family);
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_GENS_EMULATOR
         case OPNMIDI_EMU_GENS:
-            chip = new GensOPN2;
+            chip = new GensOPN2(family);
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_GX_EMULATOR
         case OPNMIDI_EMU_GX:
-            chip = new GXOPN2;
+            chip = new GXOPN2(family);
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_NP2_EMULATOR
         case OPNMIDI_EMU_NP2:
-            chip = new NP2OPNA<>;
+            chip = new NP2OPNA<>(family);
             break;
 #endif
         }

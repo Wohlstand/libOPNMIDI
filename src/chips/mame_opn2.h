@@ -23,11 +23,11 @@
 
 #include "opn_chip_base.h"
 
-class MameOPN2 final : public OPNChipBaseT<MameOPN2, OPNChip_OPN2>
+class MameOPN2 final : public OPNChipBaseT<MameOPN2>
 {
     void *chip;
 public:
-    MameOPN2();
+    explicit MameOPN2(OPNFamily f);
     ~MameOPN2() override;
 
     bool canRunAtPcmRate() const override { return true; }

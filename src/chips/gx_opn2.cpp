@@ -23,8 +23,9 @@
 
 #include "gx/gx_ym2612.h"
 
-GXOPN2::GXOPN2()
-    : m_chip(YM2612GXAlloc()),
+GXOPN2::GXOPN2(OPNFamily f)
+    : OPNChipBaseT(f),
+      m_chip(YM2612GXAlloc()),
       m_framecount(0)
 {
     YM2612GXInit(m_chip);

@@ -109,6 +109,7 @@ OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
     m_setup.VolumeModel = OPNMIDI_VolumeModel_AUTO;
     m_setup.lfoEnable = -1;
     m_setup.lfoFrequency = -1;
+    m_setup.chipType = -1;
     //m_setup.SkipForward = 0;
     m_setup.ScaleModulators     = 0;
     m_setup.fullRangeBrightnessCC74 = false;
@@ -163,7 +164,13 @@ void OPNMIDIplay::applySetup()
     else
         synth.m_lfoFrequency = m_setup.lfoFrequency;
 
-    synth.reset(m_setup.emulator, m_setup.PCM_RATE, this);
+    int chipType;
+    if(m_setup.chipType < 0)
+        chipType = synth.m_insBankSetup.chipType;
+    else
+        chipType = m_setup.chipType;
+
+    synth.reset(m_setup.emulator, m_setup.PCM_RATE, (OPNFamily)chipType, this);
     m_chipChannels.clear();
     m_chipChannels.resize(synth.m_numChannels, OpnChannel());
 
@@ -177,7 +184,7 @@ void OPNMIDIplay::partialReset()
     realTime_panic();
     m_setup.tick_skip_samples_delay = 0;
     synth.m_runAtPcmRate = m_setup.runAtPcmRate;
-    synth.reset(m_setup.emulator, m_setup.PCM_RATE, this);
+    synth.reset(m_setup.emulator, m_setup.PCM_RATE, synth.chipFamily(), this);
     m_chipChannels.clear();
     m_chipChannels.resize(synth.m_numChannels);
 }
@@ -1213,21 +1220,7 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
                 if(vibrato && (!d || d->vibdelay_us >= chan.vibdelay_us))
                     bend += static_cast<double>(vibrato) * chan.vibdepth * std::sin(chan.vibpos);
 
-                double coef;
-                switch (synth.chipFamily()) {
-                    default:
-                    case OPNChip_OPN2:
-                        coef = 321.88557;
-                        break;
-                    case OPNChip_OPNA:
-                        if((midCh % 16 == 9) || chan.is_xg_percussion)
-                            coef = 313.02412;
-                        else
-                            coef = 309.12412;
-                        break;
-                }
-
-                synth.noteOn(c, coef * std::exp(0.057762265 * (currentTone + bend + phase)));
+                synth.noteOn(c, std::exp(0.057762265 * (currentTone + bend + phase)));
                 if(hooks.onNote)
                     hooks.onNote(hooks.onNote_userData, c, noteTone, (int)midiins, vol, midibend);
             }

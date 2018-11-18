@@ -44,8 +44,9 @@ protected:
     uint32_t m_id;
     uint32_t m_rate;
     uint32_t m_clock;
+    OPNFamily m_family;
 public:
-    OPNChipBase();
+    explicit OPNChipBase(OPNFamily f);
     virtual ~OPNChipBase();
 
     virtual OPNFamily family() const = 0;
@@ -88,11 +89,11 @@ private:
 
 // A base class providing F-bounded generic and efficient implementations,
 // supporting resampling of chip outputs
-template <class T, OPNFamily F>
+template <class T>
 class OPNChipBaseT : public OPNChipBase
 {
 public:
-    OPNChipBaseT();
+    explicit OPNChipBaseT(OPNFamily f);
     virtual ~OPNChipBaseT();
 
     OPNFamily family() const override;
@@ -138,12 +139,12 @@ private:
 // A base class which provides frame-by-frame interfaces on emulations which
 // don't have a routine for it. It produces outputs in fixed size buffers.
 // Fast register updates will suffer some latency because of buffering.
-template <class T, OPNFamily F, unsigned Buffer = 256>
-class OPNChipBaseBufferedT : public OPNChipBaseT<T, F>
+template <class T, unsigned Buffer = 256>
+class OPNChipBaseBufferedT : public OPNChipBaseT<T>
 {
 public:
-    OPNChipBaseBufferedT()
-        : OPNChipBaseT<T, F>(), m_bufferIndex(0) {}
+    explicit OPNChipBaseBufferedT(OPNFamily f)
+        : OPNChipBaseT<T>(f), m_bufferIndex(0) {}
     virtual ~OPNChipBaseBufferedT()
         {}
     enum { buffer_size = Buffer };

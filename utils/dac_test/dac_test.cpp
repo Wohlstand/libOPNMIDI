@@ -105,7 +105,7 @@ int main(int argc, char **argv)
                      obtained.samples, obtained.freq, obtained.channels);
     }
 
-    CurrentOPN2 opn;
+    CurrentOPN2 opn(OPNChip_OPN2);
     opn.writeReg(0, 0x22, 0x00);  //push current LFO state
     opn.writeReg(0, 0x27, 0x00);  //set Channel 3 normal mode
     opn.writeReg(0, 0x2B, 0x80);  //Enable DAC (7'th bit is 1)

@@ -23,8 +23,9 @@
 
 #include "gens/Ym2612_Emu.h"
 
-GensOPN2::GensOPN2()
-    : chip(new Ym2612_Emu())
+GensOPN2::GensOPN2(OPNFamily f)
+    : OPNChipBaseBufferedT(f),
+      chip(new Ym2612_Emu())
 {
     setRate(m_rate, m_clock);
 }
