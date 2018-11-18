@@ -46,7 +46,7 @@ typedef enum WOPN_ChipType
     /* The Yamaha OPN2 chip, alias YM2612 YM3438 */
     WOPN_Chip_OPN2 = 0,
     /* The Yamaha OPNA chip, alias YM2608 */
-    WOPN_Chip_OPNA = 1,
+    WOPN_Chip_OPNA = 1
 } WOPN_ChipType;
 
 /* Volume scaling model implemented in the libOPNMIDI */

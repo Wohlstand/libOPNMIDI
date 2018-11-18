@@ -101,7 +101,7 @@ enum OPNMIDI_ChipType
     /*! The Yamaha OPN2, alias YM2612 YM3438 */
     OPNMIDI_ChipType_OPN2 = 0,
     /*! The Yamaha OPNA, alias YM2608 */
-    OPNMIDI_ChipType_OPNA,
+    OPNMIDI_ChipType_OPNA
 };
 
 /**
