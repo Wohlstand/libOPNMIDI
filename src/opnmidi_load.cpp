@@ -112,9 +112,11 @@ bool OPNMIDIplay::LoadBank(FileAndMemReader &fr)
     synth.m_insBankSetup.volumeModel = wopn->volume_model;
     synth.m_insBankSetup.lfoEnable = (wopn->lfo_freq & 8) != 0;
     synth.m_insBankSetup.lfoFrequency = wopn->lfo_freq & 7;
+    synth.m_insBankSetup.chipType = wopn->chip_type;
     m_setup.VolumeModel = OPNMIDI_VolumeModel_AUTO;
     m_setup.lfoEnable = -1;
     m_setup.lfoFrequency = -1;
+    m_setup.chipType = -1;
 
     synth.m_insBanks.clear();
 
@@ -189,7 +191,7 @@ bool OPNMIDIplay::LoadMIDI_post()
     }
 
     m_setup.tick_skip_samples_delay = 0;
-    synth.reset(m_setup.emulator, m_setup.PCM_RATE, this); // Reset OPN2 chip
+    synth.reset(m_setup.emulator, m_setup.PCM_RATE, synth.chipFamily(), this); // Reset OPN2 chip
     m_chipChannels.clear();
     m_chipChannels.resize(synth.m_numChannels);
 

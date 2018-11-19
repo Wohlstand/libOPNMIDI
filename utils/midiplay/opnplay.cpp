@@ -99,10 +99,10 @@ static inline void secondsToHMSM(double seconds_full, char *hmsm_buffer, size_t 
 {
     double seconds_integral;
     double seconds_fractional = std::modf(seconds_full, &seconds_integral);
-    unsigned int milliseconds = static_cast<unsigned int>(std::floor(seconds_fractional * 1000.0));
+    unsigned int milliseconds = static_cast<unsigned int>(seconds_fractional * 1000.0);
     unsigned int seconds = static_cast<unsigned int>(std::fmod(seconds_full, 60.0));
-    unsigned int minutes = static_cast<unsigned int>(std::floor(seconds_full / 60));
-    unsigned int hours   = static_cast<unsigned int>(std::floor(seconds_full / 3600));
+    unsigned int minutes = static_cast<unsigned int>(std::fmod(seconds_full / 60, 60.0));
+    unsigned int hours   = static_cast<unsigned int>(seconds_full / 3600);
     std::memset(hmsm_buffer, 0, hmsm_buffer_size);
     if (hours > 0)
         snprintf(hmsm_buffer, hmsm_buffer_size, "%02u:%02u:%02u,%03u", hours, minutes, seconds, milliseconds);
@@ -153,7 +153,7 @@ int main(int argc, char **argv)
     {
         std::printf(
             "Usage:\n"
-            "   opnmidiplay [-s] [-w] [-nl] [--emu-mame|--emu-nuked|--emu-gens|--emu-gx] \\\n"
+            "   opnmidiplay [-s] [-w] [-nl] [--emu-mame|--emu-nuked|--emu-gens|--emu-gx|--emu-np2] \\\n"
             "               [--chips <count>] [<bankfile>.wopn] <midifilename>\n"
             "\n"
             " <bankfile>.wopn   Path to WOPN bank file\n"
@@ -171,6 +171,7 @@ int main(int argc, char **argv)
             " --emu-gens        Use GENS 2.10 Emulator\n"
             " --emu-nuked       Use Nuked OPN2 Emulator\n"
             " --emu-gx          Use Genesis Plus GX Emulator\n"
+            " --emu-np2         Use Neko Project II Emulator\n"
             " --chips <count>   Choose a count of emulated concurrent chips\n"
             "\n"
         );
@@ -234,6 +235,8 @@ int main(int argc, char **argv)
             emulator = OPNMIDI_EMU_MAME;
         else if(!std::strcmp("--emu-gx", argv[arg]))
             emulator = OPNMIDI_EMU_GX;
+        else if(!std::strcmp("--emu-np2", argv[arg]))
+            emulator = OPNMIDI_EMU_NP2;
         else if(!std::strcmp("-fp", argv[arg]))
             fullPanEnabled = true;
         else if(!std::strcmp("-s", argv[arg]))

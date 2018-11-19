@@ -22,7 +22,8 @@
 #include "nuked/ym3438.h"
 #include <cstring>
 
-NukedOPN2::NukedOPN2()
+NukedOPN2::NukedOPN2(OPNFamily f)
+    : OPNChipBaseT(f)
 {
     OPN2_SetChipType(ym3438_type_asic);
     chip = new ym3438_t;

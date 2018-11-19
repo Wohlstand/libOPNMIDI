@@ -25,7 +25,8 @@
 #include "opnmidi_private.hpp"
 
 #if defined(OPNMIDI_DISABLE_NUKED_EMULATOR) && defined(OPNMIDI_DISABLE_MAME_EMULATOR) && \
-    defined(OPNMIDI_DISABLE_GENS_EMULATOR) && defined(OPNMIDI_DISABLE_GX_EMULATOR)
+    defined(OPNMIDI_DISABLE_GENS_EMULATOR) && defined(OPNMIDI_DISABLE_GX_EMULATOR) && \
+    defined(OPNMIDI_DISABLE_NP2_EMULATOR)
 #error "No emulators enabled. You must enable at least one emulator to use this library!"
 #endif
 
@@ -49,6 +50,11 @@
 #include "chips/gx_opn2.h"
 #endif
 
+// Neko Project II OPNA emulator
+#ifndef OPNMIDI_DISABLE_NP2_EMULATOR
+#include "chips/np2_opna.h"
+#endif
+
 static const unsigned opn2_emulatorSupport = 0
 #ifndef OPNMIDI_DISABLE_NUKED_EMULATOR
     | (1u << OPNMIDI_EMU_NUKED)
@@ -61,6 +67,9 @@ static const unsigned opn2_emulatorSupport = 0
 #endif
 #ifndef OPNMIDI_DISABLE_GX_EMULATOR
     | (1u << OPNMIDI_EMU_GX)
+#endif
+#ifndef OPNMIDI_DISABLE_NP2_EMULATOR
+    | (1u << OPNMIDI_EMU_NP2)
 #endif
 ;
 
@@ -131,11 +140,13 @@ OPN2::OPN2() :
     m_musicMode(MODE_MIDI),
     m_volumeScale(VOLUME_Generic),
     m_lfoEnable(false),
-    m_lfoFrequency(0)
+    m_lfoFrequency(0),
+    m_chipFamily(OPNChip_OPN2)
 {
     m_insBankSetup.volumeModel = OPN2::VOLUME_Generic;
     m_insBankSetup.lfoEnable = false;
     m_insBankSetup.lfoFrequency = 0;
+    m_insBankSetup.chipType = OPNChip_OPN2;
 
     // Initialize blank instruments banks
     m_insBanks.clear();
@@ -180,14 +191,24 @@ void OPN2::noteOff(size_t c)
 
 void OPN2::noteOn(size_t c, double hertz) // Hertz range: 0..131071
 {
+    if(hertz < 0) // Avoid infinite loop
+        return;
+
+    double coef;
+    switch(m_chipFamily)
+    {
+    case OPNChip_OPN2: default:
+        coef = 321.88557; break;
+    case OPNChip_OPNA:
+        coef = 309.12412; break;
+    }
+    hertz *= coef;
+
     size_t      chip;
     uint8_t     port;
     uint32_t    cc;
     size_t      ch4 = c % 6;
     getOpnChannel(c, chip, port, cc);
-
-    if(hertz < 0) // Avoid infinite loop
-        return;
 
     uint32_t octave = 0, ftone = 0, mul_offset = 0;
     const opnInstData &adli = m_insCache[c];
@@ -406,7 +427,7 @@ void OPN2::clearChips()
     m_chips.clear();
 }
 
-void OPN2::reset(int emulator, unsigned long PCM_RATE, void *audioTickHandler)
+void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *audioTickHandler)
 {
 #if !defined(ADLMIDI_AUDIO_TICK_HANDLER)
     ADL_UNUSED(audioTickHandler);
@@ -427,35 +448,42 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, void *audioTickHandler)
             abort();
 #ifndef OPNMIDI_DISABLE_MAME_EMULATOR
         case OPNMIDI_EMU_MAME:
-            chip = new MameOPN2;
+            chip = new MameOPN2(family);
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_NUKED_EMULATOR
         case OPNMIDI_EMU_NUKED:
-            chip = new NukedOPN2;
+            chip = new NukedOPN2(family);
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_GENS_EMULATOR
         case OPNMIDI_EMU_GENS:
-            chip = new GensOPN2;
+            chip = new GensOPN2(family);
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_GX_EMULATOR
         case OPNMIDI_EMU_GX:
-            chip = new GXOPN2;
+            chip = new GXOPN2(family);
+            break;
+#endif
+#ifndef OPNMIDI_DISABLE_NP2_EMULATOR
+        case OPNMIDI_EMU_NP2:
+            chip = new NP2OPNA<>(family);
             break;
 #endif
         }
         m_chips[i].reset(chip);
         chip->setChipId((uint32_t)i);
-        chip->setRate((uint32_t)PCM_RATE, 7670454);
+        chip->setRate((uint32_t)PCM_RATE, chip->nativeClockRate());
         if(m_runAtPcmRate)
             chip->setRunningAtPcmRate(true);
 #if defined(ADLMIDI_AUDIO_TICK_HANDLER)
         chip->setAudioTickHandlerInstance(audioTickHandler);
 #endif
+        family = chip->family();
     }
 
+    m_chipFamily = family;
     m_numChannels = m_numChips * 6;
     m_insCache.resize(m_numChannels,   m_emptyInstrument.opn[0]);
     m_regLFOSens.resize(m_numChannels,    0);
@@ -478,4 +506,9 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, void *audioTickHandler)
     }
 
     silenceAll();
+}
+
+OPNFamily OPN2::chipFamily() const
+{
+    return m_chipFamily;
 }

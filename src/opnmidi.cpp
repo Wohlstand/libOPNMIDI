@@ -347,6 +347,25 @@ OPNMIDI_EXPORT int opn2_getLfoFrequency(struct OPN2_MIDIPlayer *device)
     return play->m_synth->m_lfoFrequency;
 }
 
+/*Override chip type. -1 - use bank default state*/
+OPNMIDI_EXPORT void opn2_setChipType(struct OPN2_MIDIPlayer *device, int chipType)
+{
+    if(!device) return;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
+    play->m_setup.chipType = chipType;
+    play->applySetup();
+}
+
+/*Get the chip type*/
+OPNMIDI_EXPORT int opn2_getChipType(struct OPN2_MIDIPlayer *device)
+{
+    if(!device) return -1;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
+    return play->m_synth->chipFamily();
+}
+
 OPNMIDI_EXPORT void opn2_setScaleModulators(OPN2_MIDIPlayer *device, int smod)
 {
     if(!device)

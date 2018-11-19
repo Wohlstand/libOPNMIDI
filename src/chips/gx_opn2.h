@@ -29,7 +29,7 @@ class GXOPN2 final : public OPNChipBaseT<GXOPN2>
     YM2612GX *m_chip;
     unsigned int m_framecount;
 public:
-    GXOPN2();
+    explicit GXOPN2(OPNFamily f);
     ~GXOPN2() override;
 
     bool canRunAtPcmRate() const override { return false; }

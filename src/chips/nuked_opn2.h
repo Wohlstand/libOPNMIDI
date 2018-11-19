@@ -27,7 +27,7 @@ class NukedOPN2 final : public OPNChipBaseT<NukedOPN2>
 {
     void *chip;
 public:
-    NukedOPN2();
+    explicit NukedOPN2(OPNFamily f);
     ~NukedOPN2() override;
 
     bool canRunAtPcmRate() const override { return false; }

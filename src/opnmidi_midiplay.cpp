@@ -25,6 +25,7 @@
 #include "opnmidi_opn2.hpp"
 #include "opnmidi_private.hpp"
 #include "midi_sequencer.hpp"
+#include "chips/opn_chip_base.h"
 
 // Mapping from MIDI volume level to OPL level value.
 
@@ -109,6 +110,7 @@ OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
     m_setup.VolumeModel = OPNMIDI_VolumeModel_AUTO;
     m_setup.lfoEnable = -1;
     m_setup.lfoFrequency = -1;
+    m_setup.chipType = -1;
     //m_setup.SkipForward = 0;
     m_setup.ScaleModulators     = 0;
     m_setup.fullRangeBrightnessCC74 = false;
@@ -163,7 +165,13 @@ void OPNMIDIplay::applySetup()
     else
         synth.m_lfoFrequency = m_setup.lfoFrequency;
 
-    synth.reset(m_setup.emulator, m_setup.PCM_RATE, this);
+    int chipType;
+    if(m_setup.chipType < 0)
+        chipType = synth.m_insBankSetup.chipType;
+    else
+        chipType = m_setup.chipType;
+
+    synth.reset(m_setup.emulator, m_setup.PCM_RATE, (OPNFamily)chipType, this);
     m_chipChannels.clear();
     m_chipChannels.resize(synth.m_numChannels, OpnChannel());
 
@@ -177,7 +185,7 @@ void OPNMIDIplay::partialReset()
     realTime_panic();
     m_setup.tick_skip_samples_delay = 0;
     synth.m_runAtPcmRate = m_setup.runAtPcmRate;
-    synth.reset(m_setup.emulator, m_setup.PCM_RATE, this);
+    synth.reset(m_setup.emulator, m_setup.PCM_RATE, synth.chipFamily(), this);
     m_chipChannels.clear();
     m_chipChannels.resize(synth.m_numChannels);
 }
@@ -1201,10 +1209,11 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
             // Don't bend a sustained note
             if(d.is_end() || (d->value.sustained == OpnChannel::LocationData::Sustain_None))
             {
-                double midibend = m_midiChannels[midCh].bend * m_midiChannels[midCh].bendsense;
+                MIDIchannel &chan = m_midiChannels[midCh];
+                double midibend = chan.bend * chan.bendsense;
                 double bend = midibend + ins.ains.finetune;
                 double phase = 0.0;
-                uint8_t vibrato = std::max(m_midiChannels[midCh].vibrato, m_midiChannels[midCh].aftertouch);
+                uint8_t vibrato = std::max(chan.vibrato, chan.aftertouch);
                 vibrato = std::max(vibrato, info.vibrato);
 
                 if((ains.flags & opnInstMeta::Flag_Pseudo8op) && ins.ains == ains.opn[1])
@@ -1212,12 +1221,10 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
                     phase = ains.fine_tune;//0.125; // Detune the note slightly (this is what Doom does)
                 }
 
-                if(vibrato && (d.is_end() || d->value.vibdelay_us >= m_midiChannels[midCh].vibdelay_us))
-                    bend += static_cast<double>(vibrato) * m_midiChannels[midCh].vibdepth * std::sin(m_midiChannels[midCh].vibpos);
+                if(vibrato && (d.is_end() || d->value.vibdelay_us >= chan.vibdelay_us))
+                    bend += static_cast<double>(vibrato) * chan.vibdepth * std::sin(chan.vibpos);
 
-#define BEND_COEFFICIENT 321.88557
-                synth.noteOn(c, BEND_COEFFICIENT * std::exp(0.057762265 * (currentTone + bend + phase)));
-#undef BEND_COEFFICIENT
+                synth.noteOn(c, std::exp(0.057762265 * (currentTone + bend + phase)));
                 if(hooks.onNote)
                     hooks.onNote(hooks.onNote_userData, c, noteTone, (int)midiins, vol, midibend);
             }

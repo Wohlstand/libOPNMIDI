@@ -89,6 +89,7 @@ option(USE_MAME_EMULATOR    "Use MAME YM2612 emulator (for most of hardware)" ON
 option(USE_GENS_EMULATOR    "Use GENS 2.10 emulator (fastest, very outdated, inaccurate)" ON)
 option(USE_NUKED_EMULATOR   "Use Nuked OPN2 emulator (most accurate, heavy)" ON)
 option(USE_GX_EMULATOR      "Use Genesis Plus GX emulator (experimental)" OFF)
+option(USE_NP2_EMULATOR     "Use Neko Project II emulator" ON)
 # WIP FEATURES
 # option(WITH_CPP_EXTRAS      "Build with support for C++ extras (features are can be found in 'adlmidi.hpp' header)" OFF)
 
@@ -171,6 +172,20 @@ if(USE_GX_EMULATOR)
     set(HAS_EMULATOR TRUE)
 else()
     add_definitions(-DOPNMIDI_DISABLE_GX_EMULATOR)
+endif()
+
+if(USE_NP2_EMULATOR)
+    list(APPEND libOPNMIDI_SOURCES
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/np2_opna.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/np2/fmgen_opna.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/np2/fmgen_file.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/np2/fmgen_fmgen.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/np2/fmgen_fmtimer.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/np2/fmgen_opna.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/np2/fmgen_psg.cpp)
+    set(HAS_EMULATOR TRUE)
+else()
+    add_definitions(-DOPNMIDI_DISABLE_NP2_EMULATOR)
 endif()
 
 if(NOT HAS_EMULATOR)
@@ -394,6 +409,7 @@ message("USE_MAME_EMULATOR        = ${USE_MAME_EMULATOR}")
 message("USE_GENS_EMULATOR        = ${USE_GENS_EMULATOR}")
 message("USE_NUKED_EMULATOR       = ${USE_NUKED_EMULATOR}")
 message("USE_GX_EMULATOR          = ${USE_GX_EMULATOR}")
+message("USE_NP2_EMULATOR         = ${USE_NP2_EMULATOR}")
 
 message("===== Utils and extras =====")
 message("WITH_MIDIPLAY            = ${WITH_MIDIPLAY}")
