@@ -162,7 +162,7 @@ int32 FileIO::Tellp()
 	if (!(GetFlags() & open))
 		return 0;
 
-	return static_cast<int32_t>(ftell(pfile));
+	return static_cast<int32>(ftell(pfile));
 }
 
 // ---------------------------------------------------------------------------
