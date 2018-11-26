@@ -75,7 +75,7 @@ template <class ChipType>
 void NP2OPNA<ChipType>::nativeGenerateN(int16_t *output, size_t frames)
 {
     std::memset(output, 0, 2 * frames * sizeof(output[0]));
-    chip->Mix(output, frames);
+    chip->Mix(output, static_cast<int>(frames));
 }
 
 template <>

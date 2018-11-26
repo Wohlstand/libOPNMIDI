@@ -103,9 +103,9 @@ int32 FileIO::Read(void* dest, int32 size)
 {
 	if (!(GetFlags() & open))
 		return -1;
-	
-	uint32 readsize;
-	if (!(readsize = fread(dest, 1, size, pfile)))
+
+	size_t readsize;
+	if (!(readsize = fread(dest, 1, static_cast<size_t>(size), pfile)))
 		return -1;
 	return size;
 }
@@ -118,11 +118,11 @@ int32 FileIO::Write(const void* dest, int32 size)
 {
 	if (!(GetFlags() & open) || (GetFlags() & readonly))
 		return -1;
-	
-	uint32 writtensize;
-	if (!(writtensize = fwrite(dest, 1, size, pfile)))
+
+	size_t writtensize;
+	if (!(writtensize = fwrite(dest, 1, static_cast<size_t>(size), pfile)))
 		return -1;
-	return writtensize;
+	return static_cast<int32>(writtensize);
 }
 
 // ---------------------------------------------------------------------------
@@ -133,24 +133,24 @@ bool FileIO::Seek(int32 pos, SeekMethod method)
 {
 	if (!(GetFlags() & open))
 		return false;
-	
+
 	int origin;
 	switch (method)
 	{
-	case begin:	
-		origin = SEEK_SET; 
+	case begin:
+		origin = SEEK_SET;
 		break;
-	case current:	
-		origin = SEEK_CUR; 
+	case current:
+		origin = SEEK_CUR;
 		break;
-	case end:		
-		origin = SEEK_END; 
+	case end:
+		origin = SEEK_END;
 		break;
 	default:
 		return false;
 	}
 
-	return fseek(pfile, pos, origin);
+	return (fseek(pfile, pos, origin) != 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -162,7 +162,7 @@ int32 FileIO::Tellp()
 	if (!(GetFlags() & open))
 		return 0;
 
-	return ftell(pfile);
+	return static_cast<int32_t>(ftell(pfile));
 }
 
 // ---------------------------------------------------------------------------

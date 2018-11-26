@@ -39,16 +39,16 @@ namespace FM
 {
 	const uint8 Operator::notetable[128] =
 	{
-		 0,  0,  0,  0,  0,  0,  0,  1,  2,  3,  3,  3,  3,  3,  3,  3, 
-		 4,  4,  4,  4,  4,  4,  4,  5,  6,  7,  7,  7,  7,  7,  7,  7, 
-		 8,  8,  8,  8,  8,  8,  8,  9, 10, 11, 11, 11, 11, 11, 11, 11, 
-		12, 12, 12, 12, 12, 12, 12, 13, 14, 15, 15, 15, 15, 15, 15, 15, 
-		16, 16, 16, 16, 16, 16, 16, 17, 18, 19, 19, 19, 19, 19, 19, 19, 
-		20, 20, 20, 20, 20, 20, 20, 21, 22, 23, 23, 23, 23, 23, 23, 23, 
-		24, 24, 24, 24, 24, 24, 24, 25, 26, 27, 27, 27, 27, 27, 27, 27, 
-		28, 28, 28, 28, 28, 28, 28, 29, 30, 31, 31, 31, 31, 31, 31, 31, 
+		 0,  0,  0,  0,  0,  0,  0,  1,  2,  3,  3,  3,  3,  3,  3,  3,
+		 4,  4,  4,  4,  4,  4,  4,  5,  6,  7,  7,  7,  7,  7,  7,  7,
+		 8,  8,  8,  8,  8,  8,  8,  9, 10, 11, 11, 11, 11, 11, 11, 11,
+		12, 12, 12, 12, 12, 12, 12, 13, 14, 15, 15, 15, 15, 15, 15, 15,
+		16, 16, 16, 16, 16, 16, 16, 17, 18, 19, 19, 19, 19, 19, 19, 19,
+		20, 20, 20, 20, 20, 20, 20, 21, 22, 23, 23, 23, 23, 23, 23, 23,
+		24, 24, 24, 24, 24, 24, 24, 25, 26, 27, 27, 27, 27, 27, 27, 27,
+		28, 28, 28, 28, 28, 28, 28, 29, 30, 31, 31, 31, 31, 31, 31, 31,
 	};
-	
+
 	const int8 Operator::dttable[256] =
 	{
 		  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -69,7 +69,7 @@ namespace FM
 		-16,-16,-18,-20,-22,-24,-26,-28,-32,-34,-38,-40,-44,-44,-44,-44,
 	};
 
-	const int8 Operator::decaytable1[64][8] = 
+	const int8 Operator::decaytable1[64][8] =
 	{
 		{0, 0, 0, 0, 0, 0, 0, 0},		{0, 0, 0, 0, 0, 0, 0, 0},
 		{1, 1, 1, 1, 1, 1, 1, 1},		{1, 1, 1, 1, 1, 1, 1, 1},
@@ -105,12 +105,12 @@ namespace FM
 		{16,16,16,16,16,16,16,16},	{16,16,16,16,16,16,16,16},
 	};
 
-	const int Operator::decaytable2[16] = 
+	const int Operator::decaytable2[16] =
 	{
 		1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2047, 2047, 2047, 2047, 2047
 	};
 
-	const int8 Operator::attacktable[64][8] = 
+	const int8 Operator::attacktable[64][8] =
 	{
 		{-1,-1,-1,-1,-1,-1,-1,-1},	{-1,-1,-1,-1,-1,-1,-1,-1},
 		{ 4, 4, 4, 4, 4, 4, 4, 4},	{ 4, 4, 4, 4, 4, 4, 4, 4},
@@ -185,11 +185,11 @@ void MakeLFOTable()
 		return;
 
 	tablemade = true;
-	
+
 	int i;
 
-	static const double pms[2][8] = 
-	{ 
+	static const double pms[2][8] =
+	{
 		{ 0, 1/360., 2/360., 3/360.,  4/360.,  6/360., 12/360.,  24/360., },	// OPNA
 //		{ 0, 1/240., 2/240., 4/240., 10/240., 20/240., 80/240., 140/240., },	// OPM
 		{ 0, 1/480., 2/480., 4/480., 10/480., 20/480., 80/480., 140/480., },	// OPM
@@ -199,12 +199,12 @@ void MakeLFOTable()
 	//	1.000963
 	//	lfofref[level * max * wave];
 	//	pre = lfofref[level][pms * wave >> 8];
-	static const uint8 amt[2][4] = 
+	static const uint8 amt[2][4] =
 	{
 		{ 31, 6, 4, 3 }, // OPNA
 		{ 31, 2, 1, 0 }, //	OPM
 	};
-	
+
 	for (int type = 0; type < 2; type++)
 	{
 		for (i=0; i<8; i++)
@@ -256,7 +256,7 @@ void Chip::SetRatio(uint ratio)
 void Chip::MakeTable()
 {
 	int h, l;
-	
+
 	// PG Part
 	static const float dt2lv[4] = { 1.f, 1.414f, 1.581f, 1.732f };
 	for (h=0; h<4; h++)
@@ -318,7 +318,7 @@ FM::Operator::Operator()
 
 	// LFO
 	ms_ = 0;
-	
+
 //	Reset();
 }
 
@@ -387,7 +387,7 @@ void Operator::MakeTable()
 
 inline void FM::Operator::SetDPBN(uint dp, uint bn)
 {
-	dp_ = dp, bn_ = bn; param_changed_ = true; 
+	dp_ = dp, bn_ = bn; param_changed_ = true;
 	PARAMCHANGE(1);
 }
 
@@ -405,21 +405,21 @@ void Operator::Prepare()
 		// EG Part
 		key_scale_rate_ = bn_ >> (3-ks_);
 		tl_out_ = mute_ ? 0x3ff : tl_ * 8;
-		
+
 		switch (eg_phase_)
 		{
 		case attack:
-			SetEGRate(ar_ ? Min(63, ar_ + key_scale_rate_) : 0);
+			SetEGRate(static_cast<uint>(ar_ ? Min(63, ar_ + key_scale_rate_) : 0));
 			break;
 		case decay:
-			SetEGRate(dr_ ? Min(63, dr_ + key_scale_rate_) : 0);
+			SetEGRate(static_cast<uint>(dr_ ? Min(63, dr_ + key_scale_rate_) : 0));
 			eg_level_on_next_phase_ = sl_ * 8;
 			break;
 		case sustain:
-			SetEGRate(sr_ ? Min(63, sr_ + key_scale_rate_) : 0);
+			SetEGRate(static_cast<uint>(sr_ ? Min(63, sr_ + key_scale_rate_) : 0));
 			break;
 		case release:
-			SetEGRate(Min(63, rr_ + key_scale_rate_));
+			SetEGRate(static_cast<uint>(Min(63, rr_ + key_scale_rate_)));
 			break;
 		default:
 			break;
@@ -428,7 +428,7 @@ void Operator::Prepare()
 		// SSG-EG
 		if (ssg_type_ && (eg_phase_ != release))
 		{
-			int m = ar_ >= ((ssg_type_ == 8 || ssg_type_ == 12) ? 56 : 60);
+			int m = static_cast<int>(ar_ >= ((ssg_type_ == 8 || ssg_type_ == 12) ? 56 : 60));
 
 			assert(0 <= ssg_phase_ && ssg_phase_ <= 2);
 			const int* table = ssgenvtable[ssg_type_ & 7][m][ssg_phase_];
@@ -544,8 +544,8 @@ void Operator::ShiftPhase(EGPhase nextphase)
 			ssg_phase_ = ssg_phase_ + 1;
 			if (ssg_phase_ > 2)
 				ssg_phase_ = 1;
-			
-			int m = ar_ >= ((ssg_type_ == 8 || ssg_type_ == 12) ? 56 : 60);
+
+			int m = static_cast<int>(ar_ >= ((ssg_type_ == 8 || ssg_type_ == 12) ? 56 : 60));
 
 			assert(0 <= ssg_phase_ && ssg_phase_ <= 2);
 			const int* table = ssgenvtable[ssg_type_ & 7][m][ssg_phase_];
@@ -555,7 +555,7 @@ void Operator::ShiftPhase(EGPhase nextphase)
 		}
 		if ((ar_ + key_scale_rate_) < 62)
 		{
-			SetEGRate(ar_ ? Min(63, ar_ + key_scale_rate_) : 0);
+			SetEGRate(static_cast<uint>(ar_ ? Min(63, ar_ + key_scale_rate_) : 0));
 			eg_phase_ = attack;
 			break;
 		}
@@ -566,7 +566,7 @@ void Operator::ShiftPhase(EGPhase nextphase)
 			eg_level_ = 0;
 			eg_level_on_next_phase_ = ssg_type_ ? Min(sl_ * 8, 0x200) : sl_ * 8;
 
-			SetEGRate(dr_ ? Min(63, dr_ + key_scale_rate_) : 0);
+			SetEGRate(static_cast<uint>(dr_ ? Min(63, dr_ + key_scale_rate_) : 0));
 			eg_phase_ = decay;
 			break;
 		}
@@ -575,10 +575,10 @@ void Operator::ShiftPhase(EGPhase nextphase)
 		eg_level_ = sl_ * 8;
 		eg_level_on_next_phase_ = ssg_type_ ? 0x200 : 0x400;
 
-		SetEGRate(sr_ ? Min(63, sr_ + key_scale_rate_) : 0);
+		SetEGRate(static_cast<uint>(sr_ ? Min(63, sr_ + key_scale_rate_) : 0));
 		eg_phase_ = sustain;
 		break;
-	
+
 	case release:		// Release Phase
 		if (ssg_type_)
 		{
@@ -589,7 +589,7 @@ void Operator::ShiftPhase(EGPhase nextphase)
 		if (eg_phase_ == attack || (eg_level_ < FM_EG_BOTTOM)) //0x400/* && eg_phase_ != off*/))
 		{
 			eg_level_on_next_phase_ = 0x400;
-			SetEGRate(Min(63, rr_ + key_scale_rate_));
+			SetEGRate(static_cast<uint>(Min(63, rr_ + key_scale_rate_)));
 			eg_phase_ = release;
 			break;
 		}
@@ -655,7 +655,7 @@ inline void Operator::SetEGRate(uint rate)
 void FM::Operator::EGCalc()
 {
 	eg_count_ = (2047 * 3) << FM_RATIOBITS;				// ##この手抜きは再現性を低下させる
-	
+
 	if (eg_phase_ == attack)
 	{
 		int c = attacktable[eg_rate_][eg_curve_count_ & 7];
@@ -759,10 +759,10 @@ inline FM::ISample FM::Operator::CalcL(ISample in)
 inline FM::ISample FM::Operator::CalcN(uint noise)
 {
 	EGStep();
-	
+
 	int lv = Max(0, 0x3ff - (tl_out_ + eg_level_)) << 1;
-	
-	// noise & 1 ? lv : -lv と等価 
+
+	// noise & 1 ? lv : -lv と等価
 	noise = (noise & 1) - 1;
 	out_ = (lv + noise) ^ noise;
 
@@ -793,7 +793,7 @@ inline FM::ISample FM::Operator::CalcFB(uint fb)
 inline FM::ISample FM::Operator::CalcFBL(uint fb)
 {
 	EGStep();
-	
+
 	ISample in = out_ + out2_;
 	out2_ = out_;
 
@@ -854,7 +854,7 @@ int Channel4::Prepare()
 	op[1].Prepare();
 	op[2].Prepare();
 	op[3].Prepare();
-	
+
 	pms = pmtable[op[0].type_][op[0].ms_ & 7];
 	int key = (op[0].IsOn() | op[1].IsOn() | op[2].IsOn() | op[3].IsOn()) ? 1 : 0;
 	int lfo = op[0].ms_ & (op[0].amon_ | op[1].amon_ | op[2].amon_ | op[3].amon_ ? 0x37 : 7) ? 2 : 0;
@@ -871,10 +871,10 @@ void Channel4::SetFNum(uint f)
 //	KC/KF を設定
 void Channel4::SetKCKF(uint kc, uint kf)
 {
-	const static uint kctable[16] = 
-	{ 
-		5197, 5506, 5833, 6180, 6180, 6547, 6937, 7349, 
-		7349, 7786, 8249, 8740, 8740, 9259, 9810, 10394, 
+	const static uint kctable[16] =
+	{
+		5197, 5506, 5833, 6180, 6180, 6547, 6937, 7349,
+		7349, 7786, 8249, 8740, 8740, 9259, 9810, 10394,
 	};
 
 	int oct = 19 - ((kc >> 4) & 7);
@@ -887,7 +887,7 @@ void Channel4::SetKCKF(uint kc, uint kf)
 //printf(" %.4x %.4x %.8x", kcv, kftable[kf & 0x3f], dp >> oct);
 	dp >>= 16 + 3;
 	dp <<= 16 + 3;
-	dp >>= oct;	
+	dp >>= oct;
 	uint bn = (kc >> 2) & 31;
 	op[0].SetDPBN(dp, bn);
 	op[1].SetDPBN(dp, bn);
@@ -908,7 +908,7 @@ void Channel4::KeyControl(uint key)
 //	アルゴリズムを設定
 void Channel4::SetAlgorithm(uint algo)
 {
-	static const uint8 table1[8][6] = 
+	static const uint8 table1[8][6] =
 	{
 		{ 0, 1, 1, 2, 2, 3 },	{ 1, 0, 0, 1, 1, 2 },
 		{ 1, 1, 1, 0, 0, 2 },	{ 0, 1, 2, 1, 1, 2 },
@@ -1072,7 +1072,7 @@ ISample Channel4::CalcLN(uint noise)
 	chip_->SetPMV(pms[chip_->GetPML()]);
 	buf[1] = buf[2] = buf[3] = 0;
 
-	buf[0] = op[0].out_; op[0].CalcFBL(fb); 
+	buf[0] = op[0].out_; op[0].CalcFBL(fb);
 	*out[0] += op[1].CalcL(*in[0]);
 	*out[1] += op[2].CalcL(*in[1]);
 	int o = op[3].out_;
