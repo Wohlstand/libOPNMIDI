@@ -1,6 +1,9 @@
 
 set(CMAKE_CXX_STANDARD 11)
 
+# Remove HQ resample necessarity (othewise, link will fail)
+remove_definitions(-DOPNMIDI_ENABLE_HQ_RESAMPLER)
+
 add_subdirectory(activenotes)
 add_subdirectory(channel-users)
 add_subdirectory(wopn-file)
