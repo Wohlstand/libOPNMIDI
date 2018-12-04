@@ -27,7 +27,7 @@ class MameOPN2 final : public OPNChipBaseT<MameOPN2>
 {
     void *chip;
 public:
-    MameOPN2();
+    explicit MameOPN2(OPNFamily f);
     ~MameOPN2() override;
 
     bool canRunAtPcmRate() const override { return true; }

@@ -28,7 +28,7 @@ class GensOPN2 final : public OPNChipBaseBufferedT<GensOPN2>
 {
     Ym2612_Emu *chip;
 public:
-    GensOPN2();
+    explicit GensOPN2(OPNFamily f);
     ~GensOPN2() override;
 
     bool canRunAtPcmRate() const override { return true; }

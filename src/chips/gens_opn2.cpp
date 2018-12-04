@@ -23,8 +23,9 @@
 
 #include "gens/Ym2612_Emu.h"
 
-GensOPN2::GensOPN2()
-    : chip(new Ym2612_Emu())
+GensOPN2::GensOPN2(OPNFamily f)
+    : OPNChipBaseBufferedT(f),
+      chip(new Ym2612_Emu())
 {
     setRate(m_rate, m_clock);
 }
@@ -37,7 +38,7 @@ GensOPN2::~GensOPN2()
 void GensOPN2::setRate(uint32_t rate, uint32_t clock)
 {
     OPNChipBaseBufferedT::setRate(rate, clock);
-    uint32_t chipRate = isRunningAtPcmRate() ? rate : static_cast<uint32_t>(nativeRate);
+    uint32_t chipRate = isRunningAtPcmRate() ? rate : nativeRate();
     chip->set_rate(chipRate, clock);  // implies reset()
 }
 

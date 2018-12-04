@@ -58,7 +58,7 @@ The library is licensed under in it's parts LGPL 2.1+, GPL v2+, GPL v3+, and MIT
 * Other parts of library are licensed under GPLv3+.
 
 ## Available CMake options
-* **CMAKE_PREFIX_PATH** - destinition folder where libOPNMIDI will be installed. On Linux it is /usr/local/ by default.
+* **CMAKE_PREFIX_PATH** - destination folder where libOPNMIDI will be installed. On Linux it is /usr/local/ by default.
 * **CMAKE_BUILD_TYPE** - Build types: **Debug** or **Release**
 * **WITH_MIDIPLAY** - (ON/OFF, default OFF) Build demo MIDI player (Requires SDL2 and also pthread on Windows with MinGW)
 * **WITH_VLC_PLUGIN** - (ON/OFF, default OFF) Compile VLC plugin. For now, works on Linux and VLC version 2.2.2. Support for newer VLC versions and other platforms comming soon!
@@ -125,7 +125,7 @@ You need to make in the any IDE a library project and put into it next files
 * wopn/*        - WOPN bank format library
 
 #### MIDI Sequencer
-To remove MIDI Sequecer, define `OPNMIDI_DISABLE_MIDI_SEQUENCER` macro and remove all those files
+To remove MIDI Sequencer, define `OPNMIDI_DISABLE_MIDI_SEQUENCER` macro and remove all those files
 * adlmidi_sequencer.cpp	- MIDI Sequencer related source
 * cvt_mus2mid.hpp - MUS2MID converter source (define `BWMIDI_DISABLE_MUS_SUPPORT` macro to remove MUS support)
 * cvt_xmi2mid.hpp - XMI2MID converter source (define `BWMIDI_DISABLE_XMI_SUPPORT` macro to remove XMI support)
@@ -142,6 +142,9 @@ To remove MIDI Sequecer, define `OPNMIDI_DISABLE_MIDI_SEQUENCER` macro and remov
 * [OPNMIDI Player for Android](https://github.com/Wohlstand/OPNMIDI-Player-Java/) - a little MIDI-player for Android which uses libOPNMIDI to play MIDI files and provides flexible GUI with ability to change bank, flags, number of emulated chips, etc.
 
 # Changelog
+## 1.4.1   <dev>
+ * Added support for OPNA chip with Neko Project II Kai YM2602 emulator usage (Thanks to [Jean Pierre Cimalando](https://github.com/jpcima) for a work!)
+
 ## 1.4.0   2018-10-01
  * Implemented a full support for Portamento! (Thanks to [Jean Pierre Cimalando](https://github.com/jpcima) for a work!)
  * Added support for SysEx event handling! (Thanks to [Jean Pierre Cimalando](https://github.com/jpcima) for a work!)

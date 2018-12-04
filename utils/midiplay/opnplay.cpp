@@ -99,15 +99,47 @@ static inline void secondsToHMSM(double seconds_full, char *hmsm_buffer, size_t 
 {
     double seconds_integral;
     double seconds_fractional = std::modf(seconds_full, &seconds_integral);
-    unsigned int milliseconds = static_cast<unsigned int>(std::floor(seconds_fractional * 1000.0));
+    unsigned int milliseconds = static_cast<unsigned int>(seconds_fractional * 1000.0);
     unsigned int seconds = static_cast<unsigned int>(std::fmod(seconds_full, 60.0));
-    unsigned int minutes = static_cast<unsigned int>(std::floor(seconds_full / 60));
-    unsigned int hours   = static_cast<unsigned int>(std::floor(seconds_full / 3600));
+    unsigned int minutes = static_cast<unsigned int>(std::fmod(seconds_full / 60, 60.0));
+    unsigned int hours   = static_cast<unsigned int>(seconds_full / 3600);
     std::memset(hmsm_buffer, 0, hmsm_buffer_size);
     if (hours > 0)
         snprintf(hmsm_buffer, hmsm_buffer_size, "%02u:%02u:%02u,%03u", hours, minutes, seconds, milliseconds);
     else
         snprintf(hmsm_buffer, hmsm_buffer_size, "%02u:%02u,%03u", minutes, seconds, milliseconds);
+}
+
+
+#define DEFAULT_BANK_NAME "xg.wopn"
+
+static std::string findDefaultBank()
+{
+    const char *const paths[] =
+    {
+        DEFAULT_BANK_NAME,
+        "../fm_banks/" DEFAULT_BANK_NAME,
+#ifdef __unix__
+        "/usr/share/opnmidiplay/" DEFAULT_BANK_NAME,
+        "/usr/local/share/opnmidiplay/" DEFAULT_BANK_NAME,
+#endif
+    };
+    const size_t paths_count = sizeof(paths) / sizeof(const char*);
+    std::string ret;
+
+    for(size_t i = 0; i < paths_count; i++)
+    {
+        const char *p = paths[i];
+        FILE *probe = std::fopen(p, "rb");
+        if(probe)
+        {
+            std::fclose(probe);
+            ret = std::string(p);
+            break;
+        }
+    }
+
+    return ret;
 }
 
 int main(int argc, char **argv)
@@ -117,23 +149,31 @@ int main(int argc, char **argv)
                          "==========================================\n\n");
     std::fflush(stdout);
 
-    if(argc < 3 || std::string(argv[1]) == "--help" || std::string(argv[1]) == "-h")
+    if(argc < 2 || std::string(argv[1]) == "--help" || std::string(argv[1]) == "-h")
     {
         std::printf(
-            "Usage: opnmidi [-s] [-w] [-nl] [--emu-mame|--emu-nuked|--emu-gens|--emu-gx] [--chips <count>] <bankfile>.wopn <midifilename>\n"
+            "Usage:\n"
+            "   opnmidiplay [-s] [-w] [-nl] [--emu-mame|--emu-nuked|--emu-gens|--emu-gx|--emu-np2] \\\n"
+            "               [--chips <count>] [<bankfile>.wopn] <midifilename>\n"
+            "\n"
+            " <bankfile>.wopn   Path to WOPN bank file\n"
+            " <midifilename>    Path to music file to play\n"
+            "\n"
             //" -p Enables adlib percussion instrument mode\n"
             //" -t Enables tremolo amplification mode\n"
             //" -v Enables vibrato amplification mode\n"
-            " -s Enables scaling of modulator volumes\n"
-            " -frb Enables full-ranged CC74 XG Brightness controller\n"
-            " -nl Quit without looping\n"
-            " -w Write WAV file rather than playing\n"
-            " -fp Enables full-panning stereo support\n"
-            " --emu-mame Use MAME YM2612 Emulator\n"
-            " --emu-gens Use GENS 2.10 Emulator\n"
-            " --emu-nuked Use Nuked OPN2 Emulator\n"
-            " --emu-gx Use Genesis Plus GX Emulator\n"
-            " --chips <count> Choose a count of emulated concurrent chips\n"
+            " -s                Enables scaling of modulator volumes\n"
+            " -frb              Enables full-ranged CC74 XG Brightness controller\n"
+            " -nl               Quit without looping\n"
+            " -w                Write WAV file rather than playing\n"
+            " -fp               Enables full-panning stereo support\n"
+            " --emu-mame        Use MAME YM2612 Emulator\n"
+            " --emu-gens        Use GENS 2.10 Emulator\n"
+            " --emu-nuked       Use Nuked OPN2 Emulator\n"
+            " --emu-gx          Use Genesis Plus GX Emulator\n"
+            " --emu-np2         Use Neko Project II Emulator\n"
+            " --chips <count>   Choose a count of emulated concurrent chips\n"
+            "\n"
         );
         std::fflush(stdout);
 
@@ -175,6 +215,9 @@ int main(int argc, char **argv)
     size_t soloTrack = ~(size_t)0;
     int chipsCount = -1;//Auto-choose chips count by emulator (Nuked 3, others 8)
 
+    std::string bankPath;
+    std::string musPath;
+
     int arg = 1;
     for(arg = 1; arg < argc; arg++)
     {
@@ -192,6 +235,8 @@ int main(int argc, char **argv)
             emulator = OPNMIDI_EMU_MAME;
         else if(!std::strcmp("--emu-gx", argv[arg]))
             emulator = OPNMIDI_EMU_GX;
+        else if(!std::strcmp("--emu-np2", argv[arg]))
+            emulator = OPNMIDI_EMU_NP2;
         else if(!std::strcmp("-fp", argv[arg]))
             fullPanEnabled = true;
         else if(!std::strcmp("-s", argv[arg]))
@@ -238,9 +283,27 @@ int main(int argc, char **argv)
         }
     }
 
-    if(arg > argc - 2)
+    if(arg == argc - 2)
     {
-        printError("Missing bank and/or music file paths!\n");
+        bankPath = argv[arg];
+        musPath = argv[arg + 1];
+    }
+    else if(arg == argc - 1)
+    {
+        std::fprintf(stdout, " - Bank is not specified, searching for default...\n");
+        std::fflush(stdout);
+        bankPath = findDefaultBank();
+        if(bankPath.empty())
+        {
+            printError("Missing default bank file xg.wopn!\n");
+            return 2;
+        }
+        musPath = argv[arg];
+    }
+    else
+    if(arg > argc - 1)
+    {
+        printError("Missing music file path!\n");
         return 2;
     }
 
@@ -268,9 +331,6 @@ int main(int argc, char **argv)
     if(!recordWave)
         opn2_setRawEventHook(myDevice, debugPrintEvent, NULL);
     #endif
-
-    std::string bankPath = argv[arg];
-    std::string musPath = argv[arg + 1];
 
     if(opn2_switchEmulator(myDevice, emulator) != 0)
     {

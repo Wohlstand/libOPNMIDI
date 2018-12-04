@@ -1,5 +1,10 @@
 cmake_minimum_required (VERSION 3.2)
-project(libOPNMIDI C CXX)
+project(libOPNMIDI VERSION 1.4.0 LANGUAGES C CXX)
+
+include(GNUInstallDirs)
+
+# Prefer C++98 standard
+set(CMAKE_CXX_STANDARD 98)
 
 #===========================================================================================
 # Strip garbage
@@ -87,11 +92,13 @@ option(USE_MAME_EMULATOR    "Use MAME YM2612 emulator (for most of hardware)" ON
 option(USE_GENS_EMULATOR    "Use GENS 2.10 emulator (fastest, very outdated, inaccurate)" ON)
 option(USE_NUKED_EMULATOR   "Use Nuked OPN2 emulator (most accurate, heavy)" ON)
 option(USE_GX_EMULATOR      "Use Genesis Plus GX emulator (experimental)" OFF)
+option(USE_NP2_EMULATOR     "Use Neko Project II emulator" ON)
 # WIP FEATURES
 # option(WITH_CPP_EXTRAS      "Build with support for C++ extras (features are can be found in 'adlmidi.hpp' header)" OFF)
 
 option(WITH_MIDIPLAY        "Build also demo MIDI player" OFF)
 option(WITH_VLC_PLUGIN      "Build also a plugin for VLC Media Player" OFF)
+option(VLC_PLUGIN_NOINSTALL "Don't install VLC plugin into VLC directory" OFF)
 option(WITH_DAC_UTIL        "Build also OPN2 DAC testing utility" OFF)
 
 if(CMAKE_VERSION VERSION_EQUAL "3.1" OR CMAKE_VERSION VERSION_GREATER "3.1")
@@ -170,6 +177,20 @@ else()
     add_definitions(-DOPNMIDI_DISABLE_GX_EMULATOR)
 endif()
 
+if(USE_NP2_EMULATOR)
+    list(APPEND libOPNMIDI_SOURCES
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/np2_opna.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/np2/fmgen_opna.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/np2/fmgen_file.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/np2/fmgen_fmgen.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/np2/fmgen_fmtimer.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/np2/fmgen_opna.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/np2/fmgen_psg.cpp)
+    set(HAS_EMULATOR TRUE)
+else()
+    add_definitions(-DOPNMIDI_DISABLE_NP2_EMULATOR)
+endif()
+
 if(NOT HAS_EMULATOR)
     message(FATAL_ERROR "No emulators enabled! You must enable at least one emulator!")
 endif()
@@ -183,15 +204,20 @@ endif()
 #    add_definitions(-DADLMIDI_DISABLE_CPP_EXTRAS)
 #endif()
 
-if(libOPNMIDI_STATIC)
+# === Static library ====
+if(libOPNMIDI_STATIC OR WITH_VLC_PLUGIN)
     add_library(OPNMIDI_static STATIC ${libOPNMIDI_SOURCES})
     set_target_properties(OPNMIDI_static PROPERTIES OUTPUT_NAME OPNMIDI)
     target_include_directories(OPNMIDI_static PUBLIC ${libOPNMIDI_SOURCE_DIR}/include)
     set_legacy_standard(OPNMIDI_static)
     set_visibility_hidden(OPNMIDI_static)
     list(APPEND libOPNMIDI_INSTALLS OPNMIDI_static)
+    if(NOT libOPNMIDI_STATIC)
+        set_target_properties(OPNMIDI_static PROPERTIES EXCLUDE_FROM_ALL TRUE)
+    endif()
 endif()
 
+# === Shared library ====
 if(libOPNMIDI_SHARED)
     add_library(OPNMIDI_shared SHARED ${libOPNMIDI_SOURCES})
     set_target_properties(OPNMIDI_shared PROPERTIES OUTPUT_NAME OPNMIDI)
@@ -201,7 +227,12 @@ if(libOPNMIDI_SHARED)
     list(APPEND libOPNMIDI_INSTALLS OPNMIDI_shared)
     if(WIN32)
         target_compile_definitions(OPNMIDI_shared PRIVATE "-DOPNMIDI_BUILD_DLL")
+        if(CMAKE_COMPILER_IS_GNUCXX)
+            set_property(TARGET OPNMIDI_shared APPEND_STRING PROPERTY LINK_FLAGS " -static-libgcc -static-libstdc++")
+            set_property(TARGET OPNMIDI_shared APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-Bstatic,--whole-archive -lpthread -Wl,-Bdynamic,--no-whole-archive")
+        endif()
     endif()
+    set_target_properties(OPNMIDI_shared PROPERTIES SOVERSION "1")
 endif()
 
 if(NOT libOPNMIDI_STATIC AND NOT libOPNMIDI_SHARED)
@@ -210,6 +241,12 @@ You must enable at least one of them!")
 endif()
 
 add_library(OPNMIDI_IF INTERFACE)
+
+if(libOPNMIDI_STATIC OR WITH_VLC_PLUGIN)
+    add_library(OPNMIDI_IF_STATIC INTERFACE)
+    target_link_libraries(OPNMIDI_IF_STATIC INTERFACE OPNMIDI_static)
+endif()
+
 if(libOPNMIDI_SHARED)
   target_link_libraries(OPNMIDI_IF INTERFACE OPNMIDI_shared)
 else()
@@ -253,6 +290,10 @@ if(WITH_MIDIPLAY)
         add_dependencies(opnmidiplay OPNMIDI_static)
     endif()
 
+    if(NOT WIN32 AND NOT APPLE)
+        install(FILES ${libOPNMIDI_SOURCE_DIR}/fm_banks/xg.wopn DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/opnmidiplay/)
+    endif()
+
     list(APPEND libOPNMIDI_INSTALLS opnmidiplay)
 endif()
 
@@ -275,19 +316,26 @@ if(WITH_VLC_PLUGIN)
     target_include_directories(opnmidi_vlc_plugin PRIVATE
             ${LIBVLC_INCLUDE_DIR}/vlc/plugins
             ${LIBVLC_INCLUDE_DIR}/vlc)
-    target_link_libraries(opnmidi_vlc_plugin OPNMIDI_IF vlccore m stdc++)
+
+    set(OPNMIDIVLC_LIBS OPNMIDI_IF_STATIC ${LIBVLCCORE_LIBRARY} m)
+
+    if(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND CMAKE_COMPILER_IS_GNUCXX)
+        set_property(TARGET opnmidi_vlc_plugin APPEND_STRING PROPERTY LINK_FLAGS " -static-libgcc -static-libstdc++")
+        set_property(TARGET opnmidi_vlc_plugin APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-Bstatic,--whole-archive -lpthread -Wl,-Bdynamic,--no-whole-archive")
+    elseif(NOT WIN32)
+        list(APPEND OPNMIDIVLC_LIBS stdc++)
+    endif()
+
+    target_link_libraries(opnmidi_vlc_plugin ${OPNMIDIVLC_LIBS})
     # target_link_libraries(opnmidi_vlc_plugin INTERFACE "-export-symbol-regex ^vlc_entry")
 
-    install(TARGETS opnmidi_vlc_plugin DESTINATION "${VLCPLUGIN_CODEC_INSTALL_PATH}")
-
-    if(libOPNMIDI_SHARED)
-        add_dependencies(opnmidi_vlc_plugin OPNMIDI_shared)
+    if(NOT VLC_PLUGIN_NOINSTALL)
+        install(TARGETS opnmidi_vlc_plugin DESTINATION "${VLCPLUGIN_CODEC_INSTALL_PATH}")
     else()
-        if(NOT libOPNMIDI_STATIC)
-            message(FATAL_ERROR "libOPNMIDI is required to be built!")
-        endif()
-        add_dependencies(opnmidi_vlc_plugin OPNMIDI_static)
+        install(TARGETS opnmidi_vlc_plugin DESTINATION "${CMAKE_INSTALL_LIBDIR}/vlc-codec/")
     endif()
+
+    add_dependencies(opnmidi_vlc_plugin OPNMIDI_static)
 
 endif()
 
@@ -309,7 +357,7 @@ if(WITH_HQ_RESAMPLER)
     if(libOPNMIDI_SHARED)
         target_link_libraries(OPNMIDI_shared PUBLIC "${ZITA_RESAMPLER_LIBRARY}")
     endif()
-    if(libOPNMIDI_STATIC)
+    if(libADLMIDI_STATIC OR WITH_VLC_PLUGIN)
         target_link_libraries(OPNMIDI_static PUBLIC "${ZITA_RESAMPLER_LIBRARY}")
     endif()
     if(WITH_DAC_UTIL)
@@ -318,15 +366,21 @@ if(WITH_HQ_RESAMPLER)
 endif()
 
 install(TARGETS ${libOPNMIDI_INSTALLS}
-        RUNTIME DESTINATION "bin"
-        LIBRARY DESTINATION "lib"
-        ARCHIVE DESTINATION "lib"
-        INCLUDES DESTINATION "include")
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
 install(FILES
         include/opnmidi.h
         #include/opnmidi.hpp # WIP
-        DESTINATION include/)
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+
+if(NOT ANDROID)
+    configure_file(libOPNMIDI.pc.in libOPNMIDI.pc @ONLY)
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libOPNMIDI.pc"
+                  DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+endif()
 
 option(WITH_UNIT_TESTS   "Enable unit testing" OFF)
 if(WITH_UNIT_TESTS)
@@ -334,6 +388,15 @@ if(WITH_UNIT_TESTS)
     add_subdirectory(test)
 endif()
 
+# === Version check ====
+set(VERSION_CHECK_SOURCE "
+    #include \"opnmidi.h\"
+    #if !(OPNMIDI_VERSION_MAJOR == ${PROJECT_VERSION_MAJOR} && OPNMIDI_VERSION_MINOR == ${PROJECT_VERSION_MINOR} && OPNMIDI_VERSION_PATCHLEVEL == ${PROJECT_VERSION_PATCH})
+    #error Project and source code version do not match!
+    #endif")
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/version_check.c" "${VERSION_CHECK_SOURCE}")
+add_library(OPNMIDI_version_check OBJECT "${CMAKE_CURRENT_BINARY_DIR}/version_check.c")
+target_include_directories(OPNMIDI_version_check PRIVATE "include")
 
 message("==== libOPNMIDI options ====")
 message("libOPNMIDI_STATIC        = ${libOPNMIDI_STATIC}")
@@ -349,6 +412,7 @@ message("USE_MAME_EMULATOR        = ${USE_MAME_EMULATOR}")
 message("USE_GENS_EMULATOR        = ${USE_GENS_EMULATOR}")
 message("USE_NUKED_EMULATOR       = ${USE_NUKED_EMULATOR}")
 message("USE_GX_EMULATOR          = ${USE_GX_EMULATOR}")
+message("USE_NP2_EMULATOR         = ${USE_NP2_EMULATOR}")
 
 message("===== Utils and extras =====")
 message("WITH_MIDIPLAY            = ${WITH_MIDIPLAY}")

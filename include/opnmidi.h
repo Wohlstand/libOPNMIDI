@@ -94,6 +94,17 @@ typedef short           OPN2_SInt16;
 #endif
 
 /**
+ * @brief Chip types
+ */
+enum OPNMIDI_ChipType
+{
+    /*! The Yamaha OPN2, alias YM2612 YM3438 */
+    OPNMIDI_ChipType_OPN2 = 0,
+    /*! The Yamaha OPNA, alias YM2608 */
+    OPNMIDI_ChipType_OPNA
+};
+
+/**
  * @brief Volume scaling models
  */
 enum OPNMIDI_VolumeModels
@@ -311,6 +322,12 @@ extern OPNMIDI_DECLSPEC void opn2_setLfoFrequency(struct OPN2_MIDIPlayer *device
 /*Get the LFO frequency*/
 extern OPNMIDI_DECLSPEC int opn2_getLfoFrequency(struct OPN2_MIDIPlayer *device);
 
+/*Override chip type. -1 - use bank default state*/
+extern OPNMIDI_DECLSPEC void opn2_setChipType(struct OPN2_MIDIPlayer *device, int chipType);
+
+/*Get the chip type*/
+extern OPNMIDI_DECLSPEC int opn2_getChipType(struct OPN2_MIDIPlayer *device);
+
 /**
  * @brief Override Enable(1) or Disable(0) scaling of modulator volumes. -1 - use bank default scaling of modulator volumes
  * @param device Instance of the library
@@ -419,6 +436,8 @@ enum Opn2_Emulator
     OPNMIDI_EMU_GENS,
     /*! Genesis Plus GX (a fork of Mame YM2612) */
     OPNMIDI_EMU_GX,
+    /*! Neko Project II OPNA */
+    OPNMIDI_EMU_NP2,
     /*! Count instrument on the level */
     OPNMIDI_EMU_end
 };
