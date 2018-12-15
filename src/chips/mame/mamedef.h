@@ -23,11 +23,11 @@ typedef signed __int64						INT64;
 typedef unsigned __int64					UINT64;
 #	else
 #		if __WORDSIZE == 64
-typedef signed long int __int64_t;
-typedef unsigned long int __uint64_t;
+typedef signed long int						INT64;
+typedef unsigned long int					UINT64;
 #		else
-__extension__ typedef signed long long int __int64_t;
-__extension__ typedef unsigned long long int __uint64_t;
+__extension__ typedef signed long long int	INT64;
+__extension__ typedef unsigned long long int UINT64;
 #		endif
 #	endif
 #endif
