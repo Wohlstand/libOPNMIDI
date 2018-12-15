@@ -149,7 +149,7 @@ enum OPNMIDI_SampleType
     /*! unsigned PCM 32-bit */
     OPNMIDI_SampleType_U32,
     /*! Count of available sample format types */
-    OPNMIDI_SampleType_Count,
+    OPNMIDI_SampleType_Count
 };
 
 /**
@@ -819,7 +819,7 @@ enum OPNMIDI_TrackOptions
     /*! Disabled track */
     OPNMIDI_TrackOption_Off  = 2,
     /*! Solo track */
-    OPNMIDI_TrackOption_Solo = 3,
+    OPNMIDI_TrackOption_Solo = 3
 };
 
 /**

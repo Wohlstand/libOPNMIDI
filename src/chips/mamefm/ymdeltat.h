@@ -12,9 +12,12 @@ typedef void (*STATUS_CHANGE_HANDLER)(void *chip, uint8_t status_bits);
 
 
 /* DELTA-T (adpcm type B) struct */
-struct YM_DELTAT {     /* AT: rearranged and tightened structure */
-	static constexpr int EMULATION_MODE_NORMAL = 0;
-	static constexpr int EMULATION_MODE_YM2610 = 1;
+struct YM_DELTAT {/* AT: rearranged and tightened structure */
+	enum
+	{
+		EMULATION_MODE_NORMAL = 0,
+		EMULATION_MODE_YM2610 = 1
+	};
 
 	FM_READBYTE read_byte;
 	FM_WRITEBYTE write_byte;

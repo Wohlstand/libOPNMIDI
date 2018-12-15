@@ -48,7 +48,7 @@ enum
     OPERATOR1 = 0,
     OPERATOR2 = 1,
     OPERATOR3 = 2,
-    OPERATOR4 = 3,
+    OPERATOR4 = 3
 };
 /* *********** FM Operator indexes *end******* */
 

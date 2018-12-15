@@ -906,6 +906,7 @@ static inline void FM_BUSY_SET(FM_ST *ST,int busyclock )
 static inline void FM_KEYON(uint8_t type, FM_CH *CH , int s )
 {
 	FM_SLOT *SLOT = &CH->SLOT[s];
+	(void)type;
 	if( !SLOT->key )
 	{
 		SLOT->key = 1;
@@ -983,7 +984,7 @@ static void setup_connection( FM_OPN *OPN, FM_CH *CH, int ch )
 		/*    +----C1----+     */
 		/* M1-+-MEM---M2-+-OUT */
 		/*    +----C2----+     */
-		*om1 = nullptr;   /* special mark */
+		*om1 = NULLPTR;   /* special mark */
 		*oc1 = carrier;
 		*om2 = carrier;
 		*memc= &OPN->m2;
@@ -1025,6 +1026,7 @@ static inline void set_det_mul(FM_ST *ST,FM_CH *CH,FM_SLOT *SLOT,int v)
 /* set total level */
 static inline void set_tl(FM_CH *CH,FM_SLOT *SLOT , int v)
 {
+	(void)CH;
 	SLOT->tl = (v&0x7f)<<(ENV_BITS-7); /* 7bit TL */
 }
 
@@ -1032,6 +1034,7 @@ static inline void set_tl(FM_CH *CH,FM_SLOT *SLOT , int v)
 static inline void set_ar_ksr(uint8_t type, FM_CH *CH,FM_SLOT *SLOT,int v)
 {
 	uint8_t old_KSR = SLOT->KSR;
+	(void)type;
 
 	SLOT->ar = (v&0x1f) ? 32 + ((v&0x1f)<<1) : 0;
 
@@ -1057,6 +1060,7 @@ static inline void set_ar_ksr(uint8_t type, FM_CH *CH,FM_SLOT *SLOT,int v)
 /* set decay rate */
 static inline void set_dr(uint8_t type, FM_SLOT *SLOT,int v)
 {
+	(void)type;
 	SLOT->d1r = (v&0x1f) ? 32 + ((v&0x1f)<<1) : 0;
 
 	SLOT->eg_sh_d1r = eg_rate_shift [SLOT->d1r + SLOT->ksr];
@@ -1066,6 +1070,7 @@ static inline void set_dr(uint8_t type, FM_SLOT *SLOT,int v)
 /* set sustain rate */
 static inline void set_sr(uint8_t type, FM_SLOT *SLOT,int v)
 {
+	(void)type;
 	SLOT->d2r = (v&0x1f) ? 32 + ((v&0x1f)<<1) : 0;
 
 	SLOT->eg_sh_d2r = eg_rate_shift [SLOT->d2r + SLOT->ksr];
@@ -1075,6 +1080,7 @@ static inline void set_sr(uint8_t type, FM_SLOT *SLOT,int v)
 /* set release rate */
 static inline void set_sl_rr(uint8_t type, FM_SLOT *SLOT,int v)
 {
+	(void)type;
 	SLOT->sl = sl_table[ v>>4 ];
 
 	SLOT->rr  = 34 + ((v&0x0f)<<2);
@@ -2440,8 +2446,8 @@ int ym2203_timer_over(void *chip,int c)
 
 namespace {
 /**** YM2610 ADPCM defines ****/
-constexpr unsigned ADPCM_SHIFT          = 16;  /* frequency step rate   */
-constexpr unsigned ADPCMA_ADDRESS_SHIFT = 8;   /* adpcm A address shift */
+CONSTEXPR unsigned ADPCM_SHIFT          = 16;  /* frequency step rate   */
+CONSTEXPR unsigned ADPCMA_ADDRESS_SHIFT = 8;   /* adpcm A address shift */
 
 /* speedup purposes only */
 static int jedi_table[ 49*16 ];
@@ -2488,7 +2494,8 @@ struct ym2610_state
 	device_t    *device;
 
 	/* different from the usual ADPCM table */
-	static constexpr int step_inc[8] = { -1*16, -1*16, -1*16, -1*16, 2*16, 5*16, 7*16, 9*16 };
+	//static CONSTEXPR int step_inc[8] = { -1*16, -1*16, -1*16, -1*16, 2*16, 5*16, 7*16, 9*16 };
+	static CONSTEXPR int step_inc[8];
 
 	/* ADPCM A (Non control type) : calculate one channel output */
 	inline void ADPCMA_calc_chan( ADPCM_CH *ch )
@@ -2498,7 +2505,7 @@ struct ym2610_state
 
 
 		ch->now_step += ch->step;
-		if ( ch->now_step >= (1<<ADPCM_SHIFT) )
+		if ( ch->now_step >= uint32_t(1<<ADPCM_SHIFT) )
 		{
 			step = ch->now_step >> ADPCM_SHIFT;
 			ch->now_step &= (1<<ADPCM_SHIFT)-1;
@@ -2653,7 +2660,7 @@ struct ym2610_state
 
 };
 
-constexpr int ym2610_state::step_inc[8];
+CONSTEXPR int ym2610_state::step_inc[8] = { -1*16, -1*16, -1*16, -1*16, 2*16, 5*16, 7*16, 9*16 };
 
 /* here is the virtual YM2608 */
 typedef ym2610_state ym2608_state;
@@ -2662,7 +2669,7 @@ typedef ym2610_state ym2608_state;
 /* Algorithm and tables verified on real YM2608 and YM2610 */
 
 /* usual ADPCM table (16 * 1.1^N) */
-constexpr int steps[49] =
+CONSTEXPR int steps[49] =
 {
 		16,  17,   19,   21,   23,   25,   28,
 		31,  34,   37,   41,   45,   50,   55,
@@ -2993,7 +3000,7 @@ void * ym2608_init(device_t *device, int clock, int rate,
 	if( !init_tables() )
 	{
 		delete F2608;
-		return nullptr;
+		return NULLPTR;
 	}
 
 	F2608->device = device;

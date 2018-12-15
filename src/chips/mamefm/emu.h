@@ -37,6 +37,18 @@
 #   define M_PI 3.14159265358979323846
 #endif
 
+#if __cplusplus <= 199711L
+#define CONSTEXPR
+#else
+#define CONSTEXPR constexpr
+#endif
+
+#if __cplusplus <= 199711L
+#define NULLPTR NULL
+#else
+#define NULLPTR nullptr
+#endif
+
 typedef uint32_t offs_t;
 
 inline void vlogerror(const char *fmt, va_list ap)

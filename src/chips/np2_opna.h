@@ -25,9 +25,9 @@
 
 namespace FM { class OPN2; class OPNA; class OPNB; }
 template <class ChipType = FM::OPNA>
-class NP2OPNA final : public OPNChipBaseBufferedT<NP2OPNA<ChipType>>
+class NP2OPNA final : public OPNChipBaseBufferedT<NP2OPNA<ChipType > >
 {
-    typedef OPNChipBaseBufferedT<NP2OPNA<ChipType>> ChipBase;
+    typedef OPNChipBaseBufferedT<NP2OPNA<ChipType > > ChipBase;
     ChipType *chip;
 public:
     explicit NP2OPNA(OPNFamily f);

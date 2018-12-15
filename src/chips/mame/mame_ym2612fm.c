@@ -2043,7 +2043,7 @@ static void OPNWriteReg(FM_OPN *OPN, int r, int v)
 		case 1:		/* 0xa4-0xa6 : FNUM2,BLK */
 			OPN->ST.fn_h = v&0x3f;
 #ifdef USE_VGM_INIT_SWITCH
-			if (IsVGMInit)	// workaround for stupid Kega Fusion init block
+			if (IsVGMInit)	/* workaround for stupid Kega Fusion init block */
 				CH->block_fnum = (OPN->ST.fn_h << 8) | (CH->block_fnum & 0xFF);
 #endif
 			break;

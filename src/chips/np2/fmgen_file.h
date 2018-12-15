@@ -14,12 +14,12 @@ public:
 	{
 		open		= 0x000001,
 		readonly	= 0x000002,
-		create		= 0x000004,
+		create		= 0x000004
 	};
 
 	enum SeekMethod
 	{
-		begin = 0, current = 1, end = 2,
+		begin = 0, current = 1, end = 2
 	};
 
 	enum Error

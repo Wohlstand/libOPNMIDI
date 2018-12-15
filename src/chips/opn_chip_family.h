@@ -31,7 +31,7 @@ enum OPNFamily
     #define Each(x) OPNChip_##x,
     OPN_FAMILY_EACH(Each)
     #undef Each
-    OPNChip_Count,
+    OPNChip_Count
 };
 
 template <OPNFamily F>
@@ -43,7 +43,7 @@ struct OPNFamilyTraits<OPNChip_OPN2>
     enum
     {
         nativeRate = 53267,
-        nativeClockRate = 7670454,
+        nativeClockRate = 7670454
     };
 };
 
@@ -53,7 +53,7 @@ struct OPNFamilyTraits<OPNChip_OPNA>
     enum
     {
         nativeRate = 55466,
-        nativeClockRate = 7987200,
+        nativeClockRate = 7987200
     };
 };
 

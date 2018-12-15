@@ -69,7 +69,7 @@ public:
 		toneshift = 24,
 		envshift = 22,
 		noiseshift = 14,
-		oversampling = 2,		// ← 音質より速度が優先なら減らすといいかも
+		oversampling = 2		// ← 音質より速度が優先なら減らすといいかも
 	};
 
 public:
