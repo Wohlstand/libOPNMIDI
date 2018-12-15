@@ -2495,7 +2495,7 @@ struct ym2610_state
 
 	/* different from the usual ADPCM table */
 	//static CONSTEXPR int step_inc[8] = { -1*16, -1*16, -1*16, -1*16, 2*16, 5*16, 7*16, 9*16 };
-	static CONSTEXPR int step_inc[8];
+	static int step_inc[8];
 
 	/* ADPCM A (Non control type) : calculate one channel output */
 	inline void ADPCMA_calc_chan( ADPCM_CH *ch )
@@ -2660,7 +2660,7 @@ struct ym2610_state
 
 };
 
-CONSTEXPR int ym2610_state::step_inc[8] = { -1*16, -1*16, -1*16, -1*16, 2*16, 5*16, 7*16, 9*16 };
+int ym2610_state::step_inc[8] = { -1*16, -1*16, -1*16, -1*16, 2*16, 5*16, 7*16, 9*16 };
 
 /* here is the virtual YM2608 */
 typedef ym2610_state ym2608_state;
