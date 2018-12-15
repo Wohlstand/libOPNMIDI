@@ -153,7 +153,7 @@ int main(int argc, char **argv)
     {
         std::printf(
             "Usage:\n"
-            "   opnmidiplay [-s] [-w] [-nl] [--emu-mame|--emu-nuked|--emu-gens|--emu-gx|--emu-np2] \\\n"
+            "   opnmidiplay [-s] [-w] [-nl] [--emu-mame|--emu-nuked|--emu-gens|--emu-gx|--emu-np2|--emu-mame-opna] \\\n"
             "               [--chips <count>] [<bankfile>.wopn] <midifilename>\n"
             "\n"
             " <bankfile>.wopn   Path to WOPN bank file\n"
@@ -172,6 +172,7 @@ int main(int argc, char **argv)
             " --emu-nuked       Use Nuked OPN2 Emulator\n"
             " --emu-gx          Use Genesis Plus GX Emulator\n"
             " --emu-np2         Use Neko Project II Emulator\n"
+            " --emu-mame-opna   Use MAME YM2608 Emulator\n"
             " --chips <count>   Choose a count of emulated concurrent chips\n"
             "\n"
         );
@@ -237,6 +238,8 @@ int main(int argc, char **argv)
             emulator = OPNMIDI_EMU_GX;
         else if(!std::strcmp("--emu-np2", argv[arg]))
             emulator = OPNMIDI_EMU_NP2;
+        else if(!std::strcmp("--emu-mame-opna", argv[arg]))
+            emulator = OPNMIDI_EMU_MAME_2608;
         else if(!std::strcmp("-fp", argv[arg]))
             fullPanEnabled = true;
         else if(!std::strcmp("-s", argv[arg]))
