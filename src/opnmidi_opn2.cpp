@@ -26,7 +26,7 @@
 
 #if defined(OPNMIDI_DISABLE_NUKED_EMULATOR) && defined(OPNMIDI_DISABLE_MAME_EMULATOR) && \
     defined(OPNMIDI_DISABLE_GENS_EMULATOR) && defined(OPNMIDI_DISABLE_GX_EMULATOR) && \
-    defined(OPNMIDI_DISABLE_NP2_EMULATOR)
+    defined(OPNMIDI_DISABLE_NP2_EMULATOR) && defined(OPNMIDI_DISABLE_MAME_2608_EMULATOR)
 #error "No emulators enabled. You must enable at least one emulator to use this library!"
 #endif
 
@@ -55,6 +55,11 @@
 #include "chips/np2_opna.h"
 #endif
 
+// MAME YM2608 emulator
+#ifndef OPNMIDI_DISABLE_MAME_2608_EMULATOR
+#include "chips/mame_opna.h"
+#endif
+
 static const unsigned opn2_emulatorSupport = 0
 #ifndef OPNMIDI_DISABLE_NUKED_EMULATOR
     | (1u << OPNMIDI_EMU_NUKED)
@@ -70,6 +75,9 @@ static const unsigned opn2_emulatorSupport = 0
 #endif
 #ifndef OPNMIDI_DISABLE_NP2_EMULATOR
     | (1u << OPNMIDI_EMU_NP2)
+#endif
+#ifndef OPNMIDI_DISABLE_MAME_2608_EMULATOR
+    | (1u << OPNMIDI_EMU_MAME_2608)
 #endif
 ;
 
@@ -469,6 +477,11 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
 #ifndef OPNMIDI_DISABLE_NP2_EMULATOR
         case OPNMIDI_EMU_NP2:
             chip = new NP2OPNA<>(family);
+            break;
+#endif
+#ifndef OPNMIDI_DISABLE_MAME_2608_EMULATOR
+        case OPNMIDI_EMU_MAME_2608:
+            chip = new MameOPNA(family);
             break;
 #endif
         }
