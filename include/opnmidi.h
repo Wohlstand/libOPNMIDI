@@ -507,6 +507,8 @@ enum Opn2_Emulator
     OPNMIDI_EMU_NP2,
     /*! Mame YM2608 */
     OPNMIDI_EMU_MAME_2608,
+    /*! PMDWin OPNA */
+    OPNMIDI_EMU_PMDWIN,
     /*! Count instrument on the level */
     OPNMIDI_EMU_end
 };
