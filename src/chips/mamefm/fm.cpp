@@ -1776,7 +1776,7 @@ static void OPNSetPres(FM_OPN *OPN, int pres, int timer_prescaler, int SSGpres)
 	OPN->ST.freqbase = 1.0;
 #endif
 
-	OPN->eg_timer_add  = (1<<EG_SH)  *  OPN->ST.freqbase;
+	OPN->eg_timer_add  = (uint32_t)((1<<EG_SH) * OPN->ST.freqbase);
 	OPN->eg_timer_overflow = ( 3 ) * (1<<EG_SH);
 
 
@@ -1811,7 +1811,7 @@ static void OPNSetPres(FM_OPN *OPN, int pres, int timer_prescaler, int SSGpres)
 	{
 		/* Amplitude modulation: 64 output levels (triangle waveform); 1 level lasts for one of "lfo_samples_per_step" samples */
 		/* Phase modulation: one entry from lfo_pm_output lasts for one of 4 * "lfo_samples_per_step" samples  */
-		OPN->lfo_freq[i] = (1.0 / lfo_samples_per_step[i]) * (1<<LFO_SH) * OPN->ST.freqbase;
+		OPN->lfo_freq[i] = (uint32_t)((1.0 / lfo_samples_per_step[i]) * (1<<LFO_SH) * OPN->ST.freqbase);
 #if 0
 		logerror("FM.C: lfo_freq[%i] = %08x (dec=%8i)\n",
 					i, OPN->lfo_freq[i],OPN->lfo_freq[i] );

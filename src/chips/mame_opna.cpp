@@ -103,7 +103,7 @@ void MameOPNA::nativeGenerateN(int16_t *output, size_t frames)
     FMSAMPLE *bufR = bufLR + buffer_size;
     FMSAMPLE *bufs[2] = { bufLR, bufR };
 
-    ym2608_update_one(chip, bufs, frames);
+    ym2608_update_one(chip, bufs, (int)frames);
 
     for(size_t i = 0; i < frames; ++i)
     {

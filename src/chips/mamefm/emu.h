@@ -33,6 +33,10 @@
 #include <stdint.h>
 #include <assert.h>
 
+#if !defined(M_PI)
+#   define M_PI 3.14159265358979323846
+#endif
+
 typedef uint32_t offs_t;
 
 inline void vlogerror(const char *fmt, va_list ap)
