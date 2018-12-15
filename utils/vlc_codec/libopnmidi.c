@@ -95,14 +95,24 @@ static const char * const volume_models_descriptions[] =
     "OPN2 Emulator that will be used to generate final sound.")
 
 /*TODO: Turn on fourth emulator when complete experiments with it */
-static const int emulator_type_values[] = { 0, 1, 2 /*, 3*/, 4 };
+static const int emulator_type_values[] =
+{
+    0, 1, 2
+#ifdef USE_GX_EMULATOR
+    , 3
+#endif
+    , 4, 5
+};
 static const char * const emulator_type_descriptions[] =
 {
-    N_("MAME YM2612"),
+    N_("MAME YM2612 (OPN2)"),
     N_("Nuked OPN2"),
     N_("Gens 2.10"),
-    /* N_("Genesis Plus GX [Experimental]"),*/
+#ifdef USE_GX_EMULATOR
+    N_("Genesis Plus GX [Experimental]"),
+#endif
     N_("Neko Project II Kai OPNA"),
+    N_("MAME YM2610 (OPNA)"),
     NULL
 };
 

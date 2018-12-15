@@ -14,6 +14,11 @@ target_compile_options(opnmidi_vlc_plugin PUBLIC
             "-DVLC_MODULE_LICENSE=\"GPLv3\""
             "-DMODULE_STRING=\"opnmidi\""
             ${VLCPLUGIN_DEFINITIONS})
+
+if(USE_GX_EMULATOR)
+    target_compile_options(opnmidi_vlc_plugin PRIVATE -DUSE_GX_EMULATOR)
+endif()
+
 target_include_directories(opnmidi_vlc_plugin PRIVATE
         ${LIBVLC_INCLUDE_DIR}/vlc/plugins
         ${LIBVLC_INCLUDE_DIR}/vlc)
