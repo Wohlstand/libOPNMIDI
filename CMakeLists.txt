@@ -303,8 +303,7 @@ if(WITH_MIDIPLAY)
 
     if(libOPNMIDI_SHARED)
         add_dependencies(opnmidiplay OPNMIDI_shared)
-        # ========= WIP =========
-        # set_target_properties(opnmidiplay PROPERTIES COMPILE_FLAGS "-Wl,-rpath='$$ORIGIN/../lib'")
+        set_target_properties(opnmidiplay PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
     else()
         if(NOT libOPNMIDI_STATIC)
             message(FATAL_ERROR "libOPNMIDI is required to be built!")

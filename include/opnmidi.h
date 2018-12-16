@@ -231,7 +231,74 @@ enum OPN2_BankAccessFlags
     OPNMIDI_Bank_CreateRt = 1|2
 };
 
-typedef struct OPN2_Instrument OPN2_Instrument;
+
+
+/* ======== Instrument structures ======== */
+
+/**
+ * @brief Version of the instrument data format
+ */
+enum
+{
+    OPNMIDI_InstrumentVersion = 0
+};
+
+/**
+ * @brief Instrument flags
+ */
+typedef enum OPN2_InstrumentFlags
+{
+    OPNMIDI_Ins_Pseudo8op  = 0x01, /*Reserved for future use, not implemented yet*/
+    OPNMIDI_Ins_IsBlank    = 0x02
+} OPN2_InstrumentFlags;
+
+/**
+ * @brief Operator structure, part of Instrument structure
+ */
+typedef struct OPN2_Operator
+{
+    /* Detune and frequency multiplication register data */
+    OPN2_UInt8 dtfm_30;
+    /* Total level register data */
+    OPN2_UInt8 level_40;
+    /* Rate scale and attack register data */
+    OPN2_UInt8 rsatk_50;
+    /* Amplitude modulation enable and Decay-1 register data */
+    OPN2_UInt8 amdecay1_60;
+    /* Decay-2 register data */
+    OPN2_UInt8 decay2_70;
+    /* Sustain and Release register data */
+    OPN2_UInt8 susrel_80;
+    /* SSG-EG register data */
+    OPN2_UInt8 ssgeg_90;
+} OPN2_Operator;
+
+/**
+ * @brief Instrument structure
+ */
+typedef struct OPN2_Instrument
+{
+    /*! Version of the instrument object */
+    int version;
+    /* MIDI note key (half-tone) offset for an instrument (or a first voice in pseudo-4-op mode) */
+    OPN2_SInt16 note_offset;
+    /* Reserved */
+    OPN2_SInt8  midi_velocity_offset;
+    /* Percussion MIDI base tone number at which this drum will be played */
+    OPN2_UInt8 percussion_key_number;
+    /* Instrument flags */
+    OPN2_UInt8 inst_flags;
+    /* Feedback and Algorithm register data */
+    OPN2_UInt8 fbalg;
+    /* LFO Sensitivity register data */
+    OPN2_UInt8 lfosens;
+    /* Operators register data */
+    OPN2_Operator operators[4];
+    /* Millisecond delay of sounding while key is on */
+    OPN2_UInt16 delay_on_ms;
+    /* Millisecond delay of sounding after key off */
+    OPN2_UInt16 delay_off_ms;
+} OPN2_Instrument;
 
 
 
@@ -1022,76 +1089,6 @@ extern OPNMIDI_DECLSPEC void opn2_setDebugMessageHook(struct OPN2_MIDIPlayer *de
  * To get the valid MIDI channel you will need to apply the & 0x0F mask to every value.
  */
 extern OPNMIDI_DECLSPEC int opn2_describeChannels(struct OPN2_MIDIPlayer *device, char *text, char *attr, size_t size);
-
-
-
-
-/* ======== Instrument structures ======== */
-
-/**
- * @brief Version of the instrument data format
- */
-enum
-{
-    OPNMIDI_InstrumentVersion = 0
-};
-
-/**
- * @brief Instrument flags
- */
-typedef enum OPN2_InstrumentFlags
-{
-    OPNMIDI_Ins_Pseudo8op  = 0x01, /*Reserved for future use, not implemented yet*/
-    OPNMIDI_Ins_IsBlank    = 0x02
-} OPN2_InstrumentFlags;
-
-/**
- * @brief Operator structure, part of Instrument structure
- */
-typedef struct OPN2_Operator
-{
-    /* Detune and frequency multiplication register data */
-    OPN2_UInt8 dtfm_30;
-    /* Total level register data */
-    OPN2_UInt8 level_40;
-    /* Rate scale and attack register data */
-    OPN2_UInt8 rsatk_50;
-    /* Amplitude modulation enable and Decay-1 register data */
-    OPN2_UInt8 amdecay1_60;
-    /* Decay-2 register data */
-    OPN2_UInt8 decay2_70;
-    /* Sustain and Release register data */
-    OPN2_UInt8 susrel_80;
-    /* SSG-EG register data */
-    OPN2_UInt8 ssgeg_90;
-} OPN2_Operator;
-
-/**
- * @brief Instrument structure
- */
-typedef struct OPN2_Instrument
-{
-    /*! Version of the instrument object */
-    int version;
-    /* MIDI note key (half-tone) offset for an instrument (or a first voice in pseudo-4-op mode) */
-    OPN2_SInt16 note_offset;
-    /* Reserved */
-    OPN2_SInt8  midi_velocity_offset;
-    /* Percussion MIDI base tone number at which this drum will be played */
-    OPN2_UInt8 percussion_key_number;
-    /* Instrument flags */
-    OPN2_UInt8 inst_flags;
-    /* Feedback and Algorithm register data */
-    OPN2_UInt8 fbalg;
-    /* LFO Sensitivity register data */
-    OPN2_UInt8 lfosens;
-    /* Operators register data */
-    OPN2_Operator operators[4];
-    /* Millisecond delay of sounding while key is on */
-    OPN2_UInt16 delay_on_ms;
-    /* Millisecond delay of sounding after key off */
-    OPN2_UInt16 delay_off_ms;
-} OPN2_Instrument;
 
 #ifdef __cplusplus
 }
