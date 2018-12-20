@@ -14,6 +14,8 @@ Library is based on core of the [libADLMIDI](https://github.com/Wohlstand/libADL
 * Mac OS X CLang (Xcode 7.x)
 * Windows MinGW 4.9.x, 5.2
 * Android NDK 12b/13
+* OpenBSD
+* Haiku
 
 # Key features
 * OPN2 emulation
