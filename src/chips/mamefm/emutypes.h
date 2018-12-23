@@ -21,28 +21,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OPNMIDI_MAMEFM_2608INTF_H
-#define OPNMIDI_MAMEFM_2608INTF_H
+#ifndef LIBOPNMIDI_EMUTYPES_H
+#define LIBOPNMIDI_EMUTYPES_H
 
-#include "emu.h"
-#include "emu2149.h"
+#include <stdint.h>
 
-struct ym2608_device : device_t
-{
-    void update_request();
-    static void update_request(device_t *dev);
+typedef uint8_t UINT8;
+typedef uint16_t UINT16;
+typedef uint32_t UINT32;
+typedef uint64_t UINT64;
+typedef int8_t INT8;
+typedef int16_t INT16;
+typedef int32_t INT32;
+typedef int64_t INT64;
 
-    PSG m_psg;
-};
-
-inline void ym2608_device::update_request()
-{
-    // libOPNMIDI: use this callback maybe
-}
-
-inline void ym2608_device::update_request(device_t *dev)
-{
-    static_cast<ym2608_device *>(dev)->update_request();
-}
-
-#endif
+#endif /* LIBOPNMIDI_EMUTYPES_H */
