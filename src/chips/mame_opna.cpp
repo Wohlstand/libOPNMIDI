@@ -20,6 +20,7 @@
 
 #include "mame_opna.h"
 #include "mamefm/fm.h"
+#include "mamefm/fmopn_2608rom.h"
 #include "mamefm/2608intf.h"
 #include "mamefm/resampler.hpp"
 
@@ -36,7 +37,7 @@ struct MameOPNA::Impl {
     static const ssg_callbacks cbssg;
 
     // callbacks
-    static uint8_t cbInternalReadByte(device_t *, offs_t) { return 0; }
+    static uint8_t cbInternalReadByte(device_t *, offs_t);
     static uint8_t cbExternalReadByte(device_t *, offs_t) { return 0; }
     static void cbExternalWriteByte(device_t *, offs_t, uint8_t) {}
     static void cbHandleTimer(device_t *, int, int, int) {}
@@ -168,6 +169,11 @@ void MameOPNA::nativeGenerateN(int16_t *output, size_t frames)
 const char *MameOPNA::emulatorName()
 {
     return "MAME YM2608";  // git 2018-12-15 rev 8ab05c0
+}
+
+uint8_t MameOPNA::Impl::cbInternalReadByte(device_t *dev, offs_t off)
+{
+    return YM2608_ADPCM_ROM[off & 0x1fff];
 }
 
 void MameOPNA::Impl::cbSsgSetClock(device_t *dev, int clock)
