@@ -1,5 +1,5 @@
 /*
- * libOPNMIDI is a free MIDI to WAV conversion library with OPN2 (YM2612) emulation
+ * libOPNMIDI is a free Software MIDI synthesizer library with OPN2 (YM2612) emulation
  *
  * MIDI parser and player (Original code from ADLMIDI): Copyright (c) 2010-2014 Joel Yliluoma <bisqwit@iki.fi>
  * ADLMIDI Library API:   Copyright (c) 2016 Vitaly Novichkov <admin@wohlnet.ru>
