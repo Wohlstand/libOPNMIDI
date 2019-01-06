@@ -37,6 +37,10 @@
 #include <opnmidi.h>
 #include "gm_opn_bank.h"
 
+#define ENABLE_CODEC_TEXT N_("Enable this synthesizer")
+#define ENABLE_CODEC_LONGTEXT N_( \
+    "Enable using of this synthesizer, otherwise, other MIDI synthesizers will be used")
+
 #define FMBANK_TEXT N_("Custom bank file")
 #define FMBANK_LONGTEXT N_( \
     "Custom bank file (in WOPN format) to use for software synthesis." )
@@ -133,25 +137,28 @@ vlc_module_begin ()
     set_subcategory (SUBCAT_INPUT_ACODEC)
     set_callbacks (Open, Close)
 
+    add_bool( CONFIG_PREFIX "enable", true, ENABLE_CODEC_TEXT,
+                  ENABLE_CODEC_LONGTEXT, false )
+
     add_loadfile (CONFIG_PREFIX "custombank", "",
                   FMBANK_TEXT, FMBANK_LONGTEXT, false)
 
     add_integer (CONFIG_PREFIX "volume-model", 0, VOLUME_MODEL_TEXT, VOLUME_MODEL_LONGTEXT, false )
         change_integer_list( volume_models_values, volume_models_descriptions )
 
-    add_integer (CONFIG_PREFIX "emulator-type", 0, EMULATOR_TYPE_TEXT, EMULATOR_TYPE_LINGTEXT, true)
+    add_integer (CONFIG_PREFIX "emulator-type", 0, EMULATOR_TYPE_TEXT, EMULATOR_TYPE_LINGTEXT, false)
         change_integer_list( emulator_type_values, emulator_type_descriptions )
 
-    add_integer (CONFIG_PREFIX "emulated-chips", 6, EMULATED_CHIPS_TEXT, EMULATED_CHIPS_TEXT, true)
+    add_integer (CONFIG_PREFIX "emulated-chips", 6, EMULATED_CHIPS_TEXT, EMULATED_CHIPS_TEXT, false)
         change_integer_range (1, 100)
 
     add_integer (CONFIG_PREFIX "sample-rate", 44100, SAMPLE_RATE_TEXT, SAMPLE_RATE_TEXT, true)
         change_integer_range (22050, 96000)
 
     add_bool( CONFIG_PREFIX "full-range-brightness", false, FULL_RANGE_CC74_TEXT,
-              FULL_RANGE_CC74_LONGTEXT, false )
+              FULL_RANGE_CC74_LONGTEXT, true )
 
-    add_bool( CONFIG_PREFIX "full-panning", false, FULL_PANNING_TEXT,
+    add_bool( CONFIG_PREFIX "full-panning", true, FULL_PANNING_TEXT,
               FULL_PANNING_LONGTEXT, true )
 
 vlc_module_end ()
@@ -184,6 +191,9 @@ static int Open (vlc_object_t *p_this)
     decoder_t *p_dec = (decoder_t *)p_this;
 
     if (p_dec->fmt_in.i_codec != VLC_CODEC_MIDI)
+        return VLC_EGENERIC;
+
+    if (!var_InheritBool(p_this, CONFIG_PREFIX "enable"))
         return VLC_EGENERIC;
 
     decoder_sys_t *p_sys = malloc (sizeof (*p_sys));
