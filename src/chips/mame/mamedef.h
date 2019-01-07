@@ -17,12 +17,12 @@ typedef signed int							INT32;
 #endif
 
 /* 64-bit values */
-#ifndef _WINDOWS_H
+#if !defined(_WINDOWS_H) && defined(RSM_ENABLE)
 #	ifdef _MSC_VER
 typedef signed __int64						INT64;
 typedef unsigned __int64					UINT64;
 #	else
-#		if __WORDSIZE == 64
+#		if (__WORDSIZE == 64) || defined(_WIN64)
 typedef signed long int						INT64;
 typedef unsigned long int					UINT64;
 #		else
