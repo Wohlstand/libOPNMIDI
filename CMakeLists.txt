@@ -201,7 +201,9 @@ if(USE_MAME_2608_EMULATOR)
     list(APPEND libOPNMIDI_SOURCES
         ${libOPNMIDI_SOURCE_DIR}/src/chips/mame_opna.cpp
         ${libOPNMIDI_SOURCE_DIR}/src/chips/mamefm/fm.cpp
-        ${libOPNMIDI_SOURCE_DIR}/src/chips/mamefm/ymdeltat.cpp)
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/mamefm/ymdeltat.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/mamefm/emu2149.c
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/mamefm/resampler.cpp)
     set(HAS_EMULATOR TRUE)
 else()
     add_definitions(-DOPNMIDI_DISABLE_MAME_2608_EMULATOR)
