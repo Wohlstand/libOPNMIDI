@@ -4,7 +4,7 @@
 enum Stereo
 {
 	LEFT = 0,
-	RIGHT = 1,
+	RIGHT = 1
 };
 
 static const size_t SMPL_BUF_SIZE_ = 0x10000;
