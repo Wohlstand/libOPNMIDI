@@ -42,17 +42,17 @@ namespace chip
 	class LinearResampler : public AbstractResampler
 	{
 	public:
-		sample** interpolate(sample** src, size_t nSamples, size_t intrSize) override;
+		sample** interpolate(sample** src, size_t nSamples, size_t intrSize);
 	};
 
 
 	class SincResampler : public AbstractResampler
 	{
 	public:
-		void init(int srcRate, int destRate, size_t maxDuration) override;
-		void setDestributionRate(int destRate) override;
-		void setMaxDuration(size_t maxDuration) override;
-		sample** interpolate(sample** src, size_t nSamples, size_t intrSize) override;
+		void init(int srcRate, int destRate, size_t maxDuration);
+		void setDestributionRate(int destRate);
+		void setMaxDuration(size_t maxDuration);
+		sample** interpolate(sample** src, size_t nSamples, size_t intrSize);
 
 	private:
 		std::vector<float> sincTable_;

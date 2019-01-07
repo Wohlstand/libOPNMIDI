@@ -173,6 +173,7 @@ const char *MameOPNA::emulatorName()
 
 uint8_t MameOPNA::Impl::cbInternalReadByte(device_t *dev, offs_t off)
 {
+    (void)dev;
     return YM2608_ADPCM_ROM[off & 0x1fff];
 }
 
