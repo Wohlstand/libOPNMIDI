@@ -222,15 +222,23 @@ void OPNMIDIplay::TickIterators(double s)
     for(size_t c = 0, n = m_midiChannels.size(); c < n; ++c)
     {
         MIDIchannel &ch = m_midiChannels[c];
+        if(ch.extended_note_count == 0)
+            continue;
+
         for(MIDIchannel::notes_iterator inext = ch.activenotes.begin(); !inext.is_end();)
         {
             MIDIchannel::notes_iterator i(inext++);
             MIDIchannel::NoteInfo &ni = i->value;
+
             double ttl = ni.ttl;
-            if(ttl > 0)
+            if(ttl <= 0)
+                continue;
+
+            ni.ttl = ttl = ttl - s;
+            if(ttl <= 0)
             {
-                ni.ttl = ttl = ttl - s;
-                if(ni.isOnExtendedLifeTime && ttl <= 0)
+                --ch.extended_note_count;
+                if(ni.isOnExtendedLifeTime)
                 {
                     noteUpdate(c, i, Upd_Off);
                     ni.isOnExtendedLifeTime = false;
@@ -516,7 +524,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     ni.isPercussion = isPercussion;
     ni.isBlank = isBlankNote;
     ni.isOnExtendedLifeTime = false;
-    ni.ttl = isPercussion ? drum_note_min_time : 0;
+    ni.ttl = 0;
     ni.ains = ains;
     ni.chip_channels_count = 0;
 
@@ -534,6 +542,13 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
         ni.currentTone = currentPortamentoSource;
         ni.glideRate = currentPortamentoRate;
         ++midiChan.gliding_note_count;
+    }
+
+    // Enable life time extension on percussion note
+    if (isPercussion)
+    {
+        ni.ttl = drum_note_min_time;
+        ++midiChan.extended_note_count;
     }
 
     for(unsigned ccount = 0; ccount < MIDIchannel::NoteInfo::MaxNumPhysChans; ++ccount)
@@ -1266,8 +1281,7 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
 
     if(info.chip_channels_count == 0)
     {
-        if(info.glideRate != HUGE_VAL)
-            --m_midiChannels[midCh].gliding_note_count;
+        m_midiChannels[midCh].cleanupNote(i);
         m_midiChannels[midCh].activenotes.erase(i);
     }
 }
