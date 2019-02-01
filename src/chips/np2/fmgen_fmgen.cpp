@@ -580,7 +580,7 @@ void Operator::ShiftPhase(EGPhase nextphase)
 		break;
 
 	case release:		// Release Phase
-		if (ssg_type_)
+		if (false && ssg_type_)  // libOPNMIDI: workaround for SSG-EG
 		{
 			eg_level_ = eg_level_ * ssg_vector_ + ssg_offset_;
 			ssg_vector_ = 1;
@@ -635,7 +635,7 @@ inline FM::ISample Operator::LogToLin(uint a)
 
 inline void Operator::EGUpdate()
 {
-	if (!ssg_type_)
+	if (true || !ssg_type_)  // libOPNMIDI: workaround for SSG-EG
 	{
 		eg_out_ = Min(tl_out_ + eg_level_, 0x3ff) << (1 + 2);
 	}
@@ -679,9 +679,10 @@ void FM::Operator::EGCalc()
 		else
 		{
 			eg_level_ += 4 * decaytable1[eg_rate_][eg_curve_count_ & 7];
+			EGUpdate();  // libOPNMIDI: workaround for SSG-EG
 			if (eg_level_ >= eg_level_on_next_phase_)
 			{
-				EGUpdate();
+				// EGUpdate();  // libOPNMIDI: workaround for SSG-EG
 				switch (eg_phase_)
 				{
 				case decay:
