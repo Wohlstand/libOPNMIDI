@@ -69,9 +69,11 @@ namespace FM
 		int		tl_out_;
 		int		eg_rate_;
 		int		eg_curve_count_;
+#if 0  // libOPNMIDI: experimental SSG-EG
 		int		ssg_offset_;
 		int		ssg_vector_;
 		int		ssg_phase_;
+#endif
 		uint	key_scale_rate_;
 		EGPhase	eg_phase_;
 		uint	ms_;
@@ -90,6 +92,8 @@ namespace FM
 		bool	amon_;
 		bool	param_changed_;
 		bool	mute_;
+		bool	inverted_;
+		bool	held_;
 	};
 
 	class Operator
@@ -183,10 +187,11 @@ namespace FM
 //		int		am_depth_;		// AM depth
 		int		eg_rate_;
 		int		eg_curve_count_;
+#if 0  // libOPNMIDI: experimental SSG-EG
 		int		ssg_offset_;
 		int		ssg_vector_;
 		int		ssg_phase_;
-
+#endif
 
 		uint	key_scale_rate_;		// key scale rate
 		EGPhase	eg_phase_;
@@ -207,6 +212,8 @@ namespace FM
 		bool	amon_;		// enable Amplitude Modulation
 		bool	param_changed_;	// パラメータが更新された
 		bool	mute_;
+		bool	inverted_;
+		bool	held_;
 		
 	//	Tables ---------------------------------------------------------------
 		static Counter rate_table[16];

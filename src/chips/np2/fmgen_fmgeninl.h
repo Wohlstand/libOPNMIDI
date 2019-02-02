@@ -53,9 +53,15 @@ inline void Operator::KeyOn()
 	if (!keyon_)
 	{
 		keyon_ = true;
+		held_ = false;
 		if (eg_phase_ == off || eg_phase_ == release)
 		{
+#if 1  // libOPNMIDI: experimental SSG-EG
+			inverted_ = ssg_type_ & 4;
+			inverted_ ^= (ssg_type_ & 2) && ar_ != 62; // try to match polarity with nuked OPN
+#else
 			ssg_phase_ = -1;
+#endif
 			ShiftPhase(attack);
 			EGUpdate();
 			in2_ = out_ = out2_ = 0;

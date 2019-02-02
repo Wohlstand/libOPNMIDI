@@ -146,6 +146,7 @@ namespace FM
 		{ 0, 0, 0, 0, 0, 0, 0, 0},	{ 0, 0 ,0, 0, 0, 0, 0, 0},
 	};
 
+#if 0  // libOPNMIDI: experimental SSG-EG
 	const int Operator::ssgenvtable[8][2][3][2] =
 	{
 		{{{1, 1},  {1, 1},  {1, 1}},		// 08
@@ -165,6 +166,7 @@ namespace FM
 		{{{0, 1},  {2, 0},  {2, 0}},		// 15
 		 {{1,-1},  {2, 0},  {2, 0}}},		// 15 60~
 	};
+#endif
 
 	// fixed equasion-based tables
 	int		pmtable[2][8][FM_LFOENTS];
@@ -310,6 +312,10 @@ FM::Operator::Operator()
 	keyon_ = false;
 	tl_out_ = false;
 	ssg_type_ = 0;
+#if 1  // libOPNMIDI: experimental SSG-EG
+	inverted_ = false;
+	held_ = false;
+#endif
 
 	// PG Part
 	multiple_ = 0;
@@ -330,7 +336,12 @@ void FM::Operator::Reset()
 	ShiftPhase(off);
 	eg_count_ = 0;
 	eg_curve_count_ = 0;
+#if 1  // libOPNMIDI: experimental SSG-EG
+	inverted_ = false;
+	held_ = false;
+#else
 	ssg_phase_ = 0;
+#endif
 
 	// PG part
 	pg_count_ = 0;
@@ -426,8 +437,14 @@ void Operator::Prepare()
 		}
 
 		// SSG-EG
+		inverted_ = false;
+		held_ = false;
 		if (ssg_type_ && (eg_phase_ != release))
 		{
+#if 1  // libOPNMIDI: experimental SSG-EG
+			inverted_ = ssg_type_ & 4;
+			inverted_ ^= (ssg_type_ & 2) && ar_ != 62;  // try to match polarity with nuked OPN
+#else
 			int m = static_cast<int>(ar_ >= ((ssg_type_ == 8 || ssg_type_ == 12) ? 56u : 60u));
 
 			assert(0 <= ssg_phase_ && ssg_phase_ <= 2);
@@ -435,6 +452,7 @@ void Operator::Prepare()
 
 			ssg_offset_ = table[0] * 0x200;
 			ssg_vector_ = table[1];
+#endif
 		}
 		// LFO
 		ams_ = amtable[type_][amon_ ? (ms_ >> 4) & 3 : 0];
@@ -466,9 +484,11 @@ void Operator::DataSave(struct OperatorData* data)
 	data->tl_out_ = tl_out_;
 	data->eg_rate_ = eg_rate_;
 	data->eg_curve_count_ = eg_curve_count_;
+#if 0  // libOPNMIDI: experimental SSG-EG
 	data->ssg_offset_ = ssg_offset_;
 	data->ssg_vector_ = ssg_vector_;
 	data->ssg_phase_ = ssg_phase_;
+#endif
 	data->key_scale_rate_ = key_scale_rate_;
 	data->eg_phase_ = eg_phase_;
 	data->ms_ = ms_;
@@ -485,6 +505,8 @@ void Operator::DataSave(struct OperatorData* data)
 	data->amon_ = amon_;
 	data->param_changed_ = param_changed_;
 	data->mute_ = mute_;
+	data->inverted_ = inverted_;
+	data->held_ = held_;
 }
 
 void Operator::DataLoad(struct OperatorData* data)
@@ -509,9 +531,11 @@ void Operator::DataLoad(struct OperatorData* data)
 	tl_out_ = data->tl_out_;
 	eg_rate_ = data->eg_rate_;
 	eg_curve_count_ = data->eg_curve_count_;
+#if 0  // libOPNMIDI: experimental SSG-EG
 	ssg_offset_ = data->ssg_offset_;
 	ssg_vector_ = data->ssg_vector_;
 	ssg_phase_ = data->ssg_phase_;
+#endif
 	key_scale_rate_ = data->key_scale_rate_;
 	eg_phase_ = data->eg_phase_;
 	ms_ = data->ms_;
@@ -528,6 +552,8 @@ void Operator::DataLoad(struct OperatorData* data)
 	amon_ = data->amon_;
 	param_changed_ = data->param_changed_;
 	mute_ = data->mute_;
+	inverted_ = data->inverted_;
+	held_ = data->held_;
 	ams_ = amtable[type_][amon_ ? (ms_ >> 4) & 3 : 0];
 }
 
@@ -541,6 +567,7 @@ void Operator::ShiftPhase(EGPhase nextphase)
 		tl_ = tl_latch_;
 		if (ssg_type_)
 		{
+#if 0  // libOPNMIDI: experimental SSG-EG
 			ssg_phase_ = ssg_phase_ + 1;
 			if (ssg_phase_ > 2)
 				ssg_phase_ = 1;
@@ -552,6 +579,7 @@ void Operator::ShiftPhase(EGPhase nextphase)
 
 			ssg_offset_ = table[0] * 0x200;
 			ssg_vector_ = table[1];
+#endif
 		}
 		if ((ar_ + key_scale_rate_) < 62)
 		{
@@ -580,7 +608,9 @@ void Operator::ShiftPhase(EGPhase nextphase)
 		break;
 
 	case release:		// Release Phase
-#if 0 // libOPNMIDI: workaround for SSG-EG
+		inverted_ = false;
+		held_ = false;
+#if 0 // libOPNMIDI: experimental SSG-EG
 		if (ssg_type_)
 		{
 			eg_level_ = eg_level_ * ssg_vector_ + ssg_offset_;
@@ -637,8 +667,10 @@ inline FM::ISample Operator::LogToLin(uint a)
 
 inline void Operator::EGUpdate()
 {
-#if 1	// libOPNMIDI: workaround for SSG-EG
-	eg_out_ = Min(tl_out_ + eg_level_, 0x3ff) << (1 + 2);
+#if 1	// libOPNMIDI: experimental SSG-EG
+	int level = eg_level_;
+	level = (!inverted_) ? level : (512 - level) & 0x3ff;
+	eg_out_ = Min(tl_out_ + level, 0x3ff) << (1 + 2);
 #else
 	if (!ssg_type_)
 	{
@@ -684,18 +716,33 @@ void FM::Operator::EGCalc()
 		}
 		else
 		{
-			eg_level_ += 4 * decaytable1[eg_rate_][eg_curve_count_ & 7];
-			EGUpdate();  // libOPNMIDI: workaround for SSG-EG
+			if (!held_)
+				eg_level_ += 4 * decaytable1[eg_rate_][eg_curve_count_ & 7];
+			else
+				eg_level_ = (((ssg_type_ & 4) != 0) ^ ((ssg_type_ & 2) != 0)) ? 0 : 1024;;
+			EGUpdate();  // libOPNMIDI: experimental SSG-EG
 			if (eg_level_ >= eg_level_on_next_phase_)
 			{
-				// EGUpdate();  // libOPNMIDI: workaround for SSG-EG
 				switch (eg_phase_)
 				{
 				case decay:
 					ShiftPhase(sustain);
 					break;
 				case sustain:
+#if 1  // libOPNMIDI: experimental SSG-EG
+					if (ssg_type_ & 1)
+					{
+						inverted_ = false;
+						held_ = true;
+					}
+					if (!held_)
+					{
+						inverted_ ^= (ssg_type_ & 2) && (ar_ == 62); // try to match polarity with nuked OPN
+						ShiftPhase(attack);
+					}
+#else
 					ShiftPhase(attack);
+#endif
 					break;
 				case release:
 					ShiftPhase(off);
