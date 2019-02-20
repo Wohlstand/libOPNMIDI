@@ -1789,11 +1789,14 @@ void OPNMIDIplay::describeChannels(char *str, char *attr, size_t size)
         const OpnChannel &adlChannel = m_chipChannels[index];
 
         OpnChannel::const_users_iterator loc = adlChannel.users.begin();
+        OpnChannel::const_users_iterator locnext(loc);
+        if(!loc.is_end()) ++locnext;
+
         if(loc.is_end())  // off
         {
             str[index] = '-';
         }
-        else if(loc->next)  // arpeggio
+        else if(!locnext.is_end())  // arpeggio
         {
             str[index] = '@';
         }
