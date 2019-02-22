@@ -1327,11 +1327,10 @@ int64_t OPNMIDIplay::calculateChipChannelGoodness(size_t c, const MIDIchannel::N
     for(OpnChannel::const_users_iterator j = chan.users.begin(); !j.is_end(); ++j)
     {
         const OpnChannel::LocationData &jd = j->value;
-        s -= 4000000;
 
         int64_t kon_ms = jd.kon_time_until_neglible_us / 1000;
         s -= (jd.sustained == OpnChannel::LocationData::Sustain_None) ?
-            kon_ms : (kon_ms / 2);
+            (4000000 + kon_ms) : (500000 + (kon_ms / 2));
 
         MIDIchannel::notes_iterator
         k = const_cast<MIDIchannel &>(m_midiChannels[jd.loc.MidCh]).find_activenote(jd.loc.note);
