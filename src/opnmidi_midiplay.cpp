@@ -1458,6 +1458,10 @@ void OPNMIDIplay::killOrEvacuate(size_t from_channel,
         if(adlch.users.size() == adlch.users.capacity())
             continue;  // no room for more arpeggio on channel
 
+        if(!m_chipChannels[cs].find_user(jd.loc).is_end())
+            continue;  // channel already has this note playing (sustained)
+                       // avoid introducing a duplicate location.
+
         for(OpnChannel::users_iterator m = adlch.users.begin(); !m.is_end(); ++m)
         {
             OpnChannel::LocationData &mv = m->value;
