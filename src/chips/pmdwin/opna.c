@@ -1227,7 +1227,7 @@ static void Mix6I(OPNA *opna, int32_t *buffer, uint32_t nsamples, int activech)
 
     if (opna->mpratio < 16384) {
         for (i = 0; i < nsamples; i++) {
-            int32_t l, r, d;
+            int32_t l = 0, r = 0, d = 0;
             while (delta > 0) {
                 ibuf[0] = 0;
                 ibuf[1] = 0;
