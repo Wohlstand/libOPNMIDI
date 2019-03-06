@@ -1433,7 +1433,6 @@ void OPNMIDIplay::killOrEvacuate(size_t from_channel,
                                  OPNMIDIplay::MIDIchannel::notes_iterator i)
 {
     Synth &synth = *m_synth;
-    uint32_t maxChannels = OPN_MAX_CHIPS * 6;
     OpnChannel::LocationData &jd = j->value;
     MIDIchannel::NoteInfo &info = i->value;
 
@@ -1446,8 +1445,6 @@ void OPNMIDIplay::killOrEvacuate(size_t from_channel,
     {
         uint16_t cs = static_cast<uint16_t>(c);
 
-        if(c >= maxChannels)
-            break;
         if(c == from_channel)
             continue;
         //if(opn.four_op_category[c] != opn.four_op_category[from_channel])
