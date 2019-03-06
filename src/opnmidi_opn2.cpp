@@ -257,6 +257,8 @@ void OPN2::noteOn(size_t c, double semi) // Hertz range: 0..131071
             coef = 321.88557; break;
         case OPNChip_OPNA:
             coef = 309.12412; break;
+        case OPNChip_OPM: // XXX seems related to OPNA by some factor ~5
+            coef = 5 * 309.12412; break;
         }
         hertz *= coef;
 
@@ -309,8 +311,8 @@ void OPN2::noteOn(size_t c, double semi) // Hertz range: 0..131071
             double correction;
             switch (m_chipFamily) {
             case OPNChip_OPM: correction = log(2.25) * (12 / M_LN2); break;
-            case OPNChip_OPNA: correction = log(0.45) * (12 / M_LN2); break;
-            case OPNChip_OPN2: correction = log(0.47) * (12 / M_LN2); break;
+            case OPNChip_OPNA: correction = log(0.45) * (12 / M_LN2); break; // XXX factor to OPM ~5
+            case OPNChip_OPN2: correction = log(0.46858243) * (12 / M_LN2); break; // XXX based on ratio of clocks (OPNA/OPN2)
             default: assert(false);
             }
             semi += correction;
