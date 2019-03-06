@@ -106,6 +106,8 @@ namespace FM
 		uint8	kc[8];
 		uint8	kf[8];
 		uint8	pan[8];
+		uint16	panvolume_l[8];  // libOPNMIDI: soft panning
+		uint16	panvolume_r[8];  // libOPNMIDI: soft panning
 
 		struct Channel4Data ch[8];
 		struct ChipData	chip;
@@ -186,6 +188,8 @@ namespace FM
 		uint8	kc[8];
 		uint8	kf[8];
 		uint8	pan[8];
+		uint16	panvolume_l[8];  // libOPNMIDI: soft panning
+		uint16	panvolume_r[8];  // libOPNMIDI: soft panning
 
 		Channel4 ch[8];
 		Chip	chip;

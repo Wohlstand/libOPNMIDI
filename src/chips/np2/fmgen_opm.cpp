@@ -70,11 +70,33 @@ void OPM::SetChannelMask(uint mask)
 		ch[i].Mute(!!(mask & (1 << i)));
 }
 
+// libOPNMIDI: soft panning
+static const uint16 panlawtable[] =
+{
+    65535, 65529, 65514, 65489, 65454, 65409, 65354, 65289,
+    65214, 65129, 65034, 64929, 64814, 64689, 64554, 64410,
+    64255, 64091, 63917, 63733, 63540, 63336, 63123, 62901,
+    62668, 62426, 62175, 61914, 61644, 61364, 61075, 60776,
+    60468, 60151, 59825, 59489, 59145, 58791, 58428, 58057,
+    57676, 57287, 56889, 56482, 56067, 55643, 55211, 54770,
+    54320, 53863, 53397, 52923, 52441, 51951, 51453, 50947,
+    50433, 49912, 49383, 48846, 48302, 47750, 47191,
+    46340, /* Center left */
+    46340, /* Center right */
+    45472, 44885, 44291, 43690, 43083, 42469, 41848, 41221,
+    40588, 39948, 39303, 38651, 37994, 37330, 36661, 35986,
+    35306, 34621, 33930, 33234, 32533, 31827, 31116, 30400,
+    29680, 28955, 28225, 27492, 26754, 26012, 25266, 24516,
+    23762, 23005, 22244, 21480, 20713, 19942, 19169, 18392,
+    17613, 16831, 16046, 15259, 14469, 13678, 12884, 12088,
+    11291, 10492, 9691, 8888, 8085, 7280, 6473, 5666,
+    4858, 4050, 3240, 2431, 1620, 810, 0
+};
+
 void OPM::SetPan(uint c, uint8 p)
 {
-#pragma message("libOPNMIDI: implement OPM panning")
-    (void)c;
-    (void)p;
+	panvolume_l[c] = panlawtable[p & 0x7f];
+	panvolume_r[c] = panlawtable[0x7f - (p & 0x7f)];
 }
 
 // ---------------------------------------------------------------------------
@@ -92,7 +114,10 @@ void OPM::Reset()
 	noisecount = 0;
 
 	for (i=0; i<8; i++)
+	{
+		panvolume_l[i] = panvolume_r[i] = panlawtable[64];
 		ch[i].Reset();
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -477,28 +502,45 @@ void OPM::Mix(Sample* buffer, int nsamples)
 			activech &= 0x5555;
 
 		// Mix
-		ISample ibuf[8];
-		ISample* idest[8];
-		idest[0] = &ibuf[pan[0]];
-		idest[1] = &ibuf[pan[1]];
-		idest[2] = &ibuf[pan[2]];
-		idest[3] = &ibuf[pan[3]];
-		idest[4] = &ibuf[pan[4]];
-		idest[5] = &ibuf[pan[5]];
-		idest[6] = &ibuf[pan[6]];
-		idest[7] = &ibuf[pan[7]];
+		// libOPNMIDI: rewrite for panning support
 
 		Sample* limit = buffer + nsamples * 2;
 		for (Sample* dest = buffer; dest < limit; dest+=2)
 		{
-			ibuf[1] = ibuf[2] = ibuf[3] = 0;
-			if (activech & 0xaaaa)
-				LFO(), MixSubL(activech, idest);
-			else
-				LFO(), MixSub(activech, idest);
+			ISample out[8] = {};
+			LFO();
 
-			StoreSample(dest[0], IStoSample(ibuf[1] + ibuf[3]));
-			StoreSample(dest[1], IStoSample(ibuf[2] + ibuf[3]));
+			ISample (Channel4::*calc)() = (activech & 0xaaaa) ? &Channel4::CalcL : &Channel4::Calc;
+			ISample (Channel4::*calcN)(uint) = (activech & 0xaaaa) ? &Channel4::CalcLN : &Channel4::CalcN;
+
+			if (activech & 0x4000) (out[0] = (ch[0].*calc)());
+			if (activech & 0x1000) (out[1] = (ch[1].*calc)());
+			if (activech & 0x0400) (out[2] = (ch[2].*calc)());
+			if (activech & 0x0100) (out[3] = (ch[3].*calc)());
+			if (activech & 0x0040) (out[4] = (ch[4].*calc)());
+			if (activech & 0x0010) (out[5] = (ch[5].*calc)());
+			if (activech & 0x0004) (out[6] = (ch[6].*calc)());
+			if (activech & 0x0001)
+			{
+				if (noisedelta & 0x80)
+					out[7] = (ch[7].*calcN)(Noise());
+				else
+					out[7] = (ch[7].*calc)();
+			}
+
+			int lrouts[2] = {0, 0};
+			for (uint c = 0; c<8; ++c)
+			{
+				int panl = panvolume_l[c];
+				int panr = panvolume_r[c];
+				panl = (pan[c] & 2) ? panl : 0;
+				panr = (pan[c] & 1) ? panr : 0;
+				lrouts[0] += out[c] * panl / 65535;
+				lrouts[1] += out[c] * panr / 65535;
+			}
+
+			StoreSample(dest[0], lrouts[0]);
+			StoreSample(dest[1], lrouts[1]);
 		}
 	}
 #undef IStoSample
@@ -530,6 +572,8 @@ void OPM::DataSave(struct OPMData* data) {
 	memcpy(data->kc, kc, 8);
 	memcpy(data->kf, kf, 8);
 	memcpy(data->pan, pan, 8);
+	memcpy(data->panvolume_l, panvolume_l, sizeof(uint16) * 8);
+	memcpy(data->panvolume_r, panvolume_r, sizeof(uint16) * 8);
 	for(int i = 0; i < 8; i++) {
 		ch[i].DataSave(&data->ch[i]);
 	}
@@ -562,6 +606,8 @@ void OPM::DataLoad(struct OPMData* data) {
 	memcpy(kc, data->kc, 8);
 	memcpy(kf, data->kf, 8);
 	memcpy(pan, data->pan, 8);
+	memcpy(panvolume_l, data->panvolume_l, sizeof(uint16) * 8);
+	memcpy(panvolume_r, data->panvolume_r, sizeof(uint16) * 8);
 	for(int i = 0; i < 8; i++) {
 		ch[i].DataLoad(&data->ch[i]);
 	}
