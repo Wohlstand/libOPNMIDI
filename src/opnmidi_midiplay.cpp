@@ -1272,7 +1272,7 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
                 if(vibrato && (d.is_end() || d->value.vibdelay_us >= chan.vibdelay_us))
                     bend += static_cast<double>(vibrato) * chan.vibdepth * std::sin(chan.vibpos);
 
-                synth.noteOn(c, std::exp(0.057762265 * (currentTone + bend + phase)));
+                synth.noteOn(c, currentTone + bend + phase);
                 if(hooks.onNote)
                     hooks.onNote(hooks.onNote_userData, c, noteTone, (int)midiins, vol, midibend);
             }

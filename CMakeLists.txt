@@ -199,6 +199,7 @@ if(USE_NP2_EMULATOR)
     list(APPEND libOPNMIDI_SOURCES
         ${libOPNMIDI_SOURCE_DIR}/src/chips/np2_opna.cpp
         ${libOPNMIDI_SOURCE_DIR}/src/chips/np2/fmgen_opna.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/np2/fmgen_opm.cpp
         ${libOPNMIDI_SOURCE_DIR}/src/chips/np2/fmgen_file.cpp
         ${libOPNMIDI_SOURCE_DIR}/src/chips/np2/fmgen_fmgen.cpp
         ${libOPNMIDI_SOURCE_DIR}/src/chips/np2/fmgen_fmtimer.cpp

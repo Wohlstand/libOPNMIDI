@@ -509,6 +509,8 @@ enum Opn2_Emulator
     OPNMIDI_EMU_MAME_2608,
     /*! PMDWin OPNA */
     OPNMIDI_EMU_PMDWIN,
+    /*! Neko Project II OPM */
+    OPNMIDI_EMU_NP2_OPM,
     /*! Count instrument on the level */
     OPNMIDI_EMU_end
 };

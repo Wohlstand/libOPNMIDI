@@ -109,6 +109,10 @@ typedef int32_t ssize_t;
 #define INT32_MAX   0x7fffffff
 #endif
 
+#ifndef M_LN2
+#define M_LN2 0.69314718055994530942
+#endif
+
 class FileAndMemReader;
 
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER

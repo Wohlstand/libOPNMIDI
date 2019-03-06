@@ -46,6 +46,11 @@ public:
     //! Running chip emulators
     std::vector<AdlMIDI_SPtr<OPNChipBase > > m_chips;
 private:
+    enum RegisterMode { Reg_OPN, Reg_OPM };
+
+    //! RegisterMode
+    RegisterMode m_regMode;
+
     //! Cached patch data, needed by Touch()
     std::vector<opnInstData>    m_insCache;
     //! Cached per-channel LFO sensitivity flags
@@ -179,9 +184,9 @@ public:
     /**
      * @brief On the note in specified chip channel with specified frequency of the tone
      * @param c Channel of chip (Emulated chip choosing by next formula: [c = ch + (chipId * 23)])
-     * @param hertz Frequency of the tone in hertzes
+     * @param hertz Frequency of the tone in semitones
      */
-    void noteOn(size_t c, double hertz);
+    void noteOn(size_t c, double semi);
 
     /**
      * @brief Change setup of instrument in specified chip channel
