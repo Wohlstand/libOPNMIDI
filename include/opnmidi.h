@@ -595,6 +595,8 @@ extern OPNMIDI_DECLSPEC const char *opn2_errorInfo(struct OPN2_MIDIPlayer *devic
  * Tip 1: You can initialize multiple instances and run them in parallel
  * Tip 2: Library is NOT thread-safe, therefore don't use same instance in different threads or use mutexes
  * Tip 3: Changing of sample rate on the fly is not supported. Re-create the instance again.
+ * Top 4: To generate output in OPN2 or OPNA chip native sample rate, please initialize it with sample rate
+ *        value as `OPN_OPN2_SAMPLE_RATE` or `OPN_OPNA_SAMPLE_RATE` in dependence on the chip
  *
  * @param sample_rate Output sample rate
  * @return Instance of the library. If NULL was returned, check the `adl_errorString` message for more info.
