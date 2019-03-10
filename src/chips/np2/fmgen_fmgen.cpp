@@ -442,7 +442,7 @@ void Operator::Prepare()
 		if (ssg_type_ && (eg_phase_ != release))
 		{
 #if 1  // libOPNMIDI: experimental SSG-EG
-			inverted_ = ssg_type_ & 4;
+			inverted_ = (ssg_type_ & 4) != 0;
 			inverted_ ^= (ssg_type_ & 2) && ar_ != 62;  // try to match polarity with nuked OPN
 #else
 			int m = static_cast<int>(ar_ >= ((ssg_type_ == 8 || ssg_type_ == 12) ? 56u : 60u));
