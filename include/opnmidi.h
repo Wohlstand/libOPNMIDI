@@ -39,6 +39,9 @@ extern "C" {
         OPNMIDI_TOSTR(OPNMIDI_VERSION_MINOR) "." \
         OPNMIDI_TOSTR(OPNMIDI_VERSION_PATCHLEVEL)
 
+#define OPN_OPN2_SAMPLE_RATE        53267
+#define OPN_OPNA_SAMPLE_RATE        55466
+
 #include <stddef.h>
 
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
