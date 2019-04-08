@@ -1,6 +1,6 @@
 #!/bin/bash
 
-output="gm_opn_bank.h"
+output="../utils/vlc_codec/gm_opn_bank.h"
 
 out()
 {
