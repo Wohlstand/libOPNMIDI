@@ -12,7 +12,10 @@
 
 #include <opnmidi.h>
 
-extern "C" void opn2_set_vgm_out_path(const char *path);
+extern "C"
+{
+    extern void opn2_set_vgm_out_path(const char *path);
+}
 
 static void printError(const char *err)
 {

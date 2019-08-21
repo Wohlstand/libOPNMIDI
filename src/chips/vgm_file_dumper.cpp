@@ -22,11 +22,16 @@
 #include <cstring>
 #include <cassert>
 
+#include <opnmidi_private.hpp>
+
 //! FIXME: Replace this ugly crap with proper public call
 static const char *g_vgm_path = "kek.vgm";
-extern "C" void opn2_set_vgm_out_path(const char *path)
+extern "C"
 {
-    g_vgm_path = path;
+    OPNMIDI_EXPORT void opn2_set_vgm_out_path(const char *path)
+    {
+        g_vgm_path = path;
+    }
 }
 
 
@@ -35,6 +40,7 @@ VGMFileDumper::VGMFileDumper(OPNFamily f)
 {
     m_bytes_written = 0;
     m_samples_written = 0;
+    m_delay = 0;
     setRate(m_rate, m_clock);
     m_output = std::fopen(g_vgm_path, "wb");
     assert(m_output);
@@ -78,6 +84,43 @@ void VGMFileDumper::reset()
 void VGMFileDumper::writeReg(uint32_t port, uint16_t addr, uint8_t data)
 {
     uint8_t out[3];
+
+    while(m_delay > 0)
+    {
+        uint16_t to_copy;
+        if(m_delay > 65535)
+        {
+            to_copy = 65535;
+            m_delay -= 65535;
+        }
+        else
+        {
+            to_copy = static_cast<uint16_t>(m_delay);
+            m_delay = 0;
+        }
+        out[0] = 0x61;
+        if(to_copy == 735)
+        {
+            out[0] = 0x62;
+            std::fwrite(&out, 1, 1, m_output);
+            m_bytes_written += 1;
+        }
+        else if(to_copy == 882)
+        {
+            out[0] = 0x63;
+            std::fwrite(&out, 1, 1, m_output);
+            m_bytes_written += 1;
+        }
+        else
+        {
+            out[1] = to_copy & 0xFF;
+            out[2] = (to_copy >> 8) & 0xFF;
+            std::fwrite(&out, 1, 3, m_output);
+            m_bytes_written += 3;
+        }
+        m_samples_written++;
+    }
+
     switch (port)
     {
     case 0:
@@ -100,14 +143,7 @@ void VGMFileDumper::writePan(uint16_t /*chan*/, uint8_t /*data*/)
 void VGMFileDumper::nativeGenerateN(int16_t *output, size_t frames)
 {
     std::memset(output, 0, frames * sizeof(int16_t) * 2);
-    uint8_t out[3];
-    size_t wait_sec = size_t(frames * (44100.0 / double(m_actual_rate)));
-    out[0] = 0x61;
-    out[1] = wait_sec & 0xFF;
-    out[2] = (wait_sec >> 8) & 0xFF;
-    std::fwrite(&out, 1, 3, m_output);
-    m_samples_written++;
-    m_bytes_written += 3;
+    m_delay += size_t(frames * (44100.0 / double(m_actual_rate)));
 }
 
 const char *VGMFileDumper::emulatorName()
