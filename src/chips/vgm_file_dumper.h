@@ -31,6 +31,7 @@ class VGMFileDumper final : public OPNChipBaseBufferedT<VGMFileDumper>
     uint32_t m_samples_written;
     uint32_t m_actual_rate;
     uint64_t m_delay;
+    int m_chip_index;
 
     struct VgmHead
     {

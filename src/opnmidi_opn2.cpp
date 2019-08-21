@@ -461,8 +461,8 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
     m_insCache.clear();
     m_regLFOSens.clear();
 #ifdef OPNMIDI_MIDI2VGM
-    if(emulator == OPNMIDI_VGM_DUMPER)
-        m_numChips = 1;// VGM Dumper can't work in multichip mode
+    if(emulator == OPNMIDI_VGM_DUMPER && (m_numChips > 2))
+        m_numChips = 2;// VGM Dumper can't work in multichip mode
 #endif
     m_chips.resize(m_numChips, AdlMIDI_SPtr<OPNChipBase>());
 

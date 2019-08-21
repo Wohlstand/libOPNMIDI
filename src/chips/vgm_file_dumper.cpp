@@ -34,24 +34,34 @@ extern "C"
     }
 }
 
+static int g_chip_index = 0;
+static VGMFileDumper* g_master = NULL;
 
 VGMFileDumper::VGMFileDumper(OPNFamily f)
     : OPNChipBaseBufferedT(f)
 {
+    m_chip_index = g_chip_index++;
     m_bytes_written = 0;
     m_samples_written = 0;
     m_delay = 0;
     setRate(m_rate, m_clock);
-    m_output = std::fopen(g_vgm_path, "wb");
-    assert(m_output);
-    std::memset(&m_vgm_head, 0, sizeof(VgmHead));
-    std::memcpy(m_vgm_head.magic, "Vgm ", 4);
-    m_vgm_head.version = 0x00000110;
-    std::fseek(m_output, 0x40, SEEK_SET);
+    if(m_chip_index == 0)
+    {
+        m_output = std::fopen(g_vgm_path, "wb");
+        assert(m_output);
+        std::memset(&m_vgm_head, 0, sizeof(VgmHead));
+        std::memcpy(m_vgm_head.magic, "Vgm ", 4);
+        m_vgm_head.version = 0x00000110;
+        std::fseek(m_output, 0x40, SEEK_SET);
+        g_master = this;
+    }
 }
 
 VGMFileDumper::~VGMFileDumper()
 {
+    g_chip_index--;
+    if(m_chip_index > 0)
+        return;
     uint8_t out[1];
     out[0] = 0x66;// end of sound data
     std::fwrite(&out, 1, 1, m_output);
@@ -65,6 +75,7 @@ VGMFileDumper::~VGMFileDumper()
     //! FIXME: Make proper endianess suporrt
     std::fwrite(&m_vgm_head, 1, sizeof(VgmHead), m_output);
     fclose(m_output);
+    g_master = NULL;
 }
 
 void VGMFileDumper::setRate(uint32_t rate, uint32_t clock)
@@ -83,6 +94,19 @@ void VGMFileDumper::reset()
 
 void VGMFileDumper::writeReg(uint32_t port, uint16_t addr, uint8_t data)
 {
+    if(m_chip_index > 0) // When it's a second chip
+    {
+        if(g_master)
+            g_master->writeReg(port + 2, addr, data);
+        return;
+    }
+
+    if(port > 4)
+        return;//NOT SUPPORTED
+
+    if(port > 2 && ((m_vgm_head.clock_ym2612 & 0x40000000) == 0))
+        m_vgm_head.clock_ym2612 |= 0x40000000;
+
     uint8_t out[3];
 
     while(m_delay > 0)
@@ -129,6 +153,12 @@ void VGMFileDumper::writeReg(uint32_t port, uint16_t addr, uint8_t data)
     case 1:
         out[0] = 0x53;
         break;
+    case 2://Second chip
+        out[0] = 0xA2;
+        break;
+    case 3:
+        out[0] = 0xA3;
+        break;
     }
     out[1] = (uint8_t)addr;
     out[2] = (uint8_t)data;
@@ -142,6 +172,8 @@ void VGMFileDumper::writePan(uint16_t /*chan*/, uint8_t /*data*/)
 
 void VGMFileDumper::nativeGenerateN(int16_t *output, size_t frames)
 {
+    if(m_chip_index > 0) // When it's a second chip
+        return;
     std::memset(output, 0, frames * sizeof(int16_t) * 2);
     m_delay += size_t(frames * (44100.0 / double(m_actual_rate)));
 }

@@ -117,13 +117,14 @@ int main(int argc, char **argv)
         std::printf(
             "Usage:\n"
             "   midi2vgm [-s] [-w] [-nl] \\\n"
-            "               [<bankfile>.wopn] <midifilename>\n"
+            "               [--chips <count>] [<bankfile>.wopn] <midifilename>\n"
             "\n"
             " <bankfile>.wopn   Path to WOPN bank file\n"
             " <midifilename>    Path to music file to play\n"
             "\n"
             " -s                Enables scaling of modulator volumes\n"
             " -frb              Enables full-ranged CC74 XG Brightness controller\n"
+            " --chips <count>   Choose a count of chips (1 by default, 2 maximum)\n"
             "\n"
         );
         std::fflush(stdout);
@@ -143,7 +144,7 @@ int main(int argc, char **argv)
     int loopEnabled = 1;
     int emulator = OPNMIDI_VGM_DUMPER;
     size_t soloTrack = ~(size_t)0;
-    int chipsCount = -1;//Auto-choose chips count by emulator (Nuked 3, others 8)
+    int chipsCount = 1;// Single-chip by default
 
     std::string bankPath;
     std::string musPath;
