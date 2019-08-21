@@ -512,6 +512,8 @@ enum Opn2_Emulator
     OPNMIDI_EMU_MAME_2608,
     /*! PMDWin OPNA */
     OPNMIDI_EMU_PMDWIN,
+    /*! VGM file dumper (required for MIDI2VGM) */
+    OPNMIDI_VGM_DUMPER,
     /*! Count instrument on the level */
     OPNMIDI_EMU_end
 };

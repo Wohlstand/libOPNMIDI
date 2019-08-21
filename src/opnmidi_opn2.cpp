@@ -66,6 +66,11 @@
 #include "chips/pmdwin_opna.h"
 #endif
 
+// VGM File dumper
+#ifdef OPNMIDI_MIDI2VGM
+#include "chips/vgm_file_dumper.h"
+#endif
+
 static const unsigned opn2_emulatorSupport = 0
 #ifndef OPNMIDI_DISABLE_NUKED_EMULATOR
     | (1u << OPNMIDI_EMU_NUKED)
@@ -87,6 +92,9 @@ static const unsigned opn2_emulatorSupport = 0
 #endif
 #ifndef OPNMIDI_DISABLE_PMDWIN_EMULATOR
     | (1u << OPNMIDI_EMU_PMDWIN)
+#endif
+#ifdef OPNMIDI_MIDI2VGM
+    | (1u << OPNMIDI_VGM_DUMPER)
 #endif
 ;
 
@@ -452,6 +460,10 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
     clearChips();
     m_insCache.clear();
     m_regLFOSens.clear();
+#ifdef OPNMIDI_MIDI2VGM
+    if(emulator == OPNMIDI_VGM_DUMPER)
+        m_numChips = 1;// VGM Dumper can't work in multichip mode
+#endif
     m_chips.resize(m_numChips, AdlMIDI_SPtr<OPNChipBase>());
 
     for(size_t i = 0; i < m_chips.size(); i++)
@@ -496,6 +508,11 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
 #ifndef OPNMIDI_DISABLE_PMDWIN_EMULATOR
         case OPNMIDI_EMU_PMDWIN:
             chip = new PMDWinOPNA(family);
+            break;
+#endif
+#ifdef OPNMIDI_MIDI2VGM
+        case OPNMIDI_VGM_DUMPER:
+            chip = new VGMFileDumper(family);
             break;
 #endif
         }

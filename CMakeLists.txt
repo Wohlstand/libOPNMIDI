@@ -116,6 +116,7 @@ option(USE_GX_EMULATOR      "Use Genesis Plus GX emulator (experimental)" OFF)
 option(USE_NP2_EMULATOR     "Use Neko Project II emulator" ON)
 option(USE_MAME_2608_EMULATOR "Use MAME YM2608 emulator" ON)
 option(USE_PMDWIN_EMULATOR  "Use PMDWin emulator (experimental)" OFF)
+option(USE_VGM_FILE_DUMPER  "Use VGM File Dumper (required for MIDI2VGM)" OFF)
 # WIP FEATURES
 # option(WITH_CPP_EXTRAS      "Build with support for C++ extras (features are can be found in 'adlmidi.hpp' header)" OFF)
 
@@ -233,6 +234,13 @@ else()
     add_definitions(-DOPNMIDI_DISABLE_PMDWIN_EMULATOR)
 endif()
 
+if(USE_VGM_FILE_DUMPER)
+    list(APPEND libOPNMIDI_SOURCES
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/vgm_file_dumper.cpp)
+    set(HAS_EMULATOR TRUE)
+    add_definitions(-DOPNMIDI_MIDI2VGM)
+endif()
+
 if(NOT HAS_EMULATOR)
     message(FATAL_ERROR "No emulators enabled! You must enable at least one emulator!")
 endif()
@@ -348,6 +356,9 @@ if(WITH_MIDIPLAY)
     list(APPEND libOPNMIDI_INSTALLS opnmidiplay)
 endif()
 
+if(USE_VGM_FILE_DUMPER)
+    add_subdirectory(utils/midi2vgm)
+endif()
 
 if(WITH_VLC_PLUGIN)
     add_subdirectory(utils/vlc_codec)
