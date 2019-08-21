@@ -68,9 +68,9 @@ VGMFileDumper::~VGMFileDumper()
     m_bytes_written += 1;
 
     std::fseek(m_output, 0x00, SEEK_SET);
-    m_vgm_head.total_samples = m_bytes_written;
-    m_vgm_head.offset_loop = 0x0040;
-    m_vgm_head.loop_samples = m_samples_written;
+    m_vgm_head.total_samples = m_samples_written;
+    m_vgm_head.offset_loop = 0x0040; //FIXME: Verify correctness of loop begin (should be a begin of song)
+    m_vgm_head.loop_samples = m_samples_written - 1;
     m_vgm_head.eof_offset = (0x40 + m_bytes_written - 4);
     //! FIXME: Make proper endianess suporrt
     std::fwrite(&m_vgm_head, 1, sizeof(VgmHead), m_output);
@@ -142,7 +142,7 @@ void VGMFileDumper::writeReg(uint32_t port, uint16_t addr, uint8_t data)
             std::fwrite(&out, 1, 3, m_output);
             m_bytes_written += 3;
         }
-        m_samples_written++;
+        m_samples_written += to_copy;
     }
 
     switch (port)
