@@ -306,54 +306,8 @@ else()
   target_link_libraries(OPNMIDI_IF INTERFACE OPNMIDI_static)
 endif()
 
-if(WITH_MIDIPLAY OR WITH_DAC_UTIL)
-    find_library(SDL2_LIBRARY SDL2 REQUIRED)
-    include_directories(${SDL2_INCLUDE_DIR})
-    message("Found ${SDL2_LIBRARY}")
-
-    set(SDL2_NEEDED_LIBRARIES)
-    if(WIN32)
-        if(MSVC)
-            list(APPEND SDL2_NEEDED_LIBRARIES ${SDL2_LIBRARY})
-        else()
-            list(APPEND SDL2_NEEDED_LIBRARIES ${SDL2_LIBRARY} pthread)
-        endif()
-    else()
-        list(APPEND SDL2_NEEDED_LIBRARIES ${SDL2_LIBRARY} pthread)
-        if(NOT HAIKU AND NOT OPENBSD_LOCALBASE)
-            list(APPEND SDL2_NEEDED_LIBRARIES dl)
-        endif()
-        list(APPEND SDL2_NEEDED_LIBRARIES m stdc++)
-    endif()
-    if(OPENBSD_LOCALBASE)
-        list(REMOVE_ITEM SDL2_NEEDED_LIBRARIES dl)
-    endif()
-
-endif()
-
 if(WITH_MIDIPLAY)
-    add_executable(opnmidiplay
-        ${libOPNMIDI_SOURCE_DIR}/utils/midiplay/opnplay.cpp
-        ${libOPNMIDI_SOURCE_DIR}/utils/midiplay/wave_writer.c
-        # ${libOPNMIDI_SOURCE_DIR}/utils/midiplay/wave_writer.c # WIP
-    )
-    target_link_libraries(opnmidiplay OPNMIDI_IF ${SDL2_NEEDED_LIBRARIES})
-
-    if(libOPNMIDI_SHARED)
-        add_dependencies(opnmidiplay OPNMIDI_shared)
-        set_target_properties(opnmidiplay PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
-    else()
-        if(NOT libOPNMIDI_STATIC)
-            message(FATAL_ERROR "libOPNMIDI is required to be built!")
-        endif()
-        add_dependencies(opnmidiplay OPNMIDI_static)
-    endif()
-
-    if(NOT WIN32 AND NOT APPLE)
-        install(FILES ${libOPNMIDI_SOURCE_DIR}/fm_banks/xg.wopn DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/opnmidiplay/)
-    endif()
-
-    list(APPEND libOPNMIDI_INSTALLS opnmidiplay)
+    add_subdirectory(utils/midiplay)
 endif()
 
 if(USE_VGM_FILE_DUMPER)
@@ -365,16 +319,9 @@ if(WITH_VLC_PLUGIN)
 endif()
 
 if(WITH_DAC_UTIL)
-    add_executable(dac_test
-        ${libOPNMIDI_SOURCE_DIR}/utils/dac_test/dac_test.cpp
-        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_opn2.cpp
-        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked/ym3438.c
-    )
-    target_include_directories(dac_test PRIVATE
-            ${libOPNMIDI_SOURCE_DIR}/src/chips/
-    )
-    target_link_libraries(dac_test ${SDL2_NEEDED_LIBRARIES})
+    add_subdirectory(utils/dac_test)
 endif()
+
 
 if(WITH_HQ_RESAMPLER)
     find_library(ZITA_RESAMPLER_LIBRARY "zita-resampler" REQUIRED)
@@ -384,9 +331,6 @@ if(WITH_HQ_RESAMPLER)
     endif()
     if(libOPNMIDI_STATIC OR WITH_VLC_PLUGIN)
         target_link_libraries(OPNMIDI_static PUBLIC "${ZITA_RESAMPLER_LIBRARY}")
-    endif()
-    if(WITH_DAC_UTIL)
-        target_link_libraries(dac_test "${ZITA_RESAMPLER_LIBRARY}")
     endif()
 endif()
 
