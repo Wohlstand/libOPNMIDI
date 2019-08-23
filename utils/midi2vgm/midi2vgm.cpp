@@ -141,7 +141,6 @@ int main(int argc, char **argv)
      */
     bool scaleModulators = false;
     bool fullRangedBrightness = false;
-    int loopEnabled = 1;
     int emulator = OPNMIDI_VGM_DUMPER;
     size_t soloTrack = ~(size_t)0;
     int chipsCount = 1;// Single-chip by default
@@ -154,8 +153,6 @@ int main(int argc, char **argv)
     {
         if(!std::strcmp("-frb", argv[arg]))
             fullRangedBrightness = true;
-        else if(!std::strcmp("-nl", argv[arg]))
-            loopEnabled = 0; //Enable loop
         else if(!std::strcmp("-s", argv[arg]))
             scaleModulators = true;
         else if(!std::strcmp("--chips", argv[arg]))
