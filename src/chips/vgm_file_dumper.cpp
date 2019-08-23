@@ -37,6 +37,83 @@ extern "C"
 static int g_chip_index = 0;
 static VGMFileDumper* g_master = NULL;
 
+static void g_write_le(FILE *f_out, uint32_t &field)
+{
+    uint8_t out[4];
+    out[0] = (field) & 0xFF;
+    out[1] = (field >> 8) & 0xFF;
+    out[2] = (field >> 16) & 0xFF;
+    out[3] = (field >> 24) & 0xFF;
+    std::fwrite(&out, 1, 4, f_out);
+}
+
+static void g_write_le(FILE *f_out, uint16_t &field)
+{
+    uint8_t out[4];
+    out[0] = (field) & 0xFF;
+    out[1] = (field >> 8) & 0xFF;
+    std::fwrite(&out, 1, 2, f_out);
+}
+
+void VGMFileDumper::writeHead()
+{
+    off_t offset = std::ftell(m_output);
+    std::fseek(m_output, 0x00, SEEK_SET);
+    std::fwrite(m_vgm_head.magic, 1, 4, m_output);
+    g_write_le(m_output, m_vgm_head.eof_offset);
+    g_write_le(m_output, m_vgm_head.version);
+    g_write_le(m_output, m_vgm_head.clock_sn76489);
+    g_write_le(m_output, m_vgm_head.clock_ym2413);
+    g_write_le(m_output, m_vgm_head.offset_gd3);
+    g_write_le(m_output, m_vgm_head.total_samples);
+    g_write_le(m_output, m_vgm_head.offset_loop);
+    g_write_le(m_output, m_vgm_head.loop_samples);
+    g_write_le(m_output, m_vgm_head.rate);
+    g_write_le(m_output, m_vgm_head.feedback_sn76489);
+    std::fwrite(&m_vgm_head.shift_register_width_sn76489, 1, 1, m_output);
+    std::fwrite(&m_vgm_head.flags_sn76489, 1, 1, m_output);
+    g_write_le(m_output, m_vgm_head.clock_ym2612);
+    g_write_le(m_output, m_vgm_head.clock_ym2151);
+    g_write_le(m_output, m_vgm_head.offset_data);
+    std::fseek(m_output, offset, SEEK_SET);
+}
+
+void VGMFileDumper::writeWait(uint_fast16_t value)
+{
+    uint8_t out[3];
+    out[0] = 0x61;
+    if(value == 735)
+    {
+        out[0] = 0x62;
+        std::fwrite(&out, 1, 1, m_output);
+        m_bytes_written += 1;
+    }
+    else if(value == 882)
+    {
+        out[0] = 0x63;
+        std::fwrite(&out, 1, 1, m_output);
+        m_bytes_written += 1;
+    }
+    else
+    {
+        out[1] = value & 0xFF;
+        out[2] = (value >> 8) & 0xFF;
+        std::fwrite(&out, 1, 3, m_output);
+        m_bytes_written += 3;
+    }
+    m_samples_written += value;
+}
+
+void VGMFileDumper::writeCommand(uint_fast8_t cmd, uint_fast8_t key, uint_fast8_t value)
+{
+    uint8_t out[3];
+    out[0] = static_cast<uint8_t>(cmd);
+    out[1] = static_cast<uint8_t>(key);
+    out[2] = static_cast<uint8_t>(value);
+    std::fwrite(&out, 1, 3, m_output);
+    m_bytes_written += 3;
+}
+
 VGMFileDumper::VGMFileDumper(OPNFamily f)
     : OPNChipBaseBufferedT(f)
 {
@@ -67,15 +144,15 @@ VGMFileDumper::~VGMFileDumper()
     std::fwrite(&out, 1, 1, m_output);
     m_bytes_written += 1;
 
-    std::fseek(m_output, 0x00, SEEK_SET);
     m_vgm_head.total_samples = m_samples_written;
-    m_vgm_head.offset_loop = 0x1C; //FIXME: Verify correctness of loop begin (should be a begin of song)
+    m_vgm_head.offset_loop = 0x1C;
     m_vgm_head.loop_samples = m_samples_written - 1;
     m_vgm_head.eof_offset = (0x38 + m_bytes_written - 4);
     m_vgm_head.offset_data = 0x04;
-    //! FIXME: Make proper endianess suporrt
-    std::fwrite(&m_vgm_head, 1, sizeof(VgmHead), m_output);
-    fclose(m_output);
+
+    writeHead();
+
+    std::fclose(m_output);
     g_master = NULL;
 }
 
@@ -103,12 +180,10 @@ void VGMFileDumper::writeReg(uint32_t port, uint16_t addr, uint8_t data)
     }
 
     if(port > 4)
-        return;//NOT SUPPORTED
+        return; // VGM DOESN'T SUPPORTS MORE THAN 2 CHIPS
 
     if(port > 2 && ((m_vgm_head.clock_ym2612 & 0x40000000) == 0))
         m_vgm_head.clock_ym2612 |= 0x40000000;
-
-    uint8_t out[3];
 
     while(m_delay > 0)
     {
@@ -123,49 +198,11 @@ void VGMFileDumper::writeReg(uint32_t port, uint16_t addr, uint8_t data)
             to_copy = static_cast<uint16_t>(m_delay);
             m_delay = 0;
         }
-        out[0] = 0x61;
-        if(to_copy == 735)
-        {
-            out[0] = 0x62;
-            std::fwrite(&out, 1, 1, m_output);
-            m_bytes_written += 1;
-        }
-        else if(to_copy == 882)
-        {
-            out[0] = 0x63;
-            std::fwrite(&out, 1, 1, m_output);
-            m_bytes_written += 1;
-        }
-        else
-        {
-            out[1] = to_copy & 0xFF;
-            out[2] = (to_copy >> 8) & 0xFF;
-            std::fwrite(&out, 1, 3, m_output);
-            m_bytes_written += 3;
-        }
-        m_samples_written += to_copy;
+        writeWait(to_copy);
     }
 
-    switch (port)
-    {
-    case 0:
-        out[0] = 0x52;
-        break;
-    case 1:
-        out[0] = 0x53;
-        break;
-    case 2://Second chip
-        out[0] = 0xA2;
-        break;
-    case 3:
-        out[0] = 0xA3;
-        break;
-    }
-    out[1] = (uint8_t)addr;
-    out[2] = (uint8_t)data;
-
-    std::fwrite(&out, 1, 3, m_output);
-    m_bytes_written += 3;
+    uint_fast8_t ports[] = {0x52, 0x53, 0xA2, 0xA3};
+    writeCommand(ports[port], addr, data);
 }
 
 void VGMFileDumper::writePan(uint16_t /*chan*/, uint8_t /*data*/)

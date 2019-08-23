@@ -35,7 +35,7 @@ class VGMFileDumper final : public OPNChipBaseBufferedT<VGMFileDumper>
 
     struct VgmHead
     {
-        char magic[4];
+        char     magic[4];
         uint32_t eof_offset;
         uint32_t version;
         uint32_t clock_sn76489;
@@ -53,6 +53,10 @@ class VGMFileDumper final : public OPNChipBaseBufferedT<VGMFileDumper>
         uint32_t offset_data;
     };
     VgmHead m_vgm_head;
+
+    void writeHead();
+    void writeCommand(uint_fast8_t cmd, uint_fast8_t key = 0, uint_fast8_t value = 0);
+    void writeWait(uint_fast16_t value);
 public:
     explicit VGMFileDumper(OPNFamily f);
     ~VGMFileDumper() override;

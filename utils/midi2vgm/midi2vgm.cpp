@@ -14,7 +14,7 @@
 
 extern "C"
 {
-    extern void opn2_set_vgm_out_path(const char *path);
+    extern OPNMIDI_DECLSPEC void opn2_set_vgm_out_path(const char *path);
 }
 
 static void printError(const char *err)
@@ -141,7 +141,6 @@ int main(int argc, char **argv)
      */
     bool scaleModulators = false;
     bool fullRangedBrightness = false;
-    int emulator = OPNMIDI_VGM_DUMPER;
     size_t soloTrack = ~(size_t)0;
     int chipsCount = 1;// Single-chip by default
 
@@ -230,7 +229,7 @@ int main(int argc, char **argv)
         opn2_setRawEventHook(myDevice, debugPrintEvent, NULL);
     #endif
 
-    if(opn2_switchEmulator(myDevice, emulator) != 0)
+    if(opn2_switchEmulator(myDevice, OPNMIDI_VGM_DUMPER) != 0)
     {
         std::fprintf(stdout, "FAILED!\n");
         std::fflush(stdout);
@@ -252,10 +251,10 @@ int main(int argc, char **argv)
     }
     std::fprintf(stdout, "OK!\n");
 
-    if(emulator == OPNMIDI_EMU_NUKED && (chipsCount < 0))
-        chipsCount = 3;
-    else if(chipsCount < 0)
-        chipsCount = 8;
+    if(chipsCount < 0)
+        chipsCount = 1;
+    else if(chipsCount > 2)
+        chipsCount = 2;
     opn2_setNumChips(myDevice, chipsCount);
 
     if(opn2_openFile(myDevice, musPath.c_str()) != 0)
