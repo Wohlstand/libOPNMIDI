@@ -52,7 +52,7 @@ VGMFileDumper::VGMFileDumper(OPNFamily f)
         std::memset(&m_vgm_head, 0, sizeof(VgmHead));
         std::memcpy(m_vgm_head.magic, "Vgm ", 4);
         m_vgm_head.version = 0x00000150;
-        std::fseek(m_output, 0x40, SEEK_SET);
+        std::fseek(m_output, 0x38, SEEK_SET);
         g_master = this;
     }
 }
@@ -69,10 +69,10 @@ VGMFileDumper::~VGMFileDumper()
 
     std::fseek(m_output, 0x00, SEEK_SET);
     m_vgm_head.total_samples = m_samples_written;
-    m_vgm_head.offset_loop = 0x0C; //FIXME: Verify correctness of loop begin (should be a begin of song)
+    m_vgm_head.offset_loop = 0x1C; //FIXME: Verify correctness of loop begin (should be a begin of song)
     m_vgm_head.loop_samples = m_samples_written - 1;
-    m_vgm_head.eof_offset = (0x40 + m_bytes_written - 4);
-    m_vgm_head.offset_data = 0x0C;
+    m_vgm_head.eof_offset = (0x38 + m_bytes_written - 4);
+    m_vgm_head.offset_data = 0x04;
     //! FIXME: Make proper endianess suporrt
     std::fwrite(&m_vgm_head, 1, sizeof(VgmHead), m_output);
     fclose(m_output);
@@ -89,7 +89,7 @@ void VGMFileDumper::setRate(uint32_t rate, uint32_t clock)
 void VGMFileDumper::reset()
 {
     OPNChipBaseBufferedT::reset();
-    std::fseek(m_output, 0x40, SEEK_SET);
+    std::fseek(m_output, 0x38, SEEK_SET);
     m_samples_written = 0;
 }
 

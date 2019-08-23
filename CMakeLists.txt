@@ -116,7 +116,7 @@ option(USE_GX_EMULATOR      "Use Genesis Plus GX emulator (experimental)" OFF)
 option(USE_NP2_EMULATOR     "Use Neko Project II emulator" ON)
 option(USE_MAME_2608_EMULATOR "Use MAME YM2608 emulator" ON)
 option(USE_PMDWIN_EMULATOR  "Use PMDWin emulator (experimental)" OFF)
-option(USE_VGM_FILE_DUMPER  "Use VGM File Dumper (required for MIDI2VGM)" OFF)
+option(USE_VGM_FILE_DUMPER  "Use VGM File Dumper (also, build the MIDI2VGM tool)" OFF)
 # WIP FEATURES
 # option(WITH_CPP_EXTRAS      "Build with support for C++ extras (features are can be found in 'adlmidi.hpp' header)" OFF)
 
@@ -440,6 +440,7 @@ message("USE_GX_EMULATOR          = ${USE_GX_EMULATOR}")
 message("USE_NP2_EMULATOR         = ${USE_NP2_EMULATOR}")
 message("USE_MAME_2608_EMULATOR   = ${USE_MAME_2608_EMULATOR}")
 message("USE_PMDWIN_EMULATOR      = ${USE_PMDWIN_EMULATOR}")
+message("USE_VGM_FILE_DUMPER      = ${USE_VGM_FILE_DUMPER}")
 
 message("===== Utils and extras =====")
 message("WITH_MIDIPLAY            = ${WITH_MIDIPLAY}")
