@@ -19,8 +19,5 @@ install(TARGETS dac_test
         INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
 if(WITH_HQ_RESAMPLER)
-    if(WITH_DAC_UTIL)
-        target_link_libraries(dac_test "${ZITA_RESAMPLER_LIBRARY}")
-    endif()
+    target_link_libraries(dac_test "${ZITA_RESAMPLER_LIBRARY}")
 endif()
-
