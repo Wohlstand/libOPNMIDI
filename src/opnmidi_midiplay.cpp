@@ -105,8 +105,8 @@ OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
     m_setup.runAtPcmRate = false;
 
     m_setup.PCM_RATE = sampleRate;
-    m_setup.mindelay = 1.0 / (double)m_setup.PCM_RATE;
-    m_setup.maxdelay = 512.0 / (double)m_setup.PCM_RATE;
+    m_setup.mindelay = 1.0 / static_cast<double>(m_setup.PCM_RATE);
+    m_setup.maxdelay = 512.0 / static_cast<double>(m_setup.PCM_RATE);
 
     m_setup.OpnBank    = 0;
     m_setup.numChips   = 2;
@@ -155,7 +155,7 @@ void OPNMIDIplay::applySetup()
         synth.setVolumeScaleModel(static_cast<OPNMIDI_VolumeModels>(m_setup.VolumeModel));
 
     if(m_setup.VolumeModel == OPNMIDI_VolumeModel_AUTO)
-        synth.m_volumeScale = (Synth::VolumesScale)synth.m_insBankSetup.volumeModel;
+        synth.m_volumeScale = static_cast<Synth::VolumesScale>(synth.m_insBankSetup.volumeModel);
 
     synth.m_numChips    = m_setup.numChips;
 
@@ -165,9 +165,9 @@ void OPNMIDIplay::applySetup()
         synth.m_lfoEnable = (m_setup.lfoEnable != 0);
 
     if(m_setup.lfoFrequency < 0)
-        synth.m_lfoFrequency = synth.m_insBankSetup.lfoFrequency;
+        synth.m_lfoFrequency = static_cast<uint8_t>(synth.m_insBankSetup.lfoFrequency);
     else
-        synth.m_lfoFrequency = m_setup.lfoFrequency;
+        synth.m_lfoFrequency = static_cast<uint8_t>(m_setup.lfoFrequency);
 
     int chipType;
     if(m_setup.chipType < 0)
@@ -175,10 +175,16 @@ void OPNMIDIplay::applySetup()
     else
         chipType = m_setup.chipType;
 
-    synth.reset(m_setup.emulator, m_setup.PCM_RATE, (OPNFamily)chipType, this);
+    synth.reset(m_setup.emulator, m_setup.PCM_RATE, static_cast<OPNFamily>(chipType), this);
     m_chipChannels.clear();
     m_chipChannels.resize(synth.m_numChannels, OpnChannel());
-
+#ifdef OPNMIDI_MIDI2VGM
+    m_sequencerInterface->onloopStart = synth.m_loopStartHook;
+    m_sequencerInterface->onloopStart_userData = synth.m_loopStartHookData;
+    m_sequencerInterface->onloopEnd = synth.m_loopEndHook;
+    m_sequencerInterface->onloopEnd_userData = synth.m_loopEndHookData;
+    m_sequencer->setLoopHooksOnly(m_sequencerInterface->onloopStart != NULL);
+#endif
     // Reset the arpeggio counter
     m_arpeggioCounter = 0;
 }
@@ -192,6 +198,13 @@ void OPNMIDIplay::partialReset()
     synth.reset(m_setup.emulator, m_setup.PCM_RATE, synth.chipFamily(), this);
     m_chipChannels.clear();
     m_chipChannels.resize(synth.m_numChannels);
+#ifdef OPNMIDI_MIDI2VGM
+    m_sequencerInterface->onloopStart = synth.m_loopStartHook;
+    m_sequencerInterface->onloopStart_userData = synth.m_loopStartHookData;
+    m_sequencerInterface->onloopEnd = synth.m_loopEndHook;
+    m_sequencerInterface->onloopEnd_userData = synth.m_loopEndHookData;
+    m_sequencer->setLoopHooksOnly(m_sequencerInterface->onloopStart != NULL);
+#endif
 }
 
 void OPNMIDIplay::resetMIDI()
@@ -289,7 +302,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
         {
             MIDIchannel::NoteInfo &ni = i->value;
             const int veloffset = ni.ains->midi_velocity_offset;
-            velocity = (uint8_t)std::min(127, std::max(1, (int)velocity + veloffset));
+            velocity = static_cast<uint8_t>(std::min(127, std::max(1, static_cast<int>(velocity) + veloffset)));
             ni.vol = velocity;
             noteUpdate(channel, i, Upd_Volume);
             return false;
@@ -350,7 +363,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
 
     //Set bank bank
     const Synth::Bank *bnk = NULL;
-    if((bank & ~(uint16_t)Synth::PercussionTag) > 0)
+    if((bank & static_cast<size_t>(~static_cast<uint16_t>(Synth::PercussionTag))) > 0)
     {
         Synth::BankMap::iterator b = synth.m_insBanks.find(bank);
         if(b != synth.m_insBanks.end())
@@ -380,7 +393,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     }
 
     const int veloffset = ains->midi_velocity_offset;
-    velocity = (uint8_t)std::min(127, std::max(1, (int)velocity + veloffset));
+    velocity = static_cast<uint8_t>(std::min(127, std::max(1, static_cast<int>(velocity) + veloffset)));
 
     int32_t tone = note;
     if(!isPercussion && (bank > 0)) // For non-zero banks
@@ -460,7 +473,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
         int32_t c = -1;
         int32_t bs = -0x7FFFFFFFl;
 
-        for(size_t a = 0; a < (size_t)synth.m_numChannels; ++a)
+        for(size_t a = 0; a < static_cast<size_t>(synth.m_numChannels); ++a)
         {
             if(ccount == 1 && static_cast<int32_t>(a) == adlchannel[0]) continue;
             // ^ Don't use the same channel for primary&secondary
@@ -482,7 +495,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
             int64_t s = calculateChipChannelGoodness(a, voices[ccount]);
             if(s > bs)
             {
-                bs = (int32_t)s;    // Best candidate wins
+                bs = static_cast<int32_t>(s);    // Best candidate wins
                 c = static_cast<int32_t>(a);
             }
         }
@@ -933,10 +946,10 @@ bool OPNMIDIplay::doRolandSysEx(unsigned dev, const uint8_t *data, size_t size)
     {
         if(size != 1 || (dev & 0xF0) != 0x10)
             break;
-        unsigned mode = data[0] & 0x7F;
-        ADL_UNUSED(mode);//TODO: Hook this correctly!
+        unsigned gs_mode = data[0] & 0x7F;
+        ADL_UNUSED(gs_mode);//TODO: Hook this correctly!
         if(hooks.onDebugMessage)
-            hooks.onDebugMessage(hooks.onDebugMessage_userData, "SysEx: Caught Roland System Mode Set: %02X", mode);
+            hooks.onDebugMessage(hooks.onDebugMessage_userData, "SysEx: Caught Roland System Mode Set: %02X", gs_mode);
         m_synthMode = Mode_GS;
         realTime_ResetState();
         return true;
@@ -1092,10 +1105,10 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
         if(props_mask & Upd_Patch)
         {
             synth.setPatch(c, ins.ains);
-            OpnChannel::users_iterator i = m_chipChannels[c].find_or_create_user(my_loc);
-            if(!i.is_end())    // inserts if necessary
+            OpnChannel::users_iterator ci = m_chipChannels[c].find_or_create_user(my_loc);
+            if(!ci.is_end())    // inserts if necessary
             {
-                OpnChannel::LocationData &d = i->value;
+                OpnChannel::LocationData &d = ci->value;
                 d.sustained = OpnChannel::LocationData::Sustain_None;
                 d.vibdelay_us  = 0;
                 d.fixed_sustain = (ains.ms_sound_kon == static_cast<uint16_t>(opnNoteOnMaxTime));
@@ -1123,7 +1136,7 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
                     m_chipChannels[c].users.erase(k);
 
                 if(hooks.onNote)
-                    hooks.onNote(hooks.onNote_userData, c, noteTone, (int)midiins, 0, 0.0);
+                    hooks.onNote(hooks.onNote_userData, c, noteTone, static_cast<int>(midiins), 0, 0.0);
 
                 if(do_erase_user && m_chipChannels[c].users.empty())
                 {
@@ -1147,7 +1160,7 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
                 if(!d.is_end())
                     d->value.sustained |= OpnChannel::LocationData::Sustain_Pedal; // note: not erased!
                 if(hooks.onNote)
-                    hooks.onNote(hooks.onNote_userData, c, noteTone, (int)midiins, -1, 0.0);
+                    hooks.onNote(hooks.onNote_userData, c, noteTone, static_cast<int>(midiins), -1, 0.0);
             }
 
             info.phys_erase_at(&ins);  // decrements channel count
@@ -1274,7 +1287,7 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
 
                 synth.noteOn(c, std::exp(0.057762265 * (currentTone + bend + phase)));
                 if(hooks.onNote)
-                    hooks.onNote(hooks.onNote_userData, c, noteTone, (int)midiins, vol, midibend);
+                    hooks.onNote(hooks.onNote_userData, c, noteTone, static_cast<int>(midiins), vol, midibend);
             }
         }
     }
@@ -1472,13 +1485,13 @@ void OPNMIDIplay::killOrEvacuate(size_t from_channel,
             if(hooks.onNote)
             {
                 hooks.onNote(hooks.onNote_userData,
-                             (int)from_channel,
+                             static_cast<int>(from_channel),
                              info.noteTone,
-                             (int)info.midiins, 0, 0.0);
+                             static_cast<int>(info.midiins), 0, 0.0);
                 hooks.onNote(hooks.onNote_userData,
-                             (int)c,
+                             static_cast<int>(c),
                              info.noteTone,
-                             (int)info.midiins,
+                             static_cast<int>(info.midiins),
                              info.vol, 0.0);
             }
 
@@ -1540,7 +1553,7 @@ void OPNMIDIplay::killSustainingNotes(int32_t midCh, int32_t this_adlchn, uint32
             {
                 int midiins = '?';
                 if(hooks.onNote)
-                    hooks.onNote(hooks.onNote_userData, (int)c, jd.loc.note, midiins, 0, 0.0);
+                    hooks.onNote(hooks.onNote_userData, static_cast<int>(c), jd.loc.note, midiins, 0, 0.0);
                 jd.sustained &= ~sustain_type;
                 if(jd.sustained == OpnChannel::LocationData::Sustain_None)
                     m_chipChannels[c].users.erase(j);//Remove only when note is clean from any holders
@@ -1581,11 +1594,11 @@ void OPNMIDIplay::setRPN(size_t midCh, unsigned value, bool MSB)
     switch(addr + nrpn * 0x10000 + MSB * 0x20000)
     {
     case 0x0000 + 0*0x10000 + 1*0x20000: // Pitch-bender sensitivity
-        m_midiChannels[midCh].bendsense_msb = value;
+        m_midiChannels[midCh].bendsense_msb = static_cast<int>(value);
         m_midiChannels[midCh].updateBendSensitivity();
         break;
     case 0x0000 + 0*0x10000 + 0*0x20000: // Pitch-bender sensitivity LSB
-        m_midiChannels[midCh].bendsense_lsb = value;
+        m_midiChannels[midCh].bendsense_lsb = static_cast<int>(value);
         m_midiChannels[midCh].updateBendSensitivity();
         break;
     case 0x0108 + 1*0x10000 + 1*0x20000: // Vibrato speed
@@ -1600,13 +1613,13 @@ void OPNMIDIplay::setRPN(size_t midCh, unsigned value, bool MSB)
     case 0x0109 + 1*0x10000 + 1*0x20000:
         if((m_synthMode & Mode_XG) != 0) // Vibrato depth
         {
-            m_midiChannels[midCh].vibdepth = (((int)value - 64) * 0.15) * 0.01;
+            m_midiChannels[midCh].vibdepth = ((static_cast<int>(value) - 64) * 0.15) * 0.01;
         }
         break;
     case 0x010A + 1*0x10000 + 1*0x20000:
         if((m_synthMode & Mode_XG) != 0) // Vibrato delay in millisecons
         {
-            m_midiChannels[midCh].vibdelay_us = value ? int64_t(209.2 * std::exp(0.0795 * (double)value)) : 0;
+            m_midiChannels[midCh].vibdelay_us = value ? int64_t(209.2 * std::exp(0.0795 * static_cast<double>(value))) : 0;
         }
         break;
     default:/* UI.PrintLn("%s %04X <- %d (%cSB) (ch %u)",
@@ -1769,7 +1782,7 @@ void OPNMIDIplay::updateGlide(double amount)
             bool glideFinished = !(directionUp ? (currentTone < finalTone) : (currentTone > finalTone));
             currentTone = glideFinished ? finalTone : currentTone;
 
-            if(currentTone != previousTone)
+            if(int64_t(currentTone * 1000000.0) != int64_t(previousTone * 1000000.0))
             {
                 info.currentTone = currentTone;
                 noteUpdate(static_cast<uint16_t>(channel), it, Upd_Pitch);
@@ -1810,9 +1823,9 @@ void OPNMIDIplay::describeChannels(char *str, char *attr, size_t size)
 
         uint8_t attribute = 0;
         if (!loc.is_end())  // 4-bit color index of MIDI channel
-            attribute |= (uint8_t)(loc->value.loc.MidCh & 0xF);
+            attribute |= uint8_t(loc->value.loc.MidCh & 0xF);
 
-        attr[index] = (char)attribute;
+        attr[index] = static_cast<char>(attribute);
         ++index;
     }
 

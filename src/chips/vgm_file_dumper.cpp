@@ -37,6 +37,9 @@ extern "C"
 static int g_chip_index = 0;
 static VGMFileDumper* g_master = NULL;
 
+#define VGM_LOOP_START_BASE 0x1C
+#define VGM_SONG_DATA_START 0x38
+
 static void g_write_le(FILE *f_out, uint32_t &field)
 {
     uint8_t out[4];
@@ -102,9 +105,10 @@ void VGMFileDumper::writeWait(uint_fast16_t value)
         m_bytes_written += 3;
     }
     m_samples_written += value;
+    m_samples_loop += value;
 }
 
-void VGMFileDumper::writeCommand(uint_fast8_t cmd, uint_fast8_t key, uint_fast8_t value)
+void VGMFileDumper::writeCommand(uint_fast8_t cmd, uint_fast16_t key, uint_fast8_t value)
 {
     uint8_t out[3];
     out[0] = static_cast<uint8_t>(cmd);
@@ -120,7 +124,9 @@ VGMFileDumper::VGMFileDumper(OPNFamily f)
     m_chip_index = g_chip_index++;
     m_bytes_written = 0;
     m_samples_written = 0;
+    m_samples_loop = 0;
     m_delay = 0;
+    m_end_caught = false;
     setRate(m_rate, m_clock);
     if(m_chip_index == 0)
     {
@@ -129,7 +135,8 @@ VGMFileDumper::VGMFileDumper(OPNFamily f)
         std::memset(&m_vgm_head, 0, sizeof(VgmHead));
         std::memcpy(m_vgm_head.magic, "Vgm ", 4);
         m_vgm_head.version = 0x00000150;
-        std::fseek(m_output, 0x38, SEEK_SET);
+        m_vgm_head.offset_loop = VGM_LOOP_START_BASE;
+        std::fseek(m_output, VGM_SONG_DATA_START, SEEK_SET);
         g_master = this;
     }
 }
@@ -145,9 +152,8 @@ VGMFileDumper::~VGMFileDumper()
     m_bytes_written += 1;
 
     m_vgm_head.total_samples = m_samples_written;
-    m_vgm_head.offset_loop = 0x1C;
-    m_vgm_head.loop_samples = m_samples_written - 1;
-    m_vgm_head.eof_offset = (0x38 + m_bytes_written - 4);
+    m_vgm_head.loop_samples = m_samples_loop - 1;
+    m_vgm_head.eof_offset = (VGM_SONG_DATA_START + m_bytes_written - 4);
     m_vgm_head.offset_data = 0x04;
 
     writeHead();
@@ -166,7 +172,7 @@ void VGMFileDumper::setRate(uint32_t rate, uint32_t clock)
 void VGMFileDumper::reset()
 {
     OPNChipBaseBufferedT::reset();
-    std::fseek(m_output, 0x38, SEEK_SET);
+    std::fseek(m_output, VGM_SONG_DATA_START, SEEK_SET);
     m_samples_written = 0;
 }
 
@@ -210,7 +216,7 @@ void VGMFileDumper::writePan(uint16_t /*chan*/, uint8_t /*data*/)
 
 void VGMFileDumper::nativeGenerateN(int16_t *output, size_t frames)
 {
-    if(m_chip_index > 0) // When it's a second chip
+    if(m_chip_index > 0 || m_end_caught) // When it's a second chip
         return;
     std::memset(output, 0, frames * sizeof(int16_t) * 2);
     m_delay += size_t(frames * (44100.0 / double(m_actual_rate)));
@@ -219,4 +225,34 @@ void VGMFileDumper::nativeGenerateN(int16_t *output, size_t frames)
 const char *VGMFileDumper::emulatorName()
 {
     return "VGM Writer";
+}
+
+void VGMFileDumper::writeLoopStart()
+{
+    if(m_chip_index > 0)
+        return;
+    m_vgm_head.offset_loop = VGM_LOOP_START_BASE + m_bytes_written;
+    m_samples_loop = 0;
+}
+
+void VGMFileDumper::writeLoopEnd()
+{
+    if(m_chip_index > 0)
+        return;
+    m_end_caught = true;
+}
+
+void VGMFileDumper::loopStartHook(void *self)
+{
+    VGMFileDumper *s = reinterpret_cast<VGMFileDumper*>(self);
+    if(s)
+        s->writeLoopStart();
+
+}
+
+void VGMFileDumper::loopEndHook(void *self)
+{
+    VGMFileDumper *s = reinterpret_cast<VGMFileDumper*>(self);
+    if(s)
+        s->writeLoopEnd();
 }

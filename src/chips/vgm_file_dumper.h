@@ -23,15 +23,24 @@
 
 #include "opn_chip_base.h"
 
-class Ym2612_Emu;
 class VGMFileDumper final : public OPNChipBaseBufferedT<VGMFileDumper>
 {
-    FILE *m_output;
+    //! Output file instance
+    FILE    *m_output;
+    //! Count of song bytes written into the file
     uint32_t m_bytes_written;
+    //! Waiting delay of song in 1/44100'ths of second
     uint32_t m_samples_written;
+    //! Waiting delay of loop part in 1/44100'ths of second
+    uint32_t m_samples_loop;
+    //! Requested sample rate
     uint32_t m_actual_rate;
+    //! Cached delay value in 1/44100'ths of second
     uint64_t m_delay;
-    int m_chip_index;
+    //! Don't increase waiting delay after end of song caught
+    bool     m_end_caught;
+    //! Index of chip (0'th is master, 1 is a helper)
+    int      m_chip_index;
 
     struct VgmHead
     {
@@ -55,7 +64,7 @@ class VGMFileDumper final : public OPNChipBaseBufferedT<VGMFileDumper>
     VgmHead m_vgm_head;
 
     void writeHead();
-    void writeCommand(uint_fast8_t cmd, uint_fast8_t key = 0, uint_fast8_t value = 0);
+    void writeCommand(uint_fast8_t cmd, uint_fast16_t key = 0, uint_fast8_t value = 0);
     void writeWait(uint_fast16_t value);
 public:
     explicit VGMFileDumper(OPNFamily f);
@@ -70,6 +79,10 @@ public:
     void nativePostGenerate() override {}
     void nativeGenerateN(int16_t *output, size_t frames) override;
     const char *emulatorName() override;
+    void writeLoopStart();
+    void writeLoopEnd();
+    static void loopStartHook(void *self);
+    static void loopEndHook(void *self);
 };
 
 #endif // VGM_FILE_DUMPER_H

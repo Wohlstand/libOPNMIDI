@@ -45,6 +45,16 @@ public:
     char _padding[4];
     //! Running chip emulators
     std::vector<AdlMIDI_SPtr<OPNChipBase > > m_chips;
+#ifdef OPNMIDI_MIDI2VGM
+    //! Loop Start hook
+    void (*m_loopStartHook)(void*);
+    //! Loop Start hook data
+    void *m_loopStartHookData;
+    //! Loop End hook
+    void (*m_loopEndHook)(void*);
+    //! Loop End hook data
+    void *m_loopEndHookData;
+#endif
 private:
     //! Cached patch data, needed by Touch()
     std::vector<opnInstData>    m_insCache;

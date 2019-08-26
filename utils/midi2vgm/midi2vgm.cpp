@@ -122,6 +122,7 @@ int main(int argc, char **argv)
             " <bankfile>.wopn   Path to WOPN bank file\n"
             " <midifilename>    Path to music file to play\n"
             "\n"
+            " -l                Enables in-song looping support\n"
             " -s                Enables scaling of modulator volumes\n"
             " -frb              Enables full-ranged CC74 XG Brightness controller\n"
             " --chips <count>   Choose a count of chips (1 by default, 2 maximum)\n"
@@ -141,7 +142,8 @@ int main(int argc, char **argv)
      */
     bool scaleModulators = false;
     bool fullRangedBrightness = false;
-    size_t soloTrack = ~(size_t)0;
+    int loopEnabled = 0;
+    size_t soloTrack = ~static_cast<size_t>(0);
     int chipsCount = 1;// Single-chip by default
 
     std::string bankPath;
@@ -154,6 +156,8 @@ int main(int argc, char **argv)
             fullRangedBrightness = true;
         else if(!std::strcmp("-s", argv[arg]))
             scaleModulators = true;
+        else if(!std::strcmp("-l", argv[arg]))
+            loopEnabled = 1;
         else if(!std::strcmp("--chips", argv[arg]))
         {
             if(arg + 1 >= argc)
@@ -161,7 +165,7 @@ int main(int argc, char **argv)
                 printError("The option --chips requires an argument!\n");
                 return 1;
             }
-            chipsCount = (int)std::strtoul(argv[++arg], NULL, 0);
+            chipsCount = static_cast<int>(std::strtoul(argv[++arg], NULL, 0));
         }
         else if(!std::strcmp("--solo", argv[arg]))
         {
@@ -221,7 +225,7 @@ int main(int argc, char **argv)
     if(fullRangedBrightness)
         opn2_setFullRangeBrightness(myDevice, 1);//Turn on a full-ranged XG CC74 Brightness
     opn2_setSoftPanEnabled(myDevice, 0);
-    opn2_setLoopEnabled(myDevice, 0);
+    opn2_setLoopEnabled(myDevice, loopEnabled);
     opn2_setVolumeRangeModel(myDevice, OPNMIDI_VolumeModel_Generic);
     #ifdef DEBUG_TRACE_ALL_EVENTS
     //Hook all MIDI events are ticking while generating an output buffer

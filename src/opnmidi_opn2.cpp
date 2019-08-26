@@ -466,6 +466,13 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
 #endif
     m_chips.resize(m_numChips, AdlMIDI_SPtr<OPNChipBase>());
 
+#ifdef OPNMIDI_MIDI2VGM
+    m_loopStartHook = NULL;
+    m_loopStartHookData = NULL;
+    m_loopEndHook = NULL;
+    m_loopEndHookData = NULL;
+#endif
+
     for(size_t i = 0; i < m_chips.size(); i++)
     {
         OPNChipBase *chip;
@@ -513,12 +520,16 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
 #ifdef OPNMIDI_MIDI2VGM
         case OPNMIDI_VGM_DUMPER:
             chip = new VGMFileDumper(family);
+            m_loopStartHook = &VGMFileDumper::loopStartHook;
+            m_loopStartHookData = chip;
+            m_loopEndHook  = &VGMFileDumper::loopEndHook;
+            m_loopEndHookData = chip;
             break;
 #endif
         }
         m_chips[i].reset(chip);
-        chip->setChipId((uint32_t)i);
-        chip->setRate((uint32_t)PCM_RATE, chip->nativeClockRate());
+        chip->setChipId(static_cast<uint32_t>(i));
+        chip->setRate(static_cast<uint32_t>(PCM_RATE), chip->nativeClockRate());
         if(m_runAtPcmRate)
             chip->setRunningAtPcmRate(true);
 #if defined(ADLMIDI_AUDIO_TICK_HANDLER)
