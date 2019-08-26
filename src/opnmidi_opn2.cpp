@@ -564,6 +564,10 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
     }
 
     silenceAll();
+#ifdef OPNMIDI_MIDI2VGM
+    if(m_loopStartHook) // Post-initialization Loop Start hook (fix for loop edge passing clicks)
+        m_loopStartHook(m_loopStartHookData);
+#endif
 }
 
 OPNFamily OPN2::chipFamily() const

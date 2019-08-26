@@ -1136,7 +1136,7 @@ bool BW_MidiSequencer::processEvents(bool isSeek)
 
     if(shortest_no || m_loop.caughtEnd)
     {
-        if(m_loop.caughtEnd && m_interface->onloopEnd)//Loop End hook
+        if(m_interface->onloopEnd)//Loop End hook
             m_interface->onloopEnd(m_interface->onloopEnd_userData);
 
         //Loop if song end or loop end point has reached

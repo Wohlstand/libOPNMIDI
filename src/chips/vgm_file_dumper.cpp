@@ -108,6 +108,25 @@ void VGMFileDumper::writeWait(uint_fast16_t value)
     m_samples_loop += value;
 }
 
+void VGMFileDumper::flushWait()
+{
+    while(m_delay > 0)
+    {
+        uint16_t to_copy;
+        if(m_delay > 65535)
+        {
+            to_copy = 65535;
+            m_delay -= 65535;
+        }
+        else
+        {
+            to_copy = static_cast<uint16_t>(m_delay);
+            m_delay = 0;
+        }
+        writeWait(to_copy);
+    }
+}
+
 void VGMFileDumper::writeCommand(uint_fast8_t cmd, uint_fast16_t key, uint_fast8_t value)
 {
     uint8_t out[3];
@@ -191,21 +210,7 @@ void VGMFileDumper::writeReg(uint32_t port, uint16_t addr, uint8_t data)
     if(port > 2 && ((m_vgm_head.clock_ym2612 & 0x40000000) == 0))
         m_vgm_head.clock_ym2612 |= 0x40000000;
 
-    while(m_delay > 0)
-    {
-        uint16_t to_copy;
-        if(m_delay > 65535)
-        {
-            to_copy = 65535;
-            m_delay -= 65535;
-        }
-        else
-        {
-            to_copy = static_cast<uint16_t>(m_delay);
-            m_delay = 0;
-        }
-        writeWait(to_copy);
-    }
+    flushWait();
 
     uint_fast8_t ports[] = {0x52, 0x53, 0xA2, 0xA3};
     writeCommand(ports[port], addr, data);
@@ -233,16 +238,17 @@ void VGMFileDumper::writeLoopStart()
         return;
     m_vgm_head.offset_loop = VGM_LOOP_START_BASE + m_bytes_written;
     m_samples_loop = 0;
-    std::printf("== Caught loop start ==\n");
+    std::printf(" - MIDI2VGM: Loop start at 0x%04X\n", m_vgm_head.offset_loop);
     std::fflush(stdout);
 }
 
 void VGMFileDumper::writeLoopEnd()
 {
-    if(m_chip_index > 0)
+    if(m_chip_index > 0 || m_end_caught)
         return;
     m_end_caught = true;
-    std::printf("== Caught loop End ==\n");
+    flushWait();
+    std::printf(" - MIDI2VGM: Loop end with total wait in %u samples\n", m_samples_loop);
     std::fflush(stdout);
 }
 

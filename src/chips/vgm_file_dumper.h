@@ -66,6 +66,7 @@ class VGMFileDumper final : public OPNChipBaseBufferedT<VGMFileDumper>
     void writeHead();
     void writeCommand(uint_fast8_t cmd, uint_fast16_t key = 0, uint_fast8_t value = 0);
     void writeWait(uint_fast16_t value);
+    void flushWait();
 public:
     explicit VGMFileDumper(OPNFamily f);
     ~VGMFileDumper() override;
