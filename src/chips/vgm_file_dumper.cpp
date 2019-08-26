@@ -110,6 +110,9 @@ void VGMFileDumper::writeWait(uint_fast16_t value)
 
 void VGMFileDumper::flushWait()
 {
+    if(m_chip_index > 0)
+        return;
+
     while(m_delay > 0)
     {
         uint16_t to_copy;
@@ -147,11 +150,11 @@ VGMFileDumper::VGMFileDumper(OPNFamily f)
     m_delay = 0;
     m_end_caught = false;
     setRate(m_rate, m_clock);
+    std::memset(&m_vgm_head, 0, sizeof(VgmHead));
     if(m_chip_index == 0)
     {
         m_output = std::fopen(g_vgm_path, "wb");
         assert(m_output);
-        std::memset(&m_vgm_head, 0, sizeof(VgmHead));
         std::memcpy(m_vgm_head.magic, "Vgm ", 4);
         m_vgm_head.version = 0x00000150;
         m_vgm_head.offset_loop = VGM_LOOP_START_BASE;
@@ -165,13 +168,14 @@ VGMFileDumper::~VGMFileDumper()
     g_chip_index--;
     if(m_chip_index > 0)
         return;
+
     uint8_t out[1];
     out[0] = 0x66;// end of sound data
     std::fwrite(&out, 1, 1, m_output);
     m_bytes_written += 1;
 
     m_vgm_head.total_samples = m_samples_written;
-    m_vgm_head.loop_samples = m_samples_loop - 1;
+    m_vgm_head.loop_samples = m_samples_loop;
     m_vgm_head.eof_offset = (VGM_SONG_DATA_START + m_bytes_written - 4);
     m_vgm_head.offset_data = 0x04;
 
@@ -193,6 +197,10 @@ void VGMFileDumper::reset()
     OPNChipBaseBufferedT::reset();
     std::fseek(m_output, VGM_SONG_DATA_START, SEEK_SET);
     m_samples_written = 0;
+    m_samples_loop = 0;
+    m_bytes_written = 0;
+    m_end_caught = false;
+    m_delay = 0;
 }
 
 void VGMFileDumper::writeReg(uint32_t port, uint16_t addr, uint8_t data)
@@ -236,6 +244,7 @@ void VGMFileDumper::writeLoopStart()
 {
     if(m_chip_index > 0)
         return;
+    flushWait();
     m_vgm_head.offset_loop = VGM_LOOP_START_BASE + m_bytes_written;
     m_samples_loop = 0;
     std::printf(" - MIDI2VGM: Loop start at 0x%04X\n", m_vgm_head.offset_loop);
