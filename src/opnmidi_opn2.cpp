@@ -520,10 +520,13 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
 #ifdef OPNMIDI_MIDI2VGM
         case OPNMIDI_VGM_DUMPER:
             chip = new VGMFileDumper(family);
-            m_loopStartHook = &VGMFileDumper::loopStartHook;
-            m_loopStartHookData = chip;
-            m_loopEndHook  = &VGMFileDumper::loopEndHook;
-            m_loopEndHookData = chip;
+            if(i == 0)//Set hooks for first chip only
+            {
+                m_loopStartHook = &VGMFileDumper::loopStartHook;
+                m_loopStartHookData = chip;
+                m_loopEndHook  = &VGMFileDumper::loopEndHook;
+                m_loopEndHookData = chip;
+            }
             break;
 #endif
         }

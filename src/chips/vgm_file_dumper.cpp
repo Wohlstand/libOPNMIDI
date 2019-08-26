@@ -233,6 +233,8 @@ void VGMFileDumper::writeLoopStart()
         return;
     m_vgm_head.offset_loop = VGM_LOOP_START_BASE + m_bytes_written;
     m_samples_loop = 0;
+    std::printf("== Caught loop start ==\n");
+    std::fflush(stdout);
 }
 
 void VGMFileDumper::writeLoopEnd()
@@ -240,6 +242,8 @@ void VGMFileDumper::writeLoopEnd()
     if(m_chip_index > 0)
         return;
     m_end_caught = true;
+    std::printf("== Caught loop End ==\n");
+    std::fflush(stdout);
 }
 
 void VGMFileDumper::loopStartHook(void *self)
@@ -247,7 +251,6 @@ void VGMFileDumper::loopStartHook(void *self)
     VGMFileDumper *s = reinterpret_cast<VGMFileDumper*>(self);
     if(s)
         s->writeLoopStart();
-
 }
 
 void VGMFileDumper::loopEndHook(void *self)
