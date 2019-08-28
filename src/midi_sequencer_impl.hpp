@@ -957,6 +957,7 @@ bool BW_MidiSequencer::processEvents(bool isSeek)
     unsigned caughLoopStart = 0;
     unsigned caughLoopStackStart = 0;
     unsigned caughLoopStackEnds = 0;
+    double   caughLoopStackEndsTime = 0.0;
     unsigned caughLoopStackBreaks = 0;
 
 #ifdef DEBUG_TIME_CALCULATION
@@ -998,6 +999,9 @@ bool BW_MidiSequencer::processEvents(bool isSeek)
 
                 if(m_loop.caughtStackStart)
                 {
+                    if(m_interface->onloopStart && (m_loopStartTime >= track.pos->time))//Loop Start hook
+                        m_interface->onloopStart(m_interface->onloopStart_userData);
+
                     caughLoopStackStart++;
                     m_loop.caughtStackStart = false;
                 }
@@ -1014,6 +1018,7 @@ bool BW_MidiSequencer::processEvents(bool isSeek)
                     {
                         m_loop.caughtStackEnd = false;
                         caughLoopStackEnds++;
+                        caughLoopStackEndsTime = track.pos->time;
                     }
                     doLoopJump = true;
                     break;//Stop event handling on catching loopEnd event!
@@ -1103,6 +1108,15 @@ bool BW_MidiSequencer::processEvents(bool isSeek)
             LoopStackEntry &s = m_loop.getCurStack();
             if(s.infinity)
             {
+                if(m_interface->onloopEnd && (m_loopEndTime >= caughLoopStackEndsTime))//Loop End hook
+                {
+                    m_interface->onloopEnd(m_interface->onloopEnd_userData);
+                    if(m_loopHooksOnly)//Stop song on reaching loop end
+                    {
+                        m_atEnd = true; //Don't handle events anymore
+                        m_currentPosition.wait += m_postSongWaitDelay;//One second delay until stop playing
+                    }
+                }
                 m_currentPosition = s.startPosition;
                 m_loop.skipStackStart = true;
                 return true;
