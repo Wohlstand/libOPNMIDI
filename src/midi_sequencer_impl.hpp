@@ -272,13 +272,14 @@ BW_MidiSequencer::BW_MidiSequencer() :
     m_smfFormat(0),
     m_loopFormat(Loop_Default),
     m_loopEnabled(false),
+    m_loopHooksOnly(false),
     m_fullSongTimeLength(0.0),
     m_postSongWaitDelay(1.0),
     m_loopStartTime(-1.0),
     m_loopEndTime(-1.0),
     m_tempoMultiplier(1.0),
     m_atEnd(false),
-    m_trackSolo(~(size_t)0),
+    m_trackSolo(~static_cast<size_t>(0)),
     m_triggerHandler(NULL),
     m_triggerUserData(NULL)
 {
@@ -362,6 +363,11 @@ bool BW_MidiSequencer::getLoopEnabled()
 void BW_MidiSequencer::setLoopEnabled(bool enabled)
 {
     m_loopEnabled = enabled;
+}
+
+void BW_MidiSequencer::setLoopHooksOnly(bool enabled)
+{
+    m_loopHooksOnly = enabled;
 }
 
 const std::string &BW_MidiSequencer::getMusicTitle()
@@ -951,6 +957,7 @@ bool BW_MidiSequencer::processEvents(bool isSeek)
     unsigned caughLoopStart = 0;
     unsigned caughLoopStackStart = 0;
     unsigned caughLoopStackEnds = 0;
+    double   caughLoopStackEndsTime = 0.0;
     unsigned caughLoopStackBreaks = 0;
 
 #ifdef DEBUG_TIME_CALCULATION
@@ -983,12 +990,18 @@ bool BW_MidiSequencer::processEvents(bool isSeek)
 
                 if(m_loop.caughtStart)
                 {
+                    if(m_interface->onloopStart)//Loop Start hook
+                        m_interface->onloopStart(m_interface->onloopStart_userData);
+
                     caughLoopStart++;
                     m_loop.caughtStart = false;
                 }
 
                 if(m_loop.caughtStackStart)
                 {
+                    if(m_interface->onloopStart && (m_loopStartTime >= track.pos->time))//Loop Start hook
+                        m_interface->onloopStart(m_interface->onloopStart_userData);
+
                     caughLoopStackStart++;
                     m_loop.caughtStackStart = false;
                 }
@@ -1005,6 +1018,7 @@ bool BW_MidiSequencer::processEvents(bool isSeek)
                     {
                         m_loop.caughtStackEnd = false;
                         caughLoopStackEnds++;
+                        caughLoopStackEndsTime = track.pos->time;
                     }
                     doLoopJump = true;
                     break;//Stop event handling on catching loopEnd event!
@@ -1094,6 +1108,15 @@ bool BW_MidiSequencer::processEvents(bool isSeek)
             LoopStackEntry &s = m_loop.getCurStack();
             if(s.infinity)
             {
+                if(m_interface->onloopEnd && (m_loopEndTime >= caughLoopStackEndsTime))//Loop End hook
+                {
+                    m_interface->onloopEnd(m_interface->onloopEnd_userData);
+                    if(m_loopHooksOnly)//Stop song on reaching loop end
+                    {
+                        m_atEnd = true; //Don't handle events anymore
+                        m_currentPosition.wait += m_postSongWaitDelay;//One second delay until stop playing
+                    }
+                }
                 m_currentPosition = s.startPosition;
                 m_loop.skipStackStart = true;
                 return true;
@@ -1127,10 +1150,14 @@ bool BW_MidiSequencer::processEvents(bool isSeek)
 
     if(shortest_no || m_loop.caughtEnd)
     {
+        if(m_interface->onloopEnd)//Loop End hook
+            m_interface->onloopEnd(m_interface->onloopEnd_userData);
+
         //Loop if song end or loop end point has reached
         m_loop.caughtEnd         = false;
         shortest = 0;
-        if(!m_loopEnabled)
+
+        if(!m_loopEnabled || m_loopHooksOnly)
         {
             m_atEnd = true; //Don't handle events anymore
             m_currentPosition.wait += m_postSongWaitDelay;//One second delay until stop playing
@@ -1545,7 +1572,7 @@ void BW_MidiSequencer::handleEvent(size_t track, const BW_MidiSequencer::MidiEve
     }
     else
     {
-        if(m_trackSolo != ~(size_t)0 && track != m_trackSolo)
+        if(m_trackSolo != ~static_cast<size_t>(0) && track != m_trackSolo)
             return;
         if(m_trackDisable[track])
             return;
@@ -1576,8 +1603,8 @@ void BW_MidiSequencer::handleEvent(size_t track, const BW_MidiSequencer::MidiEve
     {
         // Special event FF
         uint8_t  evtype = evt.subtype;
-        uint64_t length = (uint64_t)evt.data.size();
-        const char *data(length ? (const char *)evt.data.data() : "");
+        uint64_t length = static_cast<uint64_t>(evt.data.size());
+        const char *data(length ? reinterpret_cast<const char *>(evt.data.data()) : "");
 
         if(evtype == MidiEvent::ST_ENDTRACK)//End Of Track
         {
@@ -1628,8 +1655,8 @@ void BW_MidiSequencer::handleEvent(size_t track, const BW_MidiSequencer::MidiEve
                     m_loop.skipStackStart = false;
                     return;
                 }
-                LoopStackEntry &s = m_loop.stack[(m_loop.stackLevel + 1)];
-                s.loops = (int)data[0];
+                LoopStackEntry &s = m_loop.stack[static_cast<size_t>(m_loop.stackLevel + 1)];
+                s.loops = static_cast<int>(data[0]);
                 s.infinity = (data[0] == 0);
                 m_loop.caughtStackStart = true;
                 return;

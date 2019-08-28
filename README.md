@@ -16,6 +16,7 @@ Library is based on core of the [libADLMIDI](https://github.com/Wohlstand/libADL
 * Android NDK 12b/13
 * OpenBSD
 * Haiku
+* Emscripten
 
 # Key features
 * OPN2 emulation

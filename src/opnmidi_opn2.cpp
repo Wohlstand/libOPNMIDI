@@ -66,6 +66,11 @@
 #include "chips/pmdwin_opna.h"
 #endif
 
+// VGM File dumper
+#ifdef OPNMIDI_MIDI2VGM
+#include "chips/vgm_file_dumper.h"
+#endif
+
 static const unsigned opn2_emulatorSupport = 0
 #ifndef OPNMIDI_DISABLE_NUKED_EMULATOR
     | (1u << OPNMIDI_EMU_NUKED)
@@ -90,6 +95,9 @@ static const unsigned opn2_emulatorSupport = 0
 #endif
 #ifndef OPNMIDI_DISABLE_NP2_EMULATOR
     | (1u << OPNMIDI_EMU_NP2_OPM)
+#endif
+#ifdef OPNMIDI_MIDI2VGM
+    | (1u << OPNMIDI_VGM_DUMPER)
 #endif
 ;
 
@@ -588,9 +596,19 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
     clearChips();
     m_insCache.clear();
     m_regLFOSens.clear();
+#ifdef OPNMIDI_MIDI2VGM
+    if(emulator == OPNMIDI_VGM_DUMPER && (m_numChips > 2))
+        m_numChips = 2;// VGM Dumper can't work in multichip mode
+#endif
     m_chips.resize(m_numChips, AdlMIDI_SPtr<OPNChipBase>());
-
     RegisterMode regMode = Reg_OPN;
+
+#ifdef OPNMIDI_MIDI2VGM
+    m_loopStartHook = NULL;
+    m_loopStartHookData = NULL;
+    m_loopEndHook = NULL;
+    m_loopEndHookData = NULL;
+#endif
 
     for(size_t i = 0; i < m_chips.size(); i++)
     {
@@ -649,10 +667,22 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
             regMode = Reg_OPM;
             break;
 #endif
+#ifdef OPNMIDI_MIDI2VGM
+        case OPNMIDI_VGM_DUMPER:
+            chip = new VGMFileDumper(family);
+            if(i == 0)//Set hooks for first chip only
+            {
+                m_loopStartHook = &VGMFileDumper::loopStartHook;
+                m_loopStartHookData = chip;
+                m_loopEndHook  = &VGMFileDumper::loopEndHook;
+                m_loopEndHookData = chip;
+            }
+            break;
+#endif
         }
         m_chips[i].reset(chip);
-        chip->setChipId((uint32_t)i);
-        chip->setRate((uint32_t)PCM_RATE, chip->nativeClockRate());
+        chip->setChipId(static_cast<uint32_t>(i));
+        chip->setRate(static_cast<uint32_t>(PCM_RATE), chip->nativeClockRate());
         if(m_runAtPcmRate)
             chip->setRunningAtPcmRate(true);
 #if defined(ADLMIDI_AUDIO_TICK_HANDLER)
@@ -704,6 +734,10 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
     }
 
     silenceAll();
+#ifdef OPNMIDI_MIDI2VGM
+    if(m_loopStartHook) // Post-initialization Loop Start hook (fix for loop edge passing clicks)
+        m_loopStartHook(m_loopStartHookData);
+#endif
 }
 
 OPNFamily OPN2::chipFamily() const

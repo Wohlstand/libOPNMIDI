@@ -194,6 +194,13 @@ bool OPNMIDIplay::LoadMIDI_post()
     synth.reset(m_setup.emulator, m_setup.PCM_RATE, synth.chipFamily(), this); // Reset OPN2 chip
     m_chipChannels.clear();
     m_chipChannels.resize(synth.m_numChannels);
+#ifdef OPNMIDI_MIDI2VGM
+    m_sequencerInterface->onloopStart = synth.m_loopStartHook;
+    m_sequencerInterface->onloopStart_userData = synth.m_loopStartHookData;
+    m_sequencerInterface->onloopEnd = synth.m_loopEndHook;
+    m_sequencerInterface->onloopEnd_userData = synth.m_loopEndHookData;
+    m_sequencer->setLoopHooksOnly(m_sequencerInterface->onloopStart != NULL);
+#endif
 
     return true;
 }

@@ -3,6 +3,8 @@ set(CMAKE_CXX_STANDARD 11)
 
 # Remove HQ resample necessarity (othewise, link will fail)
 remove_definitions(-DOPNMIDI_ENABLE_HQ_RESAMPLER)
+# Remove VGM File dumper
+remove_definitions(-DOPNMIDI_MIDI2VGM)
 
 add_subdirectory(activenotes)
 add_subdirectory(channel-users)

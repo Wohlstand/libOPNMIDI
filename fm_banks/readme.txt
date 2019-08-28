@@ -1,5 +1,5 @@
 This bank (gm.wopn and xg.wopn) is made by me. I have imported some instruments from various
-VGM files, ported from OPN3 banks, or remixed them.
+VGM files, ported from OPL3 banks, or remixed them.
 
 This bank can be freely used, modified, shared with any purposes.
 
