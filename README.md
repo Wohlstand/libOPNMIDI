@@ -148,6 +148,7 @@ To remove MIDI Sequencer, define `OPNMIDI_DISABLE_MIDI_SEQUENCER` macro and remo
 # Changelog
 ## 1.4.1   <dev>
  * Added support for OPNA chip with Neko Project II Kai YM2602 emulator usage (Thanks to [Jean Pierre Cimalando](https://github.com/jpcima) for a work!)
+ * Added VGM file dumper which allows to output OPN2 commands into VGM file. (A new MIDI to VGM tool is now created with basing on libOPNMIDI)
 
 ## 1.4.0   2018-10-01
  * Implemented a full support for Portamento! (Thanks to [Jean Pierre Cimalando](https://github.com/jpcima) for a work!)

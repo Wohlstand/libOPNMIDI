@@ -1,3 +1,22 @@
+/*
+ * MIDI to VGM converter, an additional tool included with libOPNMIDI library
+ *
+ * Copyright (c) 2015-2019 Vitaly Novichkov <admin@wohlnet.ru>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <vector>
 #include <string>
 #include <cstdio>
@@ -107,9 +126,12 @@ static std::string findDefaultBank()
 
 int main(int argc, char **argv)
 {
-    std::fprintf(stdout, "==========================================\n"
-                         "         MIDI to VGM conversion utility\n"
-                         "==========================================\n\n");
+    std::fprintf(stdout, "==========================================================\n"
+                         "             MIDI to VGM conversion utility\n"
+                         "==========================================================\n"
+                         "   Source code: https://github.com/Wohlstand/libOPNMIDI\n"
+                         "==========================================================\n"
+                         "\n");
     std::fflush(stdout);
 
     if(argc < 2 || std::string(argv[1]) == "--help" || std::string(argv[1]) == "-h")
@@ -126,6 +148,16 @@ int main(int argc, char **argv)
             " -s                Enables scaling of modulator volumes\n"
             " -frb              Enables full-ranged CC74 XG Brightness controller\n"
             " --chips <count>   Choose a count of chips (1 by default, 2 maximum)\n"
+            "\n"
+            "----------------------------------------------------------\n"
+            "TIP-1: Single-chip mode limits polyphony up to 6 channels.\n"
+            "       Use Dual-Chip mode (with \"--chips 2\" flag) to extend\n"
+            "       polyphony up to 12 channels!\n"
+            "\n"
+            "TIP-2: Use addional WOPN bank files to alter sounding of generated song.\n"
+            "\n"
+            "TIP-3: Use \"vgm_cmp\" tool from 'VGM Tools' toolchain to optimize size of\n"
+            "       generated VGM song when it appears too bug (300+, 500+, or even 1000+ KB).\n"
             "\n"
         );
         std::fflush(stdout);
