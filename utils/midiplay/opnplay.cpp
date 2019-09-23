@@ -9,30 +9,30 @@
 #include <deque>
 #include <algorithm>
 #include <signal.h>
+#include <stdint.h>
 
 #include <opnmidi.h>
 
-#define SDL_MAIN_HANDLED
-#include <SDL2/SDL.h>
+#include "audio.h"
 
 #include "wave_writer.h"
 
 class MutexType
 {
-    SDL_mutex *mut;
+    void *mut;
 public:
-    MutexType() : mut(SDL_CreateMutex()) { }
+    MutexType() : mut(audio_mutex_create()) { }
     ~MutexType()
     {
-        SDL_DestroyMutex(mut);
+        audio_mutex_destroy(mut);
     }
     void Lock()
     {
-        SDL_mutexP(mut);
+        audio_mutex_lock(mut);
     }
     void Unlock()
     {
-        SDL_mutexV(mut);
+        audio_mutex_unlock(mut);
     }
 };
 
@@ -40,9 +40,9 @@ typedef std::deque<int16_t> AudioBuff;
 static AudioBuff g_audioBuffer;
 static MutexType g_audioBuffer_lock;
 
-static void SDL_AudioCallbackX(void *, Uint8 *stream, int len)
+static void SDL_AudioCallbackX(void *, uint8_t *stream, int len)
 {
-    SDL_LockAudio();
+    audio_lock();
     short *target = reinterpret_cast<int16_t*>(stream);
     g_audioBuffer_lock.Lock();
     size_t ate = size_t(len) / 2; // number of shorts
@@ -51,7 +51,7 @@ static void SDL_AudioCallbackX(void *, Uint8 *stream, int len)
         target[a] = g_audioBuffer[a];
     g_audioBuffer.erase(g_audioBuffer.begin(), g_audioBuffer.begin() + AudioBuff::difference_type(ate));
     g_audioBuffer_lock.Unlock();
-    SDL_UnlockAudio();
+    audio_unlock();
 }
 
 static void printError(const char *err)
@@ -193,15 +193,14 @@ int main(int argc, char **argv)
     // The lag between visual content and audio content equals
     // the sum of these two buffers.
 
-    int sampleRate = 44100;
+    unsigned int sampleRate = 44100;
 
-    SDL_AudioSpec spec;
-    SDL_AudioSpec obtained;
+    AudioOutputSpec spec;
+    AudioOutputSpec obtained;
     spec.freq     = sampleRate;
-    spec.format   = AUDIO_S16SYS;
+    spec.format   = OPNMIDI_SampleType_S16;
     spec.channels = 2;
-    spec.samples  = Uint16((double)spec.freq * AudioBufferLength);
-    spec.callback = SDL_AudioCallbackX;
+    spec.samples  = uint16_t(static_cast<double>(spec.freq) * AudioBufferLength);
 
     OPN2_MIDIPlayer *myDevice;
 
@@ -214,7 +213,7 @@ int main(int argc, char **argv)
     int loopEnabled = 1;
     bool fullPanEnabled = false;
     int emulator = OPNMIDI_EMU_MAME;
-    size_t soloTrack = ~(size_t)0;
+    size_t soloTrack = ~static_cast<size_t>(0u);
     int chipsCount = -1;//Auto-choose chips count by emulator (Nuked 3, others 8)
 
     std::string bankPath;
@@ -254,7 +253,7 @@ int main(int argc, char **argv)
                 printError("The option --chips requires an argument!\n");
                 return 1;
             }
-            chipsCount = (int)std::strtoul(argv[++arg], NULL, 0);
+            chipsCount = static_cast<int>(std::strtoul(argv[++arg], NULL, 0));
         }
         else if(!std::strcmp("--solo", argv[arg]))
         {
@@ -274,10 +273,10 @@ int main(int argc, char **argv)
     if(!recordWave)
     {
         // Set up SDL
-        if(SDL_OpenAudio(&spec, &obtained) < 0)
+        if(audio_init(&spec, &obtained, SDL_AudioCallbackX) < 0)
         {
-            std::fprintf(stderr, "\nERROR: Couldn't open audio: %s\n\n", SDL_GetError());
-            //return 1;
+            std::fprintf(stderr, "\nERROR: Couldn't open audio: %s\n\n", audio_get_error());
+            return 1;
         }
         if(spec.samples != obtained.samples || spec.freq != obtained.freq)
         {
@@ -373,11 +372,11 @@ int main(int argc, char **argv)
     }
 
     std::fprintf(stdout, " - Number of chips %d\n", opn2_getNumChipsObtained(myDevice));
-    std::fprintf(stdout, " - Track count: %lu\n", (unsigned long)opn2_trackCount(myDevice));
+    std::fprintf(stdout, " - Track count: %lu\n", static_cast<unsigned long>(opn2_trackCount(myDevice)));
 
-    if(soloTrack != ~(size_t)0)
+    if(soloTrack != ~static_cast<size_t>(0u))
     {
-        std::fprintf(stdout, " - Solo track: %lu\n", (unsigned long)soloTrack);
+        std::fprintf(stdout, " - Solo track: %lu\n", static_cast<unsigned long>(soloTrack));
         opn2_setTrackOptions(myDevice, soloTrack, OPNMIDI_TrackOption_Solo);
     }
 
@@ -411,7 +410,7 @@ int main(int argc, char **argv)
         std::fprintf(stdout, "\n==========================================\n");
         std::fflush(stdout);
 
-        SDL_PauseAudio(0);
+        audio_start();
 
         #ifdef DEBUG_SEEKING_TEST
         int delayBeforeSeek = 50;
@@ -421,23 +420,23 @@ int main(int argc, char **argv)
 
         short buff[4096];
         char posHMS[25];
-        uint64_t milliseconds_prev = -1;
+        uint64_t milliseconds_prev = ~0u;
         while(!stop)
         {
-            size_t got = (size_t)opn2_play(myDevice, 4096, buff);
+            size_t got = static_cast<size_t>(opn2_play(myDevice, 4096, buff));
             if(got <= 0)
                 break;
 
-            #ifdef DEBUG_TRACE_ALL_CHANNELS
+#ifdef DEBUG_TRACE_ALL_CHANNELS
             enum { TerminalColumns = 80 };
             char channelText[TerminalColumns + 1];
             char channelAttr[TerminalColumns + 1];
             opn2_describeChannels(myDevice, channelText, channelAttr, sizeof(channelText));
             std::fprintf(stdout, "%*s\r", TerminalColumns, "");  // erase the line
             std::fprintf(stdout, "%s\n", channelText);
-            #endif
+#endif
 
-            #ifndef DEBUG_TRACE_ALL_EVENTS
+#ifndef DEBUG_TRACE_ALL_EVENTS
             double time_pos = opn2_positionTell(myDevice);
             uint64_t milliseconds = static_cast<uint64_t>(time_pos * 1000.0);
             if(milliseconds != milliseconds_prev)
@@ -448,7 +447,7 @@ int main(int argc, char **argv)
                 std::fflush(stdout);
                 milliseconds_prev = milliseconds;
             }
-            #endif
+#endif
 
             g_audioBuffer_lock.Lock();
             size_t pos = g_audioBuffer.size();
@@ -457,23 +456,24 @@ int main(int argc, char **argv)
                 g_audioBuffer[pos + p] = buff[p];
             g_audioBuffer_lock.Unlock();
 
-            const SDL_AudioSpec &spec = obtained;
-            while(g_audioBuffer.size() > static_cast<size_t>(spec.samples + (spec.freq * 2) * OurHeadRoomLength))
+            const AudioOutputSpec &cur_spec = obtained;
+            while(!stop && (g_audioBuffer.size() > static_cast<size_t>(cur_spec.samples + (cur_spec.freq * 2) * OurHeadRoomLength)))
             {
-                SDL_Delay(1);
+                audio_delay(1);
             }
 
-            #ifdef DEBUG_SEEKING_TEST
+#ifdef DEBUG_SEEKING_TEST
             if(delayBeforeSeek-- <= 0)
             {
                 delayBeforeSeek = rand() % 50;
                 double seekTo = double((rand() % int(opn2_totalTimeLength(myDevice)) - delayBeforeSeek - 1 ));
                 opn2_positionSeek(myDevice, seekTo);
             }
-            #endif
+#endif
         }
         std::fprintf(stdout, "                                               \n\n");
-        SDL_CloseAudio();
+        audio_stop();
+        audio_close();
     }
     else
     {
@@ -482,17 +482,18 @@ int main(int argc, char **argv)
         std::fprintf(stdout, "\n==========================================\n");
         std::fflush(stdout);
 
-        if(wave_open(sampleRate, wave_out.c_str()) == 0)
+        if(wave_open(static_cast<int>(sampleRate), wave_out.c_str()) == 0)
         {
             wave_enable_stereo();
             short buff[4096];
             int complete_prev = -1;
             while(!stop)
             {
-                size_t got = (size_t)opn2_play(myDevice, 4096, buff);
+                size_t got = static_cast<size_t>(opn2_play(myDevice, 4096, buff));
                 if(got <= 0)
                     break;
-                wave_write(buff, (long)got);
+
+                wave_write(buff, static_cast<long>(got));
 
                 int complete = static_cast<int>(std::floor(100.0 * opn2_positionTell(myDevice) / total));
                 if(complete_prev != complete)
