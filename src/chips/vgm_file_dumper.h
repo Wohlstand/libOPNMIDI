@@ -41,6 +41,8 @@ class VGMFileDumper final : public OPNChipBaseBufferedT<VGMFileDumper>
     bool     m_end_caught;
     //! Index of chip (0'th is master, 1 is a helper)
     int      m_chip_index;
+    //! Caching buffer, used to optimize the output size of final VGM file
+    uint_fast8_t m_reg_buffer[4][0xFF];
 
     struct VgmHead
     {

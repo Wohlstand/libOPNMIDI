@@ -151,6 +151,7 @@ VGMFileDumper::VGMFileDumper(OPNFamily f)
     m_end_caught = false;
     setRate(m_rate, m_clock);
     std::memset(&m_vgm_head, 0, sizeof(VgmHead));
+    std::memset(&m_reg_buffer, 0, sizeof(uint_fast8_t) * 4 * 0xFF);
     if(m_chip_index == 0)
     {
         m_output = std::fopen(g_vgm_path, "wb");
@@ -203,6 +204,25 @@ void VGMFileDumper::reset()
     m_delay = 0;
 }
 
+/**
+ * @brief Black list of addresses are will never be cached
+ * @param addr Address value
+ * @return Is
+ */
+static bool addressCacheBlackList(uint16_t addr)
+{
+    switch(addr)
+    {
+    case 0xA0: case 0xA1: case 0xA2:
+    case 0xA4: case 0xA5: case 0xA6:
+        return true;
+    default:
+        break;
+    }
+
+    return false;
+}
+
 void VGMFileDumper::writeReg(uint32_t port, uint16_t addr, uint8_t data)
 {
     if(m_chip_index > 0) // When it's a second chip
@@ -215,8 +235,13 @@ void VGMFileDumper::writeReg(uint32_t port, uint16_t addr, uint8_t data)
     if(port > 4)
         return; // VGM DOESN'T SUPPORTS MORE THAN 2 CHIPS
 
+    if(!addressCacheBlackList(addr) && m_reg_buffer[port][addr & 0xFF] == data)
+        return; //Write nothing
+
     if(port > 2 && ((m_vgm_head.clock_ym2612 & 0x40000000) == 0))
         m_vgm_head.clock_ym2612 |= 0x40000000;
+
+    m_reg_buffer[port][addr & 0xFF] = data;
 
     flushWait();
 
