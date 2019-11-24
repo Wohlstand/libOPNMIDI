@@ -60,7 +60,11 @@ static void g_write_le(FILE *f_out, uint16_t &field)
 
 void VGMFileDumper::writeHead()
 {
+    if(!m_output)
+        return;
     off_t offset = std::ftell(m_output);
+    if(offset < 0)
+        return; // FATAL ERROR:
     std::fseek(m_output, 0x00, SEEK_SET);
     std::fwrite(m_vgm_head.magic, 1, 4, m_output);
     g_write_le(m_output, m_vgm_head.eof_offset);
@@ -83,6 +87,8 @@ void VGMFileDumper::writeHead()
 
 void VGMFileDumper::writeWait(uint_fast16_t value)
 {
+    if(!m_output)
+        return;
     uint8_t out[3];
     out[0] = 0x61;
     if(value == 735)
@@ -110,6 +116,9 @@ void VGMFileDumper::writeWait(uint_fast16_t value)
 
 void VGMFileDumper::flushWait()
 {
+    if(!m_output)
+        return;
+
     if(m_chip_index > 0)
         return;
 
@@ -132,6 +141,8 @@ void VGMFileDumper::flushWait()
 
 void VGMFileDumper::writeCommand(uint_fast8_t cmd, uint_fast16_t key, uint_fast8_t value)
 {
+    if(!m_output)
+        return;
     uint8_t out[3];
     out[0] = static_cast<uint8_t>(cmd);
     out[1] = static_cast<uint8_t>(key);
@@ -181,7 +192,8 @@ VGMFileDumper::~VGMFileDumper()
 
     writeHead();
 
-    std::fclose(m_output);
+    if(m_output)
+        std::fclose(m_output);
     g_master = NULL;
 }
 
@@ -194,6 +206,8 @@ void VGMFileDumper::setRate(uint32_t rate, uint32_t clock)
 
 void VGMFileDumper::reset()
 {
+    if(!m_output)
+        return;
     OPNChipBaseBufferedT::reset();
     std::fseek(m_output, VGM_SONG_DATA_START, SEEK_SET);
     m_samples_written = 0;
@@ -205,6 +219,9 @@ void VGMFileDumper::reset()
 
 void VGMFileDumper::writeReg(uint32_t port, uint16_t addr, uint8_t data)
 {
+    if(!m_output)
+        return;
+
     if(m_chip_index > 0) // When it's a second chip
     {
         if(g_master)
@@ -212,10 +229,10 @@ void VGMFileDumper::writeReg(uint32_t port, uint16_t addr, uint8_t data)
         return;
     }
 
-    if(port > 4)
+    if(port >= 4u)
         return; // VGM DOESN'T SUPPORTS MORE THAN 2 CHIPS
 
-    if(port > 2 && ((m_vgm_head.clock_ym2612 & 0x40000000) == 0))
+    if(port > 2u && ((m_vgm_head.clock_ym2612 & 0x40000000) == 0))
         m_vgm_head.clock_ym2612 |= 0x40000000;
 
     flushWait();
@@ -229,6 +246,8 @@ void VGMFileDumper::writePan(uint16_t /*chan*/, uint8_t /*data*/)
 
 void VGMFileDumper::nativeGenerateN(int16_t *output, size_t frames)
 {
+    if(!m_output)
+        return;
     if(m_chip_index > 0 || m_end_caught) // When it's a second chip
         return;
     std::memset(output, 0, frames * sizeof(int16_t) * 2);
