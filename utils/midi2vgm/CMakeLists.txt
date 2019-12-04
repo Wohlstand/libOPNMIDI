@@ -1,5 +1,6 @@
 add_executable(midi2vgm midi2vgm.cpp)
 target_link_libraries(midi2vgm OPNMIDI_IF)
+target_compile_definitions(midi2vgm PRIVATE "-DDEFAULT_INSTALL_PREFIX=\"${CMAKE_INSTALL_PREFIX}\"")
 
 if(libOPNMIDI_SHARED)
     add_dependencies(midi2vgm OPNMIDI_shared)

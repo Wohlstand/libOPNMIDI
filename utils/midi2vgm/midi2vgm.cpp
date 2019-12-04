@@ -124,6 +124,9 @@ static inline void secondsToHMSM(double seconds_full, char *hmsm_buffer, size_t 
 
 
 #define DEFAULT_BANK_NAME "xg.wopn"
+#ifndef DEFAULT_INSTALL_PREFIX
+#define DEFAULT_INSTALL_PREFIX "/usr"
+#endif
 
 static std::string findDefaultBank()
 {
@@ -132,9 +135,11 @@ static std::string findDefaultBank()
         DEFAULT_BANK_NAME,
         "../fm_banks/" DEFAULT_BANK_NAME,
 #ifdef __unix__
-        "/usr/share/opnmidiplay/" DEFAULT_BANK_NAME,
-        "/usr/local/share/opnmidiplay/" DEFAULT_BANK_NAME,
+        DEFAULT_INSTALL_PREFIX "/share/sounds/wopn/" DEFAULT_BANK_NAME,
+        DEFAULT_INSTALL_PREFIX "/share/opnmidiplay/" DEFAULT_BANK_NAME,
 #endif
+        "../share/sounds/wopn/" DEFAULT_BANK_NAME,
+        "../share/opnmidiplay/" DEFAULT_BANK_NAME,
     };
     const size_t paths_count = sizeof(paths) / sizeof(const char*);
     std::string ret;
