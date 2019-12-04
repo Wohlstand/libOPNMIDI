@@ -365,7 +365,7 @@ install(FILES
         #include/opnmidi.hpp # WIP
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
-if(WITH_EXTRA_BANKS)
+if(WITH_EXTRA_BANKS AND NOT APPLE)
     file(GLOB WOPN_FILES ${libOPNMIDI_SOURCE_DIR}/fm_banks/*.wopn)
     file(GLOB WOPNTXT_FILES ${libOPNMIDI_SOURCE_DIR}/fm_banks/*.txt)
     install(FILES
@@ -419,4 +419,6 @@ message("===== Utils and extras =====")
 message("WITH_MIDIPLAY            = ${WITH_MIDIPLAY}")
 message("WITH_VLC_PLUGIN          = ${WITH_VLC_PLUGIN}")
 message("WITH_DAC_UTIL            = ${WITH_DAC_UTIL}")
-message("WITH_EXTRA_BANKS         = ${WITH_EXTRA_BANKS}")
+if(NOT APPLE)
+    message("WITH_EXTRA_BANKS         = ${WITH_EXTRA_BANKS}")
+endif()
