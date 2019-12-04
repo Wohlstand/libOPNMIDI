@@ -264,7 +264,7 @@ endif()
 # === Static library ====
 if(libOPNMIDI_STATIC OR WITH_VLC_PLUGIN)
     add_library(OPNMIDI_static STATIC ${libOPNMIDI_SOURCES})
-    if(libOPNMIDI_SHARED)
+    if(WIN32 AND libOPNMIDI_SHARED)
         set_target_properties(OPNMIDI_static PROPERTIES OUTPUT_NAME OPNMIDI-static)
     else()
         set_target_properties(OPNMIDI_static PROPERTIES OUTPUT_NAME OPNMIDI)
