@@ -276,6 +276,10 @@ endif()
 if(libOPNMIDI_SHARED)
     add_library(OPNMIDI_shared SHARED ${libOPNMIDI_SOURCES})
     set_target_properties(OPNMIDI_shared PROPERTIES OUTPUT_NAME OPNMIDI)
+    set_target_properties(OPNMIDI_shared PROPERTIES
+        VERSION ${libOPNMIDI_VERSION}
+        SOVERSION ${libOPNMIDI_VERSION_MAJOR}
+    )
     target_include_directories(OPNMIDI_shared PUBLIC ${libOPNMIDI_SOURCE_DIR}/include)
     set_legacy_standard(OPNMIDI_shared)
     set_visibility_hidden(OPNMIDI_shared)
