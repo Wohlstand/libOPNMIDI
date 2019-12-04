@@ -132,6 +132,8 @@ option(WITH_VLC_PLUGIN      "Build also a plugin for VLC Media Player" OFF)
 option(VLC_PLUGIN_NOINSTALL "Don't install VLC plugin into VLC directory" OFF)
 option(WITH_DAC_UTIL        "Build also OPN2 DAC testing utility" OFF)
 
+option(WITH_EXTRA_BANKS     "Install extra bank files" OFF)
+
 set(libOPNMIDI_INSTALLS)
 
 include_directories(${libOPNMIDI_SOURCE_DIR}/include)
@@ -363,6 +365,15 @@ install(FILES
         #include/opnmidi.hpp # WIP
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
+if(WITH_EXTRA_BANKS)
+    file(GLOB WOPN_FILES ${libOPNMIDI_SOURCE_DIR}/fm_banks/*.wopn)
+    file(GLOB WOPNTXT_FILES ${libOPNMIDI_SOURCE_DIR}/fm_banks/*.txt)
+    install(FILES
+            ${WOPN_FILES}
+            ${WOPNTXT_FILES}
+            DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/sounds/wopn")
+endif()
+
 if(NOT ANDROID)
     configure_file(libOPNMIDI.pc.in libOPNMIDI.pc @ONLY)
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libOPNMIDI.pc"
@@ -408,3 +419,4 @@ message("===== Utils and extras =====")
 message("WITH_MIDIPLAY            = ${WITH_MIDIPLAY}")
 message("WITH_VLC_PLUGIN          = ${WITH_VLC_PLUGIN}")
 message("WITH_DAC_UTIL            = ${WITH_DAC_UTIL}")
+message("WITH_EXTRA_BANKS         = ${WITH_EXTRA_BANKS}")
