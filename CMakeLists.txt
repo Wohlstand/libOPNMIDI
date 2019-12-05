@@ -334,6 +334,8 @@ if(WITH_MIDI2VGM)
     add_subdirectory(utils/midi2vgm)
 endif()
 
+add_subdirectory(utils/wopn2hpp)
+
 if(WITH_VLC_PLUGIN)
     add_subdirectory(utils/vlc_codec)
 endif()
@@ -341,7 +343,6 @@ endif()
 if(WITH_DAC_UTIL)
     add_subdirectory(utils/dac_test)
 endif()
-
 
 if(WITH_HQ_RESAMPLER)
     find_library(ZITA_RESAMPLER_LIBRARY "zita-resampler" REQUIRED)
@@ -367,12 +368,17 @@ install(FILES
 
 if(WITH_EXTRA_BANKS AND NOT APPLE)
     file(GLOB WOPN_FILES ${libOPNMIDI_SOURCE_DIR}/fm_banks/*.wopn)
-    file(GLOB WOPNTXT_FILES ${libOPNMIDI_SOURCE_DIR}/fm_banks/*.txt)
-    install(FILES
-            ${WOPN_FILES}
-            ${WOPNTXT_FILES}
+    install(FILES ${WOPN_FILES}
             DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/sounds/wopn")
+
+    file(GLOB WOPNTXT_FILES ${libOPNMIDI_SOURCE_DIR}/fm_banks/*.txt)
+    install(FILES ${WOPNTXT_FILES}
+            DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/libOPNMIDI/wopn")
 endif()
+
+file(GLOB DOCTXT_FILES ${libOPNMIDI_SOURCE_DIR}/docs/*.txt)
+install(FILES ${DOCTXT_FILES}
+        DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/libOPNMIDI")
 
 if(NOT ANDROID)
     configure_file(libOPNMIDI.pc.in libOPNMIDI.pc @ONLY)
