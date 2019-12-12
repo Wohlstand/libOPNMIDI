@@ -232,7 +232,7 @@ void VGMFileDumper::writeReg(uint32_t port, uint16_t addr, uint8_t data)
     if(port >= 4u)
         return; // VGM DOESN'T SUPPORTS MORE THAN 2 CHIPS
 
-    if(port > 2u && ((m_vgm_head.clock_ym2612 & 0x40000000) == 0))
+    if(port >= 2u && ((m_vgm_head.clock_ym2612 & 0x40000000) == 0))
         m_vgm_head.clock_ym2612 |= 0x40000000;
 
     flushWait();
