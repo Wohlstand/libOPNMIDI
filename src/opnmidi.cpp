@@ -163,7 +163,7 @@ OPNMIDI_EXPORT int opn2_getBank(OPN2_MIDIPlayer *device, const OPN2_BankId *idp,
             value.second.ins[i].flags = opnInstMeta::Flag_NoSound;
 
         std::pair<Synth::BankMap::iterator, bool> ir;
-        if(flags & OPNMIDI_Bank_CreateRt)
+        if((flags & OPNMIDI_Bank_CreateRt) == OPNMIDI_Bank_CreateRt)
         {
             ir = map.insert(value, Synth::BankMap::do_not_expand_t());
             if(ir.first == map.end())
