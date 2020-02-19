@@ -25,13 +25,12 @@
 #include <opnmidi_private.hpp>
 
 //! FIXME: Replace this ugly crap with proper public call
-static const char *g_vgm_path = "kek.vgm";
+static const char *g_vgm_path = "output.vgm";
+
 extern "C"
+OPNMIDI_EXPORT void opn2_set_vgm_out_path(const char *path)
 {
-    OPNMIDI_EXPORT void opn2_set_vgm_out_path(const char *path)
-    {
-        g_vgm_path = path;
-    }
+    g_vgm_path = path;
 }
 
 static int g_chip_index = 0;
@@ -219,15 +218,15 @@ void VGMFileDumper::reset()
 
 void VGMFileDumper::writeReg(uint32_t port, uint16_t addr, uint8_t data)
 {
-    if(!m_output)
-        return;
-
     if(m_chip_index > 0) // When it's a second chip
     {
         if(g_master)
             g_master->writeReg(port + 2, addr, data);
         return;
     }
+
+    if(!m_output)
+        return;
 
     if(port >= 4u)
         return; // VGM DOESN'T SUPPORTS MORE THAN 2 CHIPS
