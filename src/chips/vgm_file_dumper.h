@@ -27,6 +27,8 @@ class VGMFileDumper final : public OPNChipBaseBufferedT<VGMFileDumper>
 {
     //! Output file instance
     FILE    *m_output;
+    //! Chip is opened, but file instance isn't initialized
+    bool     m_needInit;
     //! Count of song bytes written into the file
     uint32_t m_bytes_written;
     //! Waiting delay of song in 1/44100'ths of second
@@ -67,6 +69,9 @@ class VGMFileDumper final : public OPNChipBaseBufferedT<VGMFileDumper>
     void writeCommand(uint_fast8_t cmd, uint_fast16_t key = 0, uint_fast8_t value = 0);
     void writeWait(uint_fast16_t value);
     void flushWait();
+
+    void initFile();
+
 public:
     explicit VGMFileDumper(OPNFamily f);
     ~VGMFileDumper() override;
