@@ -91,24 +91,24 @@ static void RemoveQuotationMarks(char *String)
     return;
 }
 
-static void ReadFilename(char *buffer, size_t bufsize)
-{
-    char *retStr;
+//static void ReadFilename(char *buffer, size_t bufsize)
+//{
+//    char *retStr;
 
-    retStr = fgets(buffer, bufsize, stdin);
-    if(retStr == NULL)
-        buffer[0] = '\0';
+//    retStr = fgets(buffer, bufsize, stdin);
+//    if(retStr == NULL)
+//        buffer[0] = '\0';
 
-#ifdef _WIN32
-    if(GetConsoleCP() == GetOEMCP())
-        OemToChar(buffer, buffer);  // OEM -> ANSI conversion
-#endif
+//#ifdef _WIN32
+//    if(GetConsoleCP() == GetOEMCP())
+//        OemToChar(buffer, buffer);  // OEM -> ANSI conversion
+//#endif
 
-    RemoveNewLines(buffer);
-    RemoveQuotationMarks(buffer);
+//    RemoveNewLines(buffer);
+//    RemoveQuotationMarks(buffer);
 
-    return;
-}
+//    return;
+//}
 
 //INLINE void DblClickWait(const char *argv0)
 //{
