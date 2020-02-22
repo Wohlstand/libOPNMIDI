@@ -1,5 +1,20 @@
-add_executable(midi2vgm midi2vgm.cpp)
-target_link_libraries(midi2vgm OPNMIDI_IF)
+find_package(ZLIB)
+
+add_executable(midi2vgm
+    midi2vgm.cpp
+    compact/vgm_cmp.cpp
+    compact/chip_cmp.cpp
+)
+
+if(NOT ZLIB_FOUND)
+    message(WARNING "ZLib is missing in your system, using embedded instead.")
+    unset(ZLIB_LIBRARIES) # DUMMY
+    include(../ZLib/zlib.cmake)
+    target_sources(midi2vgm PRIVATE ${ZLIB_SRC})
+    target_include_directories(midi2vgm PRIVATE ../ZLib/)
+endif()
+
+target_link_libraries(midi2vgm OPNMIDI_IF ${ZLIB_LIBRARIES})
 target_compile_definitions(midi2vgm PRIVATE "-DDEFAULT_INSTALL_PREFIX=\"${CMAKE_INSTALL_PREFIX}\"")
 
 if(libOPNMIDI_SHARED)

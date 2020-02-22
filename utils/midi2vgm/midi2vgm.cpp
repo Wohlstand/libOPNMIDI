@@ -29,6 +29,8 @@
 #include <algorithm>
 #include <signal.h>
 
+#include "compact/vgm_cmp.h"
+
 #if defined(_MSC_VER) && _MSC_VER < 1900
 
 #define snprintf c99_snprintf
@@ -181,6 +183,7 @@ int main(int argc, char **argv)
             "\n"
             " -l                Enables in-song looping support\n"
             " -s                Enables scaling of modulator volumes\n"
+            " -z                Make a compressed VGZ file\n"
             " -frb              Enables full-ranged CC74 XG Brightness controller\n"
             " --chips <count>   Choose a count of chips (1 by default, 2 maximum)\n"
             "\n"
@@ -208,6 +211,7 @@ int main(int argc, char **argv)
      * Set library options by parsing of command line arguments
      */
     bool scaleModulators = false;
+    bool makeVgz = false;
     bool fullRangedBrightness = false;
     int loopEnabled = 0;
     size_t soloTrack = ~static_cast<size_t>(0);
@@ -223,6 +227,8 @@ int main(int argc, char **argv)
             fullRangedBrightness = true;
         else if(!std::strcmp("-s", argv[arg]))
             scaleModulators = true;
+        else if(!std::strcmp("-z", argv[arg]))
+            makeVgz = true;
         else if(!std::strcmp("-l", argv[arg]))
             loopEnabled = 1;
         else if(!std::strcmp("--chips", argv[arg]))
@@ -273,8 +279,8 @@ int main(int argc, char **argv)
         return 2;
     }
 
-    std::string wave_out = musPath + ".vgm";
-    opn2_set_vgm_out_path(wave_out.c_str());
+    std::string vgm_out = musPath + (makeVgz ? ".vgz" : ".vgm");
+    opn2_set_vgm_out_path(vgm_out.c_str());
 
     myDevice = opn2_init(sampleRate);
     if(!myDevice)
@@ -365,7 +371,7 @@ int main(int argc, char **argv)
         secondsToHMSM(loopEnd, loopEndHMS, 25);
     }
 
-    std::fprintf(stdout, " - Recording VGM file %s...\n", wave_out.c_str());
+    std::fprintf(stdout, " - Recording VGM file %s...\n", vgm_out.c_str());
     std::fprintf(stdout, "\n==========================================\n");
     std::fflush(stdout);
 
@@ -379,12 +385,18 @@ int main(int argc, char **argv)
     std::fprintf(stdout, "                                               \n\n");
 
     if(stop)
-        std::fprintf(stdout, "Interrupted! Recorded WAV is incomplete, but playable!\n");
+    {
+        std::fprintf(stdout, "Interrupted! Recorded VGM is incomplete, but playable!\n");
+        std::fflush(stdout);
+        opn2_close(myDevice);
+    }
     else
+    {
+        opn2_close(myDevice);
+        VgmCMP::vgm_cmp_main(vgm_out, makeVgz);
         std::fprintf(stdout, "Completed!\n");
-    std::fflush(stdout);
-
-    opn2_close(myDevice);
+        std::fflush(stdout);
+    }
 
     return 0;
 }
