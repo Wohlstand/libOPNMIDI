@@ -90,7 +90,13 @@ void VGMFileDumper::writeWait(uint_fast16_t value)
         return;
     uint8_t out[3];
     out[0] = 0x61;
-    if(value == 735)
+    if(value < 17)
+    {
+        out[0] = uint8_t(0x6F + value);
+        std::fwrite(&out, 1, 1, m_output);
+        m_bytes_written += 1;
+    }
+    else if(value == 735)
     {
         out[0] = 0x62;
         std::fwrite(&out, 1, 1, m_output);
