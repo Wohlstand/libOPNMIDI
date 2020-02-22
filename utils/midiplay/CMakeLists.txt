@@ -25,6 +25,7 @@ endif()
 
 add_executable(opnmidiplay ${OPNMIDI_PLAY_SRC})
 target_link_libraries(opnmidiplay OPNMIDI_IF ${SDL2_NEEDED_LIBRARIES})
+target_compile_definitions(opnmidiplay PRIVATE "-DDEFAULT_INSTALL_PREFIX=\"${CMAKE_INSTALL_PREFIX}\"")
 
 if(libOPNMIDI_SHARED)
     add_dependencies(opnmidiplay OPNMIDI_shared)
@@ -36,8 +37,10 @@ else()
     add_dependencies(opnmidiplay OPNMIDI_static)
 endif()
 
-if(NOT WIN32 AND NOT APPLE)
-    install(FILES ${libOPNMIDI_SOURCE_DIR}/fm_banks/xg.wopn DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/opnmidiplay/)
+if(WIN32)
+    install(FILES ${libOPNMIDI_SOURCE_DIR}/fm_banks/xg.wopn DESTINATION ${CMAKE_INSTALL_BINDIR})
+elseif(NOT APPLE)
+    install(FILES ${libOPNMIDI_SOURCE_DIR}/fm_banks/xg.wopn DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/sounds/wopn/)
 endif()
 
 install(TARGETS opnmidiplay
@@ -45,4 +48,3 @@ install(TARGETS opnmidiplay
         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
         INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
-

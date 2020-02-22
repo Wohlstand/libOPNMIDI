@@ -8,9 +8,15 @@ set(CMAKE_C_STANDARD 90)
 # Prefer C++98 standard
 set(CMAKE_CXX_STANDARD 98)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+endif()
+if(NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+endif()
+if(NOT CMAKE_ARCHIVE_OUTPUT_DIRECTORY)
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+endif()
 
 #===========================================================================================
 # Strip garbage
@@ -125,6 +131,8 @@ option(WITH_MIDI2VGM        "Build also MIDI to VGM converter tool" OFF)
 option(WITH_VLC_PLUGIN      "Build also a plugin for VLC Media Player" OFF)
 option(VLC_PLUGIN_NOINSTALL "Don't install VLC plugin into VLC directory" OFF)
 option(WITH_DAC_UTIL        "Build also OPN2 DAC testing utility" OFF)
+
+option(WITH_EXTRA_BANKS     "Install extra bank files" OFF)
 
 set(libOPNMIDI_INSTALLS)
 
@@ -258,7 +266,7 @@ endif()
 # === Static library ====
 if(libOPNMIDI_STATIC OR WITH_VLC_PLUGIN)
     add_library(OPNMIDI_static STATIC ${libOPNMIDI_SOURCES})
-    if(libOPNMIDI_SHARED)
+    if(WIN32 AND libOPNMIDI_SHARED)
         set_target_properties(OPNMIDI_static PROPERTIES OUTPUT_NAME OPNMIDI-static)
     else()
         set_target_properties(OPNMIDI_static PROPERTIES OUTPUT_NAME OPNMIDI)
@@ -276,6 +284,10 @@ endif()
 if(libOPNMIDI_SHARED)
     add_library(OPNMIDI_shared SHARED ${libOPNMIDI_SOURCES})
     set_target_properties(OPNMIDI_shared PROPERTIES OUTPUT_NAME OPNMIDI)
+    set_target_properties(OPNMIDI_shared PROPERTIES
+        VERSION ${libOPNMIDI_VERSION}
+        SOVERSION ${libOPNMIDI_VERSION_MAJOR}
+    )
     target_include_directories(OPNMIDI_shared PUBLIC ${libOPNMIDI_SOURCE_DIR}/include)
     set_legacy_standard(OPNMIDI_shared)
     set_visibility_hidden(OPNMIDI_shared)
@@ -322,6 +334,8 @@ if(WITH_MIDI2VGM)
     add_subdirectory(utils/midi2vgm)
 endif()
 
+add_subdirectory(utils/wopn2hpp)
+
 if(WITH_VLC_PLUGIN)
     add_subdirectory(utils/vlc_codec)
 endif()
@@ -329,7 +343,6 @@ endif()
 if(WITH_DAC_UTIL)
     add_subdirectory(utils/dac_test)
 endif()
-
 
 if(WITH_HQ_RESAMPLER)
     find_library(ZITA_RESAMPLER_LIBRARY "zita-resampler" REQUIRED)
@@ -352,6 +365,24 @@ install(FILES
         include/opnmidi.h
         #include/opnmidi.hpp # WIP
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+
+if(WITH_EXTRA_BANKS AND NOT APPLE)
+    file(GLOB WOPN_FILES ${libOPNMIDI_SOURCE_DIR}/fm_banks/*.wopn)
+    install(FILES ${WOPN_FILES}
+            DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/sounds/wopn")
+
+    file(GLOB WOPNTXT_FILES ${libOPNMIDI_SOURCE_DIR}/fm_banks/*.txt)
+    install(FILES ${WOPNTXT_FILES}
+            DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/libOPNMIDI/wopn")
+endif()
+
+file(GLOB DOCTXT_FILES
+    "${libOPNMIDI_SOURCE_DIR}/docs/*.txt"
+    "${libOPNMIDI_SOURCE_DIR}/LICENSE*.txt"
+    README.md AUTHORS
+)
+install(FILES ${DOCTXT_FILES}
+        DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/doc/libOPNMIDI")
 
 if(NOT ANDROID)
     configure_file(libOPNMIDI.pc.in libOPNMIDI.pc @ONLY)
@@ -398,3 +429,6 @@ message("===== Utils and extras =====")
 message("WITH_MIDIPLAY            = ${WITH_MIDIPLAY}")
 message("WITH_VLC_PLUGIN          = ${WITH_VLC_PLUGIN}")
 message("WITH_DAC_UTIL            = ${WITH_DAC_UTIL}")
+if(NOT APPLE)
+    message("WITH_EXTRA_BANKS         = ${WITH_EXTRA_BANKS}")
+endif()

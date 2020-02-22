@@ -1,7 +1,7 @@
 /*
  * Interfaces over Yamaha OPN2 (YM2612) chip emulators
  *
- * Copyright (c) 2017-2019 Vitaly Novichkov (Wohlstand)
+ * Copyright (c) 2017-2020 Vitaly Novichkov (Wohlstand)
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,13 +25,12 @@
 #include <opnmidi_private.hpp>
 
 //! FIXME: Replace this ugly crap with proper public call
-static const char *g_vgm_path = "kek.vgm";
+static const char *g_vgm_path = "output.vgm";
+
 extern "C"
+OPNMIDI_EXPORT void opn2_set_vgm_out_path(const char *path)
 {
-    OPNMIDI_EXPORT void opn2_set_vgm_out_path(const char *path)
-    {
-        g_vgm_path = path;
-    }
+    g_vgm_path = path;
 }
 
 static int g_chip_index = 0;
@@ -60,7 +59,11 @@ static void g_write_le(FILE *f_out, uint16_t &field)
 
 void VGMFileDumper::writeHead()
 {
+    if(!m_output)
+        return;
     off_t offset = std::ftell(m_output);
+    if(offset < 0)
+        return; // FATAL ERROR:
     std::fseek(m_output, 0x00, SEEK_SET);
     std::fwrite(m_vgm_head.magic, 1, 4, m_output);
     g_write_le(m_output, m_vgm_head.eof_offset);
@@ -83,9 +86,17 @@ void VGMFileDumper::writeHead()
 
 void VGMFileDumper::writeWait(uint_fast16_t value)
 {
+    if(!m_output)
+        return;
     uint8_t out[3];
     out[0] = 0x61;
-    if(value == 735)
+    if(value < 17)
+    {
+        out[0] = uint8_t(0x6F + value);
+        std::fwrite(&out, 1, 1, m_output);
+        m_bytes_written += 1;
+    }
+    else if(value == 735)
     {
         out[0] = 0x62;
         std::fwrite(&out, 1, 1, m_output);
@@ -110,6 +121,11 @@ void VGMFileDumper::writeWait(uint_fast16_t value)
 
 void VGMFileDumper::flushWait()
 {
+    initFile();
+
+    if(!m_output)
+        return;
+
     if(m_chip_index > 0)
         return;
 
@@ -132,6 +148,8 @@ void VGMFileDumper::flushWait()
 
 void VGMFileDumper::writeCommand(uint_fast8_t cmd, uint_fast16_t key, uint_fast8_t value)
 {
+    if(!m_output)
+        return;
     uint8_t out[3];
     out[0] = static_cast<uint8_t>(cmd);
     out[1] = static_cast<uint8_t>(key);
@@ -152,6 +170,17 @@ VGMFileDumper::VGMFileDumper(OPNFamily f)
     setRate(m_rate, m_clock);
     std::memset(&m_vgm_head, 0, sizeof(VgmHead));
     std::memset(&m_reg_buffer, 0, sizeof(uint_fast8_t) * 4 * 0xFF);
+    m_needInit = (m_chip_index == 0);
+    m_output = NULL;
+    if(m_chip_index == 0)
+        g_master = this;
+}
+
+void VGMFileDumper::initFile()
+{
+    if(!m_needInit)
+        return;
+
     if(m_chip_index == 0)
     {
         m_output = std::fopen(g_vgm_path, "wb");
@@ -162,6 +191,8 @@ VGMFileDumper::VGMFileDumper(OPNFamily f)
         std::fseek(m_output, VGM_SONG_DATA_START, SEEK_SET);
         g_master = this;
     }
+
+    m_needInit = false;
 }
 
 VGMFileDumper::~VGMFileDumper()
@@ -170,19 +201,23 @@ VGMFileDumper::~VGMFileDumper()
     if(m_chip_index > 0)
         return;
 
-    uint8_t out[1];
-    out[0] = 0x66;// end of sound data
-    std::fwrite(&out, 1, 1, m_output);
-    m_bytes_written += 1;
+    if(m_output)
+    {
+        uint8_t out[1];
+        out[0] = 0x66;// end of sound data
+        std::fwrite(&out, 1, 1, m_output);
+        m_bytes_written += 1;
 
-    m_vgm_head.total_samples = m_samples_written;
-    m_vgm_head.loop_samples = m_samples_loop;
-    m_vgm_head.eof_offset = (VGM_SONG_DATA_START + m_bytes_written - 4);
-    m_vgm_head.offset_data = 0x04;
+        m_vgm_head.total_samples = m_samples_written;
+        m_vgm_head.loop_samples = m_samples_loop;
+        m_vgm_head.eof_offset = (VGM_SONG_DATA_START + m_bytes_written - 4);
+        m_vgm_head.offset_data = 0x04;
+    }
 
     writeHead();
 
-    std::fclose(m_output);
+    if(m_output)
+        std::fclose(m_output);
     g_master = NULL;
 }
 
@@ -195,6 +230,8 @@ void VGMFileDumper::setRate(uint32_t rate, uint32_t clock)
 
 void VGMFileDumper::reset()
 {
+    if(!m_output)
+        return;
     OPNChipBaseBufferedT::reset();
     std::fseek(m_output, VGM_SONG_DATA_START, SEEK_SET);
     m_samples_written = 0;
@@ -232,13 +269,16 @@ void VGMFileDumper::writeReg(uint32_t port, uint16_t addr, uint8_t data)
         return;
     }
 
-    if(port > 4)
+    if(!m_output)
+        return;
+
+    if(port >= 4u)
         return; // VGM DOESN'T SUPPORTS MORE THAN 2 CHIPS
 
     if(!addressCacheBlackList(addr) && m_reg_buffer[port][addr & 0xFF] == data)
         return; //Write nothing
 
-    if(port > 2 && ((m_vgm_head.clock_ym2612 & 0x40000000) == 0))
+    if(port >= 2u && ((m_vgm_head.clock_ym2612 & 0x40000000) == 0))
         m_vgm_head.clock_ym2612 |= 0x40000000;
 
     m_reg_buffer[port][addr & 0xFF] = data;
@@ -254,6 +294,8 @@ void VGMFileDumper::writePan(uint16_t /*chan*/, uint8_t /*data*/)
 
 void VGMFileDumper::nativeGenerateN(int16_t *output, size_t frames)
 {
+    if(!m_output)
+        return;
     if(m_chip_index > 0 || m_end_caught) // When it's a second chip
         return;
     std::memset(output, 0, frames * sizeof(int16_t) * 2);

@@ -2,7 +2,7 @@
  * libOPNMIDI is a free Software MIDI synthesizer library with OPN2 (YM2612) emulation
  *
  * MIDI parser and player (Original code from ADLMIDI): Copyright (c) 2010-2014 Joel Yliluoma <bisqwit@iki.fi>
- * OPNMIDI Library and YM2612 support:   Copyright (c) 2017-2019 Vitaly Novichkov <admin@wohlnet.ru>
+ * OPNMIDI Library and YM2612 support:   Copyright (c) 2017-2020 Vitaly Novichkov <admin@wohlnet.ru>
  *
  * Library is based on the ADLMIDI, a MIDI player for Linux and Windows with OPL3 emulation:
  * http://iki.fi/bisqwit/source/adlmidi.html
@@ -163,7 +163,7 @@ OPNMIDI_EXPORT int opn2_getBank(OPN2_MIDIPlayer *device, const OPN2_BankId *idp,
             value.second.ins[i].flags = opnInstMeta::Flag_NoSound;
 
         std::pair<Synth::BankMap::iterator, bool> ir;
-        if(flags & OPNMIDI_Bank_CreateRt)
+        if((flags & OPNMIDI_Bank_CreateRt) == OPNMIDI_Bank_CreateRt)
         {
             ir = map.insert(value, Synth::BankMap::do_not_expand_t());
             if(ir.first == map.end())
