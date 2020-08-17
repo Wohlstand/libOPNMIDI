@@ -23,7 +23,7 @@
 
 #include "opn_chip_base.h"
 
-namespace FM { class OPN2; class OPNA; class OPNB; }
+namespace FM { class OPNA; class OPM; }
 template <class ChipType = FM::OPNA>
 class NP2OPNA final : public OPNChipBaseBufferedT<NP2OPNA<ChipType > >
 {
@@ -43,6 +43,9 @@ public:
     void nativeGenerateN(int16_t *output, size_t frames) override;
     const char *emulatorName() override;
     enum { resamplerPostAttenuate = 2 };
+
+private:
+    void sendInitSequence();
 };
 
 #endif

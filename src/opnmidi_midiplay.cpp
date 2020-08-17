@@ -1285,7 +1285,7 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
                 if(vibrato && (d.is_end() || d->value.vibdelay_us >= chan.vibdelay_us))
                     bend += static_cast<double>(vibrato) * chan.vibdepth * std::sin(chan.vibpos);
 
-                synth.noteOn(c, std::exp(0.057762265 * (currentTone + bend + phase)));
+                synth.noteOn(c, currentTone + bend + phase);
                 if(hooks.onNote)
                     hooks.onNote(hooks.onNote_userData, c, noteTone, static_cast<int>(midiins), vol, midibend);
             }
@@ -1446,7 +1446,6 @@ void OPNMIDIplay::killOrEvacuate(size_t from_channel,
                                  OPNMIDIplay::MIDIchannel::notes_iterator i)
 {
     Synth &synth = *m_synth;
-    uint32_t maxChannels = OPN_MAX_CHIPS * 6;
     OpnChannel::LocationData &jd = j->value;
     MIDIchannel::NoteInfo &info = i->value;
 
@@ -1459,8 +1458,6 @@ void OPNMIDIplay::killOrEvacuate(size_t from_channel,
     {
         uint16_t cs = static_cast<uint16_t>(c);
 
-        if(c >= maxChannels)
-            break;
         if(c == from_channel)
             continue;
         //if(opn.four_op_category[c] != opn.four_op_category[from_channel])

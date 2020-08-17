@@ -93,6 +93,9 @@ static const unsigned opn2_emulatorSupport = 0
 #ifndef OPNMIDI_DISABLE_PMDWIN_EMULATOR
     | (1u << OPNMIDI_EMU_PMDWIN)
 #endif
+#ifndef OPNMIDI_DISABLE_NP2_EMULATOR
+    | (1u << OPNMIDI_EMU_NP2_OPM)
+#endif
 #ifdef OPNMIDI_MIDI2VGM
     | (1u << OPNMIDI_VGM_DUMPER)
 #endif
@@ -139,6 +142,14 @@ static inline void getOpnChannel(size_t     in_channel,
     out_ch = static_cast<uint32_t>(ch4 % 3);
 }
 
+static inline void getOpmChannel(size_t     in_channel,
+                                 size_t     &out_chip,
+                                 uint32_t   &out_ch)
+{
+    out_chip = in_channel / 8;
+    out_ch = in_channel % 8;
+}
+
 enum
 {
     OPN_PANNING_LEFT  = 0x80,
@@ -157,6 +168,7 @@ static opnInstMeta2 makeEmptyInstrument()
 const opnInstMeta2 OPN2::m_emptyInstrument = makeEmptyInstrument();
 
 OPN2::OPN2() :
+    m_regMode(Reg_OPN),
     m_regLFOSetup(0),
     m_numChips(1),
     m_scaleModulators(false),
@@ -206,86 +218,152 @@ void OPN2::writePan(size_t chip, uint32_t index, uint32_t value)
 
 void OPN2::noteOff(size_t c)
 {
-    size_t      chip;
-    uint8_t     port;
-    uint32_t    cc;
-    size_t      ch4 = c % 6;
-    getOpnChannel(c, chip, port, cc);
-    writeRegI(chip, 0, 0x28, g_noteChannelsMap[ch4]);
+    RegisterMode regMode = m_regMode;
+
+    if(regMode == Reg_OPN)
+    {
+        size_t      chip;
+        uint8_t     port;
+        uint32_t    cc;
+        size_t      ch4 = c % 6;
+        getOpnChannel(c, chip, port, cc);
+        writeRegI(chip, 0, 0x28, g_noteChannelsMap[ch4]);
+    }
+    else
+    {
+        size_t      chip;
+        uint32_t    cc;
+        getOpmChannel(c, chip, cc);
+        writeRegI(chip, 0, 0x08, cc);
+    }
 }
 
-void OPN2::noteOn(size_t c, double hertz) // Hertz range: 0..131071
+void OPN2::noteOn(size_t c, double semi) // Hertz range: 0..131071
 {
-    if(hertz < 0) // Avoid infinite loop
+    if(semi < 0) // Avoid infinite loop
         return;
 
-    double coef;
-    switch(m_chipFamily)
-    {
-    case OPNChip_OPN2: default:
-        coef = 321.88557; break;
-    case OPNChip_OPNA:
-        coef = 309.12412; break;
-    }
-    hertz *= coef;
+    RegisterMode regMode = m_regMode;
 
     size_t      chip;
     uint8_t     port;
     uint32_t    cc;
-    size_t      ch4 = c % 6;
-    getOpnChannel(c, chip, port, cc);
+    size_t      ch4 = c % ((regMode == Reg_OPN) ? 6 : 8);
+    if(regMode == Reg_OPN)
+        getOpnChannel(c, chip, port, cc);
+    else
+        getOpmChannel(c, chip, cc);
 
-    uint32_t octave = 0, ftone = 0, mul_offset = 0;
-    const opnInstData &adli = m_insCache[c];
+    if(regMode == Reg_OPN)
+    {
+        double hertz = std::exp(0.057762265 * semi);
 
-    //Basic range until max of octaves reaching
-    while((hertz >= 1023.75) && (octave < 0x3800))
-    {
-        hertz /= 2.0;    // Calculate octave
-        octave += 0x800;
-    }
-    //Extended range, rely on frequency multiplication increment
-    while(hertz >= 2036.75)
-    {
-        hertz /= 2.0;    // Calculate octave
-        mul_offset++;
-    }
-    ftone = octave + static_cast<uint32_t>(hertz + 0.5);
-
-    for(size_t op = 0; op < 4; op++)
-    {
-        uint32_t reg = adli.OPS[op].data[0];
-        uint16_t address = static_cast<uint16_t>(0x30 + (op * 4) + cc);
-        if(mul_offset > 0) // Increase frequency multiplication value
+        double coef;
+        switch(m_chipFamily)
         {
-            uint32_t dt  = reg & 0xF0;
-            uint32_t mul = reg & 0x0F;
-            if((mul + mul_offset) > 0x0F)
+        case OPNChip_OPN2: default:
+            coef = 321.88557; break;
+        case OPNChip_OPNA:
+            coef = 309.12412; break;
+        case OPNChip_OPM: // XXX seems related to OPNA by some factor ~5
+            coef = 5 * 309.12412; break;
+        }
+        hertz *= coef;
+
+        uint32_t octave = 0, ftone = 0, mul_offset = 0;
+        const opnInstData &adli = m_insCache[c];
+
+        //Basic range until max of octaves reaching
+        while((hertz >= 1023.75) && (octave < 0x3800))
+        {
+            hertz /= 2.0;    // Calculate octave
+            octave += 0x800;
+        }
+        //Extended range, rely on frequency multiplication increment
+        while(hertz >= 2036.75)
+        {
+            hertz /= 2.0;    // Calculate octave
+            mul_offset++;
+        }
+        ftone = octave + static_cast<uint32_t>(hertz + 0.5);
+
+        for(size_t op = 0; op < 4; op++)
+        {
+            uint32_t reg = adli.OPS[op].data[0];
+            uint16_t address = static_cast<uint16_t>(0x30 + (op * 4) + cc);
+            if(mul_offset > 0) // Increase frequency multiplication value
             {
-                mul_offset = 0;
-                mul = 0x0F;
+                uint32_t dt  = reg & 0xF0;
+                uint32_t mul = reg & 0x0F;
+                if((mul + mul_offset) > 0x0F)
+                {
+                    mul_offset = 0;
+                    mul = 0x0F;
+                }
+                writeRegI(chip, port, address, uint8_t(dt | (mul + mul_offset)));
             }
-            writeRegI(chip, port, address, uint8_t(dt | (mul + mul_offset)));
+            else
+            {
+                writeRegI(chip, port, address, uint8_t(reg));
+            }
         }
-        else
+
+        writeRegI(chip, port, 0xA4 + cc, (ftone>>8) & 0xFF);//Set frequency and octave
+        writeRegI(chip, port, 0xA0 + cc, ftone & 0xFF);
+    }
+    else
+    {
+        if(1) // TODO libOPNMIDI: find how to tune this...
         {
-            writeRegI(chip, port, address, uint8_t(reg));
+            // XXX it's rate dependent. shitty pitchs corrections made by ear
+            double correction;
+            switch (m_chipFamily) {
+            case OPNChip_OPM: correction = log(2.25) * (12 / M_LN2); break;
+            case OPNChip_OPNA: correction = log(0.45) * (12 / M_LN2); break; // XXX factor to OPM ~5
+            case OPNChip_OPN2: correction = log(0.46858243) * (12 / M_LN2); break; // XXX based on ratio of clocks (OPNA/OPN2)
+            default: assert(false);
+            }
+            semi += correction;
         }
+
+        const uint8_t noteTab[12] = {
+        //   C   C#  D   D#  E   F   F#  G   G#  A   A#  B
+            14,  0,  1,  2,  4,  5,  6,  8,  9, 10, 12, 13
+        };
+
+        // break into decimal and fractional semitone
+        int semiDec = (int)semi;
+        double semiFrac = semi - semiDec;
+
+        // OPM octave ranges from C#n to Cn+1 (note C is part of inferior octave)
+        // C#0 is the starting note for Oct=0 Note=0 (MIDI note 13)
+
+        int octave = (semiDec >= 13) ? ((semiDec - 13) / 12) : 0;
+        int note = noteTab[semiDec % 12];
+
+        writeRegI(chip, 0, 0x28 + cc, ((octave & 7) << 4) | note);
+        writeRegI(chip, 0, 0x30 + cc, (int)(semiFrac * 64) << 2);
     }
 
-    writeRegI(chip, port, 0xA4 + cc, (ftone>>8) & 0xFF);//Set frequency and octave
-    writeRegI(chip, port, 0xA0 + cc, ftone & 0xFF);
-    writeRegI(chip, 0, 0x28, 0xF0 + g_noteChannelsMap[ch4]);
+    if(regMode == Reg_OPN)
+        writeRegI(chip, 0, 0x28, 0xF0 + g_noteChannelsMap[ch4]);
+    else
+        writeRegI(chip, 0, 0x08, 0x78 + ch4);
 }
 
 void OPN2::touchNote(size_t c, uint8_t volume, uint8_t brightness)
 {
     if(volume > 127) volume = 127;
 
+    RegisterMode regMode = m_regMode;
+
     size_t      chip;
     uint8_t     port;
     uint32_t    cc;
-    getOpnChannel(c, chip, port, cc);
+    if (regMode == Reg_OPN)
+        getOpnChannel(c, chip, port, cc);
+    else
+        getOpmChannel(c, chip, cc);
 
     const opnInstData &adli = m_insCache[c];
 
@@ -327,7 +405,9 @@ void OPN2::touchNote(size_t c, uint8_t volume, uint8_t brightness)
             if(!do_op)
                 vol_res = (127 - (brightness * (127 - (static_cast<uint32_t>(vol_res) & 127))) / 127);
         }
-        writeRegI(chip, port, 0x40 + cc + (4 * op), vol_res);
+        unsigned regBase = (regMode == Reg_OPN) ? 0x40 : 0x60;
+        unsigned opSh = (regMode == Reg_OPN) ? 2 : 3;
+        writeRegI(chip, port, regBase + cc + (op << opSh), vol_res);
     }
     // Correct formula (ST3, AdPlug):
     //   63-((63-(instrvol))/63)*chanvol
@@ -339,46 +419,93 @@ void OPN2::touchNote(size_t c, uint8_t volume, uint8_t brightness)
 
 void OPN2::setPatch(size_t c, const opnInstData &instrument)
 {
+    RegisterMode regMode = m_regMode;
+
     size_t      chip;
     uint8_t     port;
     uint32_t    cc;
-    getOpnChannel(c, chip, port, cc);
+    if(regMode == Reg_OPN)
+        getOpnChannel(c, chip, port, cc);
+    else
+        getOpmChannel(c, chip, cc);
     m_insCache[c] = instrument;
-    for(uint8_t d = 0; d < 7; d++)
+
+    unsigned regBase = (regMode == Reg_OPN) ? 0x30 : 0x40;
+    unsigned regStep = (regMode == Reg_OPN) ? 0x10 : 0x20;
+    unsigned regCount = (regMode == Reg_OPN) ? 7 : 6;  // no SSG-EG register on OPM
+    unsigned opSh = (regMode == Reg_OPN) ? 2 : 3;
+
+    for(uint8_t d = 0; d < regCount; d++)
     {
         for(uint8_t op = 0; op < 4; op++)
-            writeRegI(chip, port, 0x30 + (0x10 * d) + (op * 4) + cc, instrument.OPS[op].data[d]);
+        {
+            unsigned reg = regBase + (regStep * d) + (op << opSh) + cc;
+            writeRegI(chip, port, reg, instrument.OPS[op].data[d]);
+        }
     }
 
-    writeRegI(chip, port, 0xB0 + cc, instrument.fbalg);//Feedback/Algorithm
-    m_regLFOSens[c] = (m_regLFOSens[c] & 0xC0) | (instrument.lfosens & 0x3F);
-    writeRegI(chip, port, 0xB4 + cc, m_regLFOSens[c]);//Panorame and LFO bits
+    unsigned fbalg = instrument.fbalg;//Feedback/Algorithm
+    unsigned lfoSens = (m_regLFOSens[c] & 0xC0) | (instrument.lfosens & 0x3F);
+    m_regLFOSens[c] = lfoSens;
+    if(regMode == Reg_OPN)
+    {
+        writeRegI(chip, port, 0xB0 + cc, fbalg);
+        writeRegI(chip, port, 0xB4 + cc, lfoSens);//Panorame and LFO bits
+    }
+    else
+    {
+        writeRegI(chip, port, 0x20 + cc, (lfoSens & 0xC0) | fbalg);
+        writeRegI(chip, port, 0x38 + cc, ((lfoSens >> 4) & 3) | ((lfoSens & 7) << 4));
+    }
 }
 
 void OPN2::setPan(size_t c, uint8_t value)
 {
+    RegisterMode regMode = m_regMode;
+
     size_t      chip;
     uint8_t     port;
     uint32_t    cc;
-    getOpnChannel(c, chip, port, cc);
+    if(regMode == Reg_OPN)
+        getOpnChannel(c, chip, port, cc);
+    else
+        getOpmChannel(c, chip, cc);
     const opnInstData &adli = m_insCache[c];
     uint8_t val = 0;
     if(m_softPanning)
     {
-        val = (OPN_PANNING_BOTH & 0xC0) | (adli.lfosens & 0x3F);
-        writePan(chip, c % 6, value);
-        writeRegI(chip, port, 0xB4 + cc, val);
+        writePan(chip, c % ((regMode == Reg_OPN) ? 6 : 8), value);
+        if(regMode == Reg_OPN)
+        {
+            val = (OPN_PANNING_BOTH & 0xC0) | (adli.lfosens & 0x3F);
+            writeRegI(chip, port, 0xB4 + cc, val);
+        }
+        else
+        {
+            val = (OPN_PANNING_BOTH & 0xC0) | (adli.fbalg & 0x3F);
+            writeRegI(chip, 0, 0x20 + cc, val);
+        }
     }
     else
     {
         int panning = 0;
         if(value  < 64 + 32) panning |= OPN_PANNING_LEFT;
         if(value >= 64 - 32) panning |= OPN_PANNING_RIGHT;
+
         val = (panning & 0xC0) | (adli.lfosens & 0x3F);
-        writePan(chip, c % 6, 64);
-        writeRegI(chip, port, 0xB4 + cc, val);
+        m_regLFOSens[c] = val;
+
+        if(regMode == Reg_OPN)
+        {
+            writePan(chip, c % 6, 64);
+            writeRegI(chip, port, 0xB4 + cc, val);
+        }
+        else
+        {
+            writePan(chip, cc, 64);
+            writeRegI(chip, 0, 0x20 + cc, (panning & 0xC0) | (adli.fbalg & 0x3F));
+        }
     }
-    m_regLFOSens[c] = val;
 }
 
 void OPN2::silenceAll() // Silence all OPL channels.
@@ -392,10 +519,19 @@ void OPN2::silenceAll() // Silence all OPL channels.
 
 void OPN2::commitLFOSetup()
 {
-    uint8_t regLFOSetup = (m_lfoEnable ? 8 : 0) | (m_lfoFrequency & 7);
-    m_regLFOSetup = regLFOSetup;
-    for(size_t chip = 0; chip < m_numChips; ++chip)
-        writeReg(chip, 0, 0x22, regLFOSetup);
+    RegisterMode regMode = m_regMode;
+
+    if(regMode == Reg_OPN)
+    {
+        uint8_t regLFOSetup = (m_lfoEnable ? 8 : 0) | (m_lfoFrequency & 7);
+        m_regLFOSetup = regLFOSetup;
+        for(size_t chip = 0; chip < m_numChips; ++chip)
+            writeReg(chip, 0, 0x22, regLFOSetup);
+    }
+    else
+    {
+#pragma message("TODO OPM: LFO")
+    }
 }
 
 void OPN2::setVolumeScaleModel(OPNMIDI_VolumeModels volumeModel)
@@ -465,6 +601,7 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
         m_numChips = 2;// VGM Dumper can't work in multichip mode
 #endif
     m_chips.resize(m_numChips, AdlMIDI_SPtr<OPNChipBase>());
+    RegisterMode regMode = Reg_OPN;
 
 #ifdef OPNMIDI_MIDI2VGM
     m_loopStartHook = NULL;
@@ -485,36 +622,49 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
 #ifndef OPNMIDI_DISABLE_MAME_EMULATOR
         case OPNMIDI_EMU_MAME:
             chip = new MameOPN2(family);
+            regMode = Reg_OPN;
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_NUKED_EMULATOR
         case OPNMIDI_EMU_NUKED:
             chip = new NukedOPN2(family);
+            regMode = Reg_OPN;
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_GENS_EMULATOR
         case OPNMIDI_EMU_GENS:
             chip = new GensOPN2(family);
+            regMode = Reg_OPN;
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_GX_EMULATOR
         case OPNMIDI_EMU_GX:
             chip = new GXOPN2(family);
+            regMode = Reg_OPN;
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_NP2_EMULATOR
         case OPNMIDI_EMU_NP2:
             chip = new NP2OPNA<>(family);
+            regMode = Reg_OPN;
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_MAME_2608_EMULATOR
         case OPNMIDI_EMU_MAME_2608:
             chip = new MameOPNA(family);
+            regMode = Reg_OPN;
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_PMDWIN_EMULATOR
         case OPNMIDI_EMU_PMDWIN:
             chip = new PMDWinOPNA(family);
+            regMode = Reg_OPN;
+            break;
+#endif
+#ifndef OPNMIDI_DISABLE_NP2_EMULATOR
+        case OPNMIDI_EMU_NP2_OPM:
+            chip = new NP2OPNA<FM::OPM>(family);
+            regMode = Reg_OPM;
             break;
 #endif
 #ifdef OPNMIDI_MIDI2VGM
@@ -541,26 +691,46 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
         family = chip->family();
     }
 
+    m_regMode = regMode;
     m_chipFamily = family;
-    m_numChannels = m_numChips * 6;
+    m_numChannels = m_numChips * ((regMode == Reg_OPN) ? 6 : 8);
     m_insCache.resize(m_numChannels,   m_emptyInstrument.opn[0]);
     m_regLFOSens.resize(m_numChannels,    0);
 
     uint8_t regLFOSetup = (m_lfoEnable ? 8 : 0) | (m_lfoFrequency & 7);
     m_regLFOSetup = regLFOSetup;
 
-    for(size_t card = 0; card < m_numChips; ++card)
+    if(regMode == Reg_OPN)
     {
-        writeReg(card, 0, 0x22, regLFOSetup);//push current LFO state
-        writeReg(card, 0, 0x27, 0x00);  //set Channel 3 normal mode
-        writeReg(card, 0, 0x2B, 0x00);  //Disable DAC
-        //Shut up all channels
-        writeReg(card, 0, 0x28, 0x00 ); //Note Off 0 channel
-        writeReg(card, 0, 0x28, 0x01 ); //Note Off 1 channel
-        writeReg(card, 0, 0x28, 0x02 ); //Note Off 2 channel
-        writeReg(card, 0, 0x28, 0x04 ); //Note Off 3 channel
-        writeReg(card, 0, 0x28, 0x05 ); //Note Off 4 channel
-        writeReg(card, 0, 0x28, 0x06 ); //Note Off 5 channel
+        for(size_t card = 0; card < m_numChips; ++card)
+        {
+            writeReg(card, 0, 0x22, regLFOSetup);//push current LFO state
+            writeReg(card, 0, 0x27, 0x00);  //set Channel 3 normal mode
+            writeReg(card, 0, 0x2B, 0x00);  //Disable DAC
+            //Shut up all channels
+            writeReg(card, 0, 0x28, 0x00 ); //Note Off 0 channel
+            writeReg(card, 0, 0x28, 0x01 ); //Note Off 1 channel
+            writeReg(card, 0, 0x28, 0x02 ); //Note Off 2 channel
+            writeReg(card, 0, 0x28, 0x04 ); //Note Off 3 channel
+            writeReg(card, 0, 0x28, 0x05 ); //Note Off 4 channel
+            writeReg(card, 0, 0x28, 0x06 ); //Note Off 5 channel
+        }
+    }
+    else
+    {
+        for(size_t card = 0; card < m_numChips; ++card)
+        {
+#pragma message("TODO OPM: LFO and other things")
+            //Shut up all channels
+            writeReg(card, 0, 0x08, 0x00 ); //Note Off 0 channel
+            writeReg(card, 0, 0x08, 0x01 ); //Note Off 1 channel
+            writeReg(card, 0, 0x08, 0x02 ); //Note Off 2 channel
+            writeReg(card, 0, 0x08, 0x03 ); //Note Off 3 channel
+            writeReg(card, 0, 0x08, 0x04 ); //Note Off 4 channel
+            writeReg(card, 0, 0x08, 0x05 ); //Note Off 5 channel
+            writeReg(card, 0, 0x08, 0x06 ); //Note Off 6 channel
+            writeReg(card, 0, 0x08, 0x07 ); //Note Off 7 channel
+        }
     }
 
     silenceAll();

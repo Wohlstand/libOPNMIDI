@@ -24,7 +24,7 @@
 #include <stdint.h>
 
 #define OPN_FAMILY_EACH(F) \
-    F(OPN2) F(OPNA)
+    F(OPN2) F(OPNA) F(OPM)
 
 enum OPNFamily
 {
@@ -54,6 +54,16 @@ struct OPNFamilyTraits<OPNChip_OPNA>
     {
         nativeRate = 55466,
         nativeClockRate = 7987200
+    };
+};
+
+template <>
+struct OPNFamilyTraits<OPNChip_OPM>
+{
+    enum
+    {
+        nativeRate = 55930,
+        nativeClockRate = 3579545
     };
 };
 

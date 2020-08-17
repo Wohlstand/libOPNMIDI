@@ -188,7 +188,7 @@ int main(int argc, char **argv)
     {
         std::printf(
             "Usage:\n"
-            "   opnmidiplay [-s] [-w] [-nl] [--emu-mame|--emu-nuked|--emu-gens|--emu-gx|--emu-np2|--emu-mame-opna|--emu-pmdwin] \\\n"
+            "   opnmidiplay [-s] [-w] [-nl] [--emu-mame|--emu-nuked|--emu-gens|--emu-gx|--emu-np2|--emu-mame-opna|--emu-pmdwin|--emu-np2-opm] \\\n"
             "               [--chips <count>] [<bankfile>.wopn] <midifilename>\n"
             "\n"
             " <bankfile>.wopn   Path to WOPN bank file\n"
@@ -206,9 +206,10 @@ int main(int argc, char **argv)
             " --emu-gens        Use GENS 2.10 Emulator\n"
             " --emu-nuked       Use Nuked OPN2 Emulator\n"
             " --emu-gx          Use Genesis Plus GX Emulator\n"
-            " --emu-np2         Use Neko Project II Emulator\n"
+            " --emu-np2         Use Neko Project II OPNA Emulator\n"
             " --emu-mame-opna   Use MAME YM2608 Emulator\n"
             " --emu-pmdwin      Use PMDWin Emulator\n"
+            " --emu-np2-opm     Use Neko Project II OPM Emulator\n"
             " --chips <count>   Choose a count of emulated concurrent chips\n"
             "\n"
         );
@@ -277,6 +278,8 @@ int main(int argc, char **argv)
             emulator = OPNMIDI_EMU_MAME_2608;
         else if(!std::strcmp("--emu-pmdwin", argv[arg]))
             emulator = OPNMIDI_EMU_PMDWIN;
+        else if(!std::strcmp("--emu-np2-opm", argv[arg]))
+            emulator = OPNMIDI_EMU_NP2_OPM;
         else if(!std::strcmp("-fp", argv[arg]))
             fullPanEnabled = true;
         else if(!std::strcmp("-s", argv[arg]))
