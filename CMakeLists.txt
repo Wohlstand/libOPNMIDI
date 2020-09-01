@@ -334,7 +334,9 @@ if(WITH_MIDI2VGM)
     add_subdirectory(utils/midi2vgm)
 endif()
 
-add_subdirectory(utils/wopn2hpp)
+if(NOT ANDROID)
+    add_subdirectory(utils/wopn2hpp)
+endif()
 
 if(WITH_VLC_PLUGIN)
     add_subdirectory(utils/vlc_codec)
