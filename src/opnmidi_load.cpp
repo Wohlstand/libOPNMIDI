@@ -189,11 +189,14 @@ bool OPNMIDIplay::LoadMIDI_post()
         /* Same as for CMF */
         return false;
     }
+    else if(format == MidiSequencer::Format_XMIDI)
+        synth.m_musicMode = Synth::MODE_XMIDI;
 
     m_setup.tick_skip_samples_delay = 0;
     synth.reset(m_setup.emulator, m_setup.PCM_RATE, synth.chipFamily(), this); // Reset OPN2 chip
     m_chipChannels.clear();
     m_chipChannels.resize(synth.m_numChannels);
+    resetMIDIDefaults();
 #ifdef OPNMIDI_MIDI2VGM
     m_sequencerInterface->onloopStart = synth.m_loopStartHook;
     m_sequencerInterface->onloopStart_userData = synth.m_loopStartHookData;

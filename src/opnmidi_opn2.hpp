@@ -90,6 +90,8 @@ public:
     bool m_runAtPcmRate;
     //! Enable soft panning
     bool m_softPanning;
+    //! Master volume, controlled via SysEx (0...127)
+    uint8_t m_masterVolume;
 
     //! Just a padding. Reserved.
     char _padding2[3];
@@ -101,6 +103,8 @@ public:
     {
         //! MIDI mode
         MODE_MIDI,
+        //! MIDI mode
+        MODE_XMIDI,
         //! Id-Software Music mode
         MODE_IMF,
         //! Creative Music Files mode
@@ -199,7 +203,11 @@ public:
      * @param volume Volume level (from 0 to 127)
      * @param brightness CC74 Brightness level (from 0 to 127)
      */
-    void touchNote(size_t c, uint8_t volume, uint8_t brightness = 127);
+    void touchNote(size_t c,
+                   uint_fast32_t velocity,
+                   uint_fast32_t channelVolume = 127,
+                   uint_fast32_t channelExpression = 127,
+                   uint8_t brightness = 127);
 
     /**
      * @brief Set the instrument into specified chip channel

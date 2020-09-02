@@ -97,6 +97,12 @@ static size_t rtCurrentDevice(void *userdata, size_t track)
     OPNMIDIplay *context = reinterpret_cast<OPNMIDIplay *>(userdata);
     return context->realTime_currentDevice(track);
 }
+
+static void rtSongBegin(void *userdata)
+{
+    OPNMIDIplay *context = reinterpret_cast<OPNMIDIplay *>(userdata);
+    return context->realTime_ResetState();
+}
 /* NonStandard calls End */
 
 
@@ -124,6 +130,9 @@ void OPNMIDIplay::initSequencerInterface()
     /* NonStandard calls */
     seq->rt_deviceSwitch = rtDeviceSwitch;
     seq->rt_currentDevice = rtCurrentDevice;
+
+    seq->onSongStart = rtSongBegin;
+    seq->onSongStart_userData = this;
     /* NonStandard calls End */
 
     m_sequencer->setInterface(seq);

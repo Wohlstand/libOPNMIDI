@@ -126,6 +126,36 @@ int opn2_getLowestEmulator()
     return emu;
 }
 
+// Mapping from MIDI volume level to OPL level value.
+
+static const uint_fast32_t s_dmx_volume_model[128] =
+{
+    0,  1,  3,  5,  6,  8,  10, 11,
+    13, 14, 16, 17, 19, 20, 22, 23,
+    25, 26, 27, 29, 30, 32, 33, 34,
+    36, 37, 39, 41, 43, 45, 47, 49,
+    50, 52, 54, 55, 57, 59, 60, 61,
+    63, 64, 66, 67, 68, 69, 71, 72,
+    73, 74, 75, 76, 77, 79, 80, 81,
+    82, 83, 84, 84, 85, 86, 87, 88,
+    89, 90, 91, 92, 92, 93, 94, 95,
+    96, 96, 97, 98, 99, 99, 100, 101,
+    101, 102, 103, 103, 104, 105, 105, 106,
+    107, 107, 108, 109, 109, 110, 110, 111,
+    112, 112, 113, 113, 114, 114, 115, 115,
+    116, 117, 117, 118, 118, 119, 119, 120,
+    120, 121, 121, 122, 122, 123, 123, 123,
+    124, 124, 125, 125, 126, 126, 127, 127,
+};
+
+static const uint_fast32_t W9X_volume_mapping_table[32] =
+{
+    63, 63, 40, 36, 32, 28, 23, 21,
+    19, 17, 15, 14, 13, 12, 11, 10,
+    9,  8,  7,  6,  5,  5,  4,  4,
+    3,  3,  2,  2,  1,  1,  0,  0
+};
+
 static const uint32_t g_noteChannelsMap[6] = { 0, 1, 2, 4, 5, 6 };
 
 static inline void getOpnChannel(size_t     in_channel,
@@ -138,6 +168,12 @@ static inline void getOpnChannel(size_t     in_channel,
     out_port = ((ch4 < 3) ? 0 : 1);
     out_ch = static_cast<uint32_t>(ch4 % 3);
 }
+
+
+enum
+{
+    MasterVolumeDefault = 127
+};
 
 enum
 {
@@ -162,6 +198,7 @@ OPN2::OPN2() :
     m_scaleModulators(false),
     m_runAtPcmRate(false),
     m_softPanning(false),
+    m_masterVolume(MasterVolumeDefault),
     m_musicMode(MODE_MIDI),
     m_volumeScale(VOLUME_Generic),
     m_lfoEnable(false),
@@ -278,16 +315,20 @@ void OPN2::noteOn(size_t c, double hertz) // Hertz range: 0..131071
     writeRegI(chip, 0, 0x28, 0xF0 + g_noteChannelsMap[ch4]);
 }
 
-void OPN2::touchNote(size_t c, uint8_t volume, uint8_t brightness)
+void OPN2::touchNote(size_t c,
+                     uint_fast32_t velocity,
+                     uint_fast32_t channelVolume,
+                     uint_fast32_t channelExpression,
+                     uint8_t brightness)
 {
-    if(volume > 127) volume = 127;
-
     size_t      chip;
     uint8_t     port;
     uint32_t    cc;
     getOpnChannel(c, chip, port, cc);
 
     const opnInstData &adli = m_insCache[c];
+
+    uint_fast32_t volume = 0;
 
     uint8_t op_vol[4] =
     {
@@ -315,12 +356,87 @@ void OPN2::touchNote(size_t c, uint8_t volume, uint8_t brightness)
         {true ,true ,true ,true},//Algorithm #7:  W = 1 + 2 + 3 + 4
     };
 
+    switch(m_volumeScale)
+    {
+    default:
+    case Synth::VOLUME_Generic:
+    {
+        volume = velocity * m_masterVolume *
+                 channelVolume * channelExpression;
+
+        /* If the channel has arpeggio, the effective volume of
+             * *this* instrument is actually lower due to timesharing.
+             * To compensate, add extra volume that corresponds to the
+             * time this note is *not* heard.
+             * Empirical tests however show that a full equal-proportion
+             * increment sounds wrong. Therefore, using the square root.
+             */
+        //volume = (int)(volume * std::sqrt( (double) ch[c].users.size() ));
+        const double c1 = 11.541560327111707;
+        const double c2 = 1.601379199767093e+02;
+        const uint_fast32_t minVolume = 1108075; // 8725 * 127
+
+        // The formula below: SOLVE(V=127^4 * 2^( (A-63.49999) / 8), A)
+        if(volume > minVolume)
+        {
+            double lv = std::log(static_cast<double>(volume));
+            volume = static_cast<uint_fast32_t>(lv * c1 - c2) * 2.0;
+        }
+        else
+            volume = 0;
+    }
+    break;
+
+    case Synth::VOLUME_NATIVE:
+    {
+        volume = velocity * channelVolume * channelExpression;
+        //volume = volume * m_masterVolume / (127 * 127 * 127) / 2;
+        volume = (volume * m_masterVolume) / 4096766;
+    }
+    break;
+
+    case Synth::VOLUME_DMX:
+    {
+        volume = (channelVolume * channelExpression * m_masterVolume) / 16129;
+        volume = (s_dmx_volume_model[volume] + 1) << 1;
+        volume = (s_dmx_volume_model[(velocity < 128) ? velocity : 127] * volume) >> 9;
+
+        if(volume > 0)
+            volume += 64;//OPN has 0~127 range. As 0...63 is almost full silence, but at 64 to 127 is very closed to OPL3, just add 64.
+    }
+    break;
+
+    case Synth::VOLUME_APOGEE:
+    {
+        volume = (channelVolume * channelExpression * m_masterVolume / 16129);
+        volume = ((64 * (velocity + 0x80)) * volume) >> 15;
+        //volume = ((63 * (vol + 0x80)) * Ch[MidCh].volume) >> 15;
+        if(volume > 0)
+            volume += 64;//OPN has 0~127 range. As 0...63 is almost full silence, but at 64 to 127 is very closed to OPL3, just add 64.
+    }
+    break;
+
+    case Synth::VOLUME_9X:
+    {
+        //volume = 63 - W9X_volume_mapping_table[(((vol * Ch[MidCh].volume /** Ch[MidCh].expression*/) * 127 / 16129 /*2048383*/) >> 2)];
+        volume = 63 - W9X_volume_mapping_table[((velocity * channelVolume * channelExpression * m_masterVolume / 2048383) >> 2)];
+        //volume = W9X_volume_mapping_table[vol >> 2] + volume;
+        if(volume > 0)
+            volume += 64;//OPN has 0~127 range. As 0...63 is almost full silence, but at 64 to 127 is very closed to OPL3, just add 64.
+    }
+    break;
+    }
+
+
+    if(volume > 127)
+        volume = 127;
+
     uint8_t alg = adli.fbalg & 0x07;
     for(uint8_t op = 0; op < 4; op++)
     {
         bool do_op = alg_do[alg][op] || m_scaleModulators;
         uint32_t x = op_vol[op];
-        uint32_t vol_res = do_op ? (127 - (static_cast<uint32_t>(volume) * (127 - (x & 127)))/127) : x;
+        uint32_t vol_res = do_op ? (127 - (static_cast<uint32_t>(volume) * (127 - (x & 127))) / 127) : x;
         if(brightness != 127)
         {
             brightness = static_cast<uint32_t>(::round(127.0 * ::sqrt((static_cast<double>(brightness)) * (1.0 / 127.0))));
