@@ -324,6 +324,7 @@ public:
         {
             volume  = def_volume;
             brightness = 127;
+            panning = 64;
 
             resetAllControllers121();
         }
@@ -347,7 +348,6 @@ public:
             vibspeed = 2 * 3.141592653 * 5.0;
             vibdepth = 0.5 / 127;
             vibdelay_us = 0;
-            panning = 64;
             portamento = 0;
             portamentoEnable = false;
             portamentoSource = -1;
