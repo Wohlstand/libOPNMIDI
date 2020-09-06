@@ -147,7 +147,7 @@ void OPNMIDIplay::applySetup()
     m_chipChannels.clear();
     m_chipChannels.resize(synth.m_numChannels, OpnChannel());
     resetMIDIDefaults();
-#ifdef OPNMIDI_MIDI2VGM
+#if defined(OPNMIDI_MIDI2VGM) && !defined(OPNMIDI_DISABLE_MIDI_SEQUENCER)
     m_sequencerInterface->onloopStart = synth.m_loopStartHook;
     m_sequencerInterface->onloopStart_userData = synth.m_loopStartHookData;
     m_sequencerInterface->onloopEnd = synth.m_loopEndHook;
@@ -168,7 +168,7 @@ void OPNMIDIplay::partialReset()
     m_chipChannels.clear();
     m_chipChannels.resize(synth.m_numChannels);
     resetMIDIDefaults();
-#ifdef OPNMIDI_MIDI2VGM
+#if defined(OPNMIDI_MIDI2VGM) && !defined(OPNMIDI_DISABLE_MIDI_SEQUENCER)
     m_sequencerInterface->onloopStart = synth.m_loopStartHook;
     m_sequencerInterface->onloopStart_userData = synth.m_loopStartHookData;
     m_sequencerInterface->onloopEnd = synth.m_loopEndHook;
