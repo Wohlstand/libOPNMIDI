@@ -172,7 +172,7 @@ public:
             //! Time-to-live until release (short percussion note fix)
             double  ttl;
             //! Patch selected
-            const opnInstMeta2 *ains;
+            const OpnInstMeta *ains;
             enum
             {
                 MaxNumPhysChans = 2,
@@ -196,7 +196,7 @@ public:
                 //! Destination chip channel
                 uint16_t chip_chan;
                 //! ins, inde to adl[]
-                opnInstData ains;
+                OpnTimbre ains;
 
                 void assign(const Phys &oth)
                 {

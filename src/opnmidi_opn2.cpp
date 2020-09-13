@@ -126,6 +126,12 @@ int opn2_getLowestEmulator()
     return emu;
 }
 
+
+
+/***************************************************************
+ *                    Volume model tables                      *
+ ***************************************************************/
+
 // Mapping from MIDI volume level to OPL level value.
 
 static const uint_fast32_t s_dmx_volume_model[128] =
@@ -170,6 +176,17 @@ static inline void getOpnChannel(size_t     in_channel,
 }
 
 
+/***************************************************************
+ *               Standard frequency formula                    *
+ * *************************************************************/
+
+static inline double s_commonFreq(double tone)
+{
+    return std::exp(0.057762265 * tone);
+}
+
+
+
 enum
 {
     MasterVolumeDefault = 127
@@ -182,15 +199,15 @@ enum
     OPN_PANNING_BOTH  = 0xC0
 };
 
-static opnInstMeta2 makeEmptyInstrument()
+static OpnInstMeta makeEmptyInstrument()
 {
-    opnInstMeta2 ins;
-    memset(&ins, 0, sizeof(opnInstMeta2));
-    ins.flags = opnInstMeta::Flag_NoSound;
+    OpnInstMeta ins;
+    memset(&ins, 0, sizeof(OpnInstMeta));
+    ins.flags = OpnInstMeta::Flag_NoSound;
     return ins;
 }
 
-const opnInstMeta2 OPN2::m_emptyInstrument = makeEmptyInstrument();
+const OpnInstMeta OPN2::m_emptyInstrument = makeEmptyInstrument();
 
 OPN2::OPN2() :
     m_regLFOSetup(0),
@@ -251,8 +268,11 @@ void OPN2::noteOff(size_t c)
     writeRegI(chip, 0, 0x28, g_noteChannelsMap[ch4]);
 }
 
-void OPN2::noteOn(size_t c, double hertz) // Hertz range: 0..131071
+void OPN2::noteOn(size_t c, double tone)
 {
+    // Hertz range: 0..131071
+    double hertz = s_commonFreq(tone);
+
     if(hertz < 0) // Avoid infinite loop
         return;
 
@@ -273,7 +293,7 @@ void OPN2::noteOn(size_t c, double hertz) // Hertz range: 0..131071
     getOpnChannel(c, chip, port, cc);
 
     uint32_t octave = 0, ftone = 0, mul_offset = 0;
-    const opnInstData &adli = m_insCache[c];
+    const OpnTimbre &adli = m_insCache[c];
 
     //Basic range until max of octaves reaching
     while((hertz >= 1023.75) && (octave < 0x3800))
@@ -326,7 +346,7 @@ void OPN2::touchNote(size_t c,
     uint32_t    cc;
     getOpnChannel(c, chip, port, cc);
 
-    const opnInstData &adli = m_insCache[c];
+    const OpnTimbre &adli = m_insCache[c];
 
     uint_fast32_t volume = 0;
 
@@ -453,7 +473,7 @@ void OPN2::touchNote(size_t c,
     //   63 + chanvol * (instrvol / 63.0 - 1)
 }
 
-void OPN2::setPatch(size_t c, const opnInstData &instrument)
+void OPN2::setPatch(size_t c, const OpnTimbre &instrument)
 {
     size_t      chip;
     uint8_t     port;
@@ -477,7 +497,7 @@ void OPN2::setPan(size_t c, uint8_t value)
     uint8_t     port;
     uint32_t    cc;
     getOpnChannel(c, chip, port, cc);
-    const opnInstData &adli = m_insCache[c];
+    const OpnTimbre &adli = m_insCache[c];
     uint8_t val = 0;
     if(m_softPanning)
     {
@@ -659,7 +679,7 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
 
     m_chipFamily = family;
     m_numChannels = m_numChips * 6;
-    m_insCache.resize(m_numChannels,   m_emptyInstrument.opn[0]);
+    m_insCache.resize(m_numChannels,   m_emptyInstrument.op[0]);
     m_regLFOSens.resize(m_numChannels,    0);
 
     uint8_t regLFOSetup = (m_lfoEnable ? 8 : 0) | (m_lfoFrequency & 7);

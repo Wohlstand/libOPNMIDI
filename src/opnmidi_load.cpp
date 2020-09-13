@@ -43,12 +43,12 @@ bool OPNMIDIplay::LoadBank(const void *data, size_t size)
     return LoadBank(file);
 }
 
-void cvt_OPNI_to_FMIns(opnInstMeta2 &ins, const OPN2_Instrument &in)
+void cvt_OPNI_to_FMIns(OpnInstMeta &ins, const OPN2_Instrument &in)
 {
     return cvt_generic_to_FMIns(ins, in);
 }
 
-void cvt_FMIns_to_OPNI(OPN2_Instrument &ins, const opnInstMeta2 &in)
+void cvt_FMIns_to_OPNI(OPN2_Instrument &ins, const OpnInstMeta &in)
 {
     cvt_FMIns_to_generic(ins, in);
 }
@@ -133,8 +133,8 @@ bool OPNMIDIplay::LoadBank(FileAndMemReader &fr)
             Synth::Bank &bank = synth.m_insBanks[bankno];
             for(int j = 0; j < 128; j++)
             {
-                opnInstMeta2 &ins = bank.ins[j];
-                std::memset(&ins, 0, sizeof(opnInstMeta2));
+                OpnInstMeta &ins = bank.ins[j];
+                std::memset(&ins, 0, sizeof(OpnInstMeta));
                 WOPNInstrument &inIns = slots_src_ins[ss][i].ins[j];
                 cvt_generic_to_FMIns(ins, inIns);
             }

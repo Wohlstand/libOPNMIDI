@@ -292,7 +292,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
         if(!i.is_end())
         {
             MIDIchannel::NoteInfo &ni = i->value;
-            const int veloffset = ni.ains->midi_velocity_offset;
+            const int veloffset = ni.ains->midiVelocityOffset;
             velocity = static_cast<uint8_t>(std::min(127, std::max(1, static_cast<int>(velocity) + veloffset)));
             ni.vol = velocity;
             noteUpdate(channel, i, Upd_Volume);
@@ -350,7 +350,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     if(isPercussion)
         bank += Synth::PercussionTag;
 
-    const opnInstMeta2 *ains = &Synth::m_emptyInstrument;
+    const OpnInstMeta *ains = &Synth::m_emptyInstrument;
 
     //Set bank bank
     const Synth::Bank *bnk = NULL;
@@ -373,7 +373,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
         }
     }
     //Or fall back to first bank
-    if(ains->flags & opnInstMeta::Flag_NoSound)
+    if(ains->flags & OpnInstMeta::Flag_NoSound)
     {
         Synth::BankMap::iterator b = synth.m_insBanks.find(bank & Synth::PercussionTag);
         if(b != synth.m_insBanks.end())
@@ -383,13 +383,13 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
             ains = &bnk->ins[midiins];
     }
 
-    const int veloffset = ains->midi_velocity_offset;
+    const int veloffset = ains->midiVelocityOffset;
     velocity = static_cast<uint8_t>(std::min(127, std::max(1, static_cast<int>(velocity) + veloffset)));
 
     int32_t tone = note;
     if(!isPercussion && (bank > 0)) // For non-zero banks
     {
-        if(ains->flags & opnInstMeta::Flag_NoSound)
+        if(ains->flags & OpnInstMeta::Flag_NoSound)
         {
             if(hooks.onDebugMessage)
             {
@@ -404,25 +404,25 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
         }
     }
 
-    if(ains->tone)
+    if(ains->drumTone)
     {
         /*if(ains.tone < 20)
             tone += ains.tone;
         else*/
-        if(ains->tone < 128)
-            tone = ains->tone;
+        if(ains->drumTone < 128)
+            tone = ains->drumTone;
         else
-            tone -= ains->tone - 128;
+            tone -= ains->drumTone - 128;
     }
 
     MIDIchannel::NoteInfo::Phys voices[MIDIchannel::NoteInfo::MaxNumPhysChans] = {
-        {0, ains->opn[0], /*false*/},
-        {0, ains->opn[1], /*pseudo_4op*/},
+        {0, ains->op[0], /*false*/},
+        {0, ains->op[1], /*pseudo_4op*/},
     };
     //bool pseudo_4op = ains.flags & opnInstMeta::Flag_Pseudo8op;
     //if((opn.AdlPercussionMode == 1) && PercussionMap[midiins & 0xFF]) i[1] = i[0];
 
-    bool isBlankNote = (ains->flags & opnInstMeta::Flag_NoSound) != 0;
+    bool isBlankNote = (ains->flags & OpnInstMeta::Flag_NoSound) != 0;
 
     if(hooks.onDebugMessage)
     {
@@ -1075,7 +1075,7 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
     const double currentTone    = info.currentTone;
     const uint8_t vol     = info.vol;
     const size_t midiins = info.midiins;
-    const opnInstMeta2 &ains = *info.ains;
+    const OpnInstMeta &ains = *info.ains;
     OpnChannel::Location my_loc;
     my_loc.MidCh = static_cast<uint16_t>(midCh);
     my_loc.note  = info.note;
@@ -1103,8 +1103,8 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
                 OpnChannel::LocationData &d = ci->value;
                 d.sustained = OpnChannel::LocationData::Sustain_None;
                 d.vibdelay_us  = 0;
-                d.fixed_sustain = (ains.ms_sound_kon == static_cast<uint16_t>(opnNoteOnMaxTime));
-                d.kon_time_until_neglible_us = 1000 * ains.ms_sound_kon;
+                d.fixed_sustain = (ains.soundKeyOnMs == static_cast<uint16_t>(opnNoteOnMaxTime));
+                d.kon_time_until_neglible_us = 1000 * ains.soundKeyOnMs;
                 d.ins       = ins;
             }
         }
@@ -1140,7 +1140,7 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
                     }
                     else
                     {
-                        m_chipChannels[c].koff_time_until_neglible_us = 1000 * int64_t(ains.ms_sound_koff);
+                        m_chipChannels[c].koff_time_until_neglible_us = 1000 * int64_t(ains.soundKeyOffMs);
                     }
                 }
             }
@@ -1194,20 +1194,22 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
             {
                 MIDIchannel &chan = m_midiChannels[midCh];
                 double midibend = chan.bend * chan.bendsense;
-                double bend = midibend + ins.ains.finetune;
+                double bend = midibend + ins.ains.noteOffset;
                 double phase = 0.0;
                 uint8_t vibrato = std::max(chan.vibrato, chan.aftertouch);
+
                 vibrato = std::max(vibrato, info.vibrato);
 
-                if((ains.flags & opnInstMeta::Flag_Pseudo8op) && ins.ains == ains.opn[1])
+                if((ains.flags & OpnInstMeta::Flag_Pseudo8op) && ins.ains == ains.op[1])
                 {
-                    phase = ains.fine_tune;//0.125; // Detune the note slightly (this is what Doom does)
+                    phase = ains.voice2_fine_tune;
                 }
 
                 if(vibrato && (d.is_end() || d->value.vibdelay_us >= chan.vibdelay_us))
                     bend += static_cast<double>(vibrato) * chan.vibdepth * std::sin(chan.vibpos);
 
-                synth.noteOn(c, std::exp(0.057762265 * (currentTone + bend + phase)));
+                synth.noteOn(c, currentTone + bend + phase);
+
                 if(hooks.onNote)
                     hooks.onNote(hooks.onNote_userData, c, noteTone, static_cast<int>(midiins), vol, midibend);
             }

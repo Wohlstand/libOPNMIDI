@@ -76,47 +76,46 @@ struct OPN_Operator
 };
 OPNDATA_BYTE_COMPARABLE(struct OPN_Operator)
 
-struct opnInstData
+struct OpnTimbre
 {
     //! Operators prepared for sending to OPL chip emulator
     OPN_Operator    OPS[4];
+    //! Feedback / algorithm
     uint8_t         fbalg;
+    //! LFO sensitivity
     uint8_t         lfosens;
-    //! Note offset
-    int16_t         finetune;
+    //! Semi-tone offset
+    int16_t         noteOffset;
 };
-OPNDATA_BYTE_COMPARABLE(struct opnInstData)
-
-struct opnInstMeta
-{
-    enum { Flag_Pseudo8op = 0x01, Flag_NoSound = 0x02 };
-    uint16_t opnno1, opnno2;
-    uint8_t  tone;
-    uint8_t  flags;
-    uint16_t ms_sound_kon;  // Number of milliseconds it produces sound;
-    uint16_t ms_sound_koff;
-    double   fine_tune;
-};
-OPNDATA_BYTE_COMPARABLE(struct opnInstMeta)
+OPNDATA_BYTE_COMPARABLE(struct OpnTimbre)
 
 /**
  * @brief Instrument data with operators included
  */
-struct opnInstMeta2
+struct OpnInstMeta
 {
-    opnInstData opn[2];
-    uint8_t  tone;
+    enum
+    {
+        Flag_Pseudo8op = 0x01,
+        Flag_NoSound = 0x02
+    };
+
+    //! Operator data
+    OpnTimbre op[2];
+    //! Fixed note for drum instruments
+    uint8_t  drumTone;
+    //! Instrument flags
     uint8_t  flags;
-    uint16_t ms_sound_kon;  // Number of milliseconds it produces sound;
-    uint16_t ms_sound_koff;
-    double   fine_tune;
-    int8_t   midi_velocity_offset;
-#if 0
-    opnInstMeta2() {}
-    explicit opnInstMeta2(const opnInstMeta &d);
-#endif
+    //! Number of milliseconds it produces sound while key on
+    uint16_t soundKeyOnMs;
+    //! Number of milliseconds it produces sound while releasing after key off
+    uint16_t soundKeyOffMs;
+    //! MIDI velocity offset
+    int8_t   midiVelocityOffset;
+    //! Second voice detune
+    double   voice2_fine_tune;
 };
-OPNDATA_BYTE_COMPARABLE(struct opnInstMeta2)
+OPNDATA_BYTE_COMPARABLE(struct OpnInstMeta)
 
 #undef OPNDATA_BYTE_COMPARABLE
 #pragma pack(pop)
@@ -132,28 +131,14 @@ struct OpnBankSetup
     int chipType;
 };
 
-#if 0
-/**
- * @brief Conversion of storage formats
- */
-inline opnInstMeta2::opnInstMeta2(const opnInstMeta &d)
-    : tone(d.tone), flags(d.flags),
-      ms_sound_kon(d.ms_sound_kon), ms_sound_koff(d.ms_sound_koff),
-      fine_tune(d.fine_tune), midi_velocity_offset(d.midi_velocity_offset)
-{
-    opn[0] = ::opn[d.opnno1];
-    opn[1] = ::opn[d.opnno2];
-}
-#endif
-
 /**
  * @brief Convert external instrument to internal instrument
  */
-void cvt_OPNI_to_FMIns(opnInstMeta2 &dst, const struct OPN2_Instrument &src);
+void cvt_OPNI_to_FMIns(OpnInstMeta &dst, const struct OPN2_Instrument &src);
 
 /**
  * @brief Convert internal instrument to external instrument
  */
-void cvt_FMIns_to_OPNI(struct OPN2_Instrument &dst, const opnInstMeta2 &src);
+void cvt_FMIns_to_OPNI(struct OPN2_Instrument &dst, const OpnInstMeta &src);
 
 #endif  // OPNMIDI_OPNBANK_H

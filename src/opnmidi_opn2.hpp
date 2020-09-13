@@ -57,7 +57,7 @@ public:
 #endif
 private:
     //! Cached patch data, needed by Touch()
-    std::vector<opnInstData>    m_insCache;
+    std::vector<OpnTimbre>    m_insCache;
     //! Cached per-channel LFO sensitivity flags
     std::vector<uint8_t>        m_regLFOSens;
     //! LFO setup registry cache
@@ -70,7 +70,7 @@ public:
     struct Bank
     {
         //! MIDI Bank instruments
-        opnInstMeta2 ins[128];
+        OpnInstMeta ins[128];
     };
     typedef BasicBankMap<Bank> BankMap;
     //! MIDI bank instruments data
@@ -80,7 +80,7 @@ public:
 
 public:
     //! Blank instrument template
-    static const opnInstMeta2 m_emptyInstrument;
+    static const OpnInstMeta m_emptyInstrument;
 
     //! Total number of running concurrent emulated chips
     uint32_t m_numChips;
@@ -193,9 +193,9 @@ public:
     /**
      * @brief On the note in specified chip channel with specified frequency of the tone
      * @param c Channel of chip (Emulated chip choosing by next formula: [c = ch + (chipId * 23)])
-     * @param hertz Frequency of the tone in hertzes
+     * @param tone The tone to play (integer part - MIDI halftone, decimal part - relative bend offset)
      */
-    void noteOn(size_t c, double hertz);
+    void noteOn(size_t c, double tone);
 
     /**
      * @brief Change setup of instrument in specified chip channel
@@ -214,7 +214,7 @@ public:
      * @param c Channel of chip (Emulated chip choosing by next formula: [c = ch + (chipId * 23)])
      * @param instrument Instrument data to set into the chip channel
      */
-    void setPatch(size_t c, const opnInstData &instrument);
+    void setPatch(size_t c, const OpnTimbre &instrument);
 
     /**
      * @brief Set panpot position

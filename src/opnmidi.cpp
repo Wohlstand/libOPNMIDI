@@ -160,7 +160,7 @@ OPNMIDI_EXPORT int opn2_getBank(OPN2_MIDIPlayer *device, const OPN2_BankId *idp,
         value.first = idnumber;
         memset(&value.second, 0, sizeof(value.second));
         for (unsigned i = 0; i < 128; ++i)
-            value.second.ins[i].flags = opnInstMeta::Flag_NoSound;
+            value.second.ins[i].flags = OpnInstMeta::Flag_NoSound;
 
         std::pair<Synth::BankMap::iterator, bool> ir;
         if((flags & OPNMIDI_Bank_CreateRt) == OPNMIDI_Bank_CreateRt)
