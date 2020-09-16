@@ -1,5 +1,5 @@
 # libOPNMIDI
-libOPNMIDI is a free Software MIDI synthesizer library with OPN2 (YM2612) emulation
+libOPNMIDI is a free Software MIDI synthesizer library with OPN2 (YM2612) and OPNA (YM2608) emulation.
 
 OPNMIDI Library: Copyright (c) 2017-2020 Vitaly Novichkov <admin@wohlnet.ru>
 
@@ -20,9 +20,10 @@ Library is based on core of the [libADLMIDI](https://github.com/Wohlstand/libADL
 
 # Key features
 * OPN2 emulation
+* Rudimentary OPNA emulation 
 * Customizable bank of FM patches (You have to use the [bank editor](https://github.com/Wohlstand/OPN2BankEditor) to create own soundbank)
 * Stereo sound
-* Number of simulated OPN2 chips can be specified as 1-100 (maximum channels 600!)
+* Number of simulated OPN2/OPNA chips can be specified as 1-100 (maximum 600 channels!)
 * Pan (binary panning, i.e. left/right side on/off)
 * Pitch-bender with adjustable range
 * Vibrato that responds to RPN/NRPN parameters
@@ -66,10 +67,16 @@ The library is licensed under in it's parts LGPL 2.1+, GPL v2+, GPL v3+, and MIT
 * **CMAKE_BUILD_TYPE** - Build types: **Debug** or **Release**
 * **WITH_MIDIPLAY** - (ON/OFF, default OFF) Build demo MIDI player (Requires SDL2 and also pthread on Windows with MinGW)
 * **WITH_VLC_PLUGIN** - (ON/OFF, default OFF) Compile VLC plugin. For now, works on Linux and VLC version 2.2.2. Support for newer VLC versions and other platforms comming soon!
+* **WITH_MIDI2VGM** - (ON/OFF, default OFF) Build MIDI to VGM converter tool.
+* **WITH_DAC_UTIL** - (ON/OFF, default OFF) Build YM2612 CH6 DAC testing utility.
 * **WITH_MIDI_SEQUENCER** - (ON/OFF, default ON) Enable built-in MIDI sequencer to play loaded MIDI files. When you will disable MIDI sequencer, Real-Time functions only will work. Use this option when you are making MIDI plugin or real-time MIDI driver.
 * **USE_MAME_EMULATOR** - (ON/OFF, default ON) Enable support for MAME YM2612 emulator. Well-accurate and fast on slow devices.
 * **USE_NUKED_EMULATOR** - (ON/OFF, default ON) Enable support for Nuked OPN2 emulator. Very accurate, however, requires a very powerful CPU. *Is not recommended for mobile devices!*.
 * **USE_GENS_EMULATOR** - (ON/OFF, default ON) Enable support for GENS 2.10 emulator. Very outdated and inaccurate, but fastest.
+* **USE_GX_EMULATOR** - (ON/OFF, default OFF) Enable support for Genesis Plus GX emulator. (experimental!)
+* **USE_NP2_EMULATOR** - (ON/OFF, default ON) Enable support for Neko Project 2 YM2608 emulator. Semi-accurate, but fast on slow devices.
+* **USE_MAME_2608_EMULATOR** - (ON/OFF, default ON) Enable support for MAME YM2608 emulator. Well-accurate and fast on slow devices. 
+* **WITH_HQ_RESAMPLER** - (ON/OFF, default OFF) Build with support for high quality resampling (requires zita-resampler to be installed.
 * **WITH_MUS_SUPPORT** - (ON/OFF, default ON) Enable support for DMX MUS format in built-in MIDI sequencer.
 * **WITH_XMI_SUPPORT** - (ON/OFF, default ON) Enable support for AIL XMI format in built-in MIDI sequencer.
 * **WITH_UNIT_TESTS** - (ON/OFF, default OFF) Also compile unit-tests of internal features.
@@ -119,12 +126,16 @@ You need to make in the any IDE a library project and put into it next files
 * chips/mame_opn2.h  - Header of emulator frontent over MAME YM2612 emulator
 * chips/mame_opn2.cpp  - Code of emulator frontent over MAME YM2612 emulator
 * chips/mame/mame_ym2612fm.h  - MAME YM2612 Emulation header
-* chips/mame/mame_ym2612fm.cpp   - Code of MAME YM2612 emulator by Stéphane Dallongeville, improved by Shay Green
+* chips/mame/mame_ym2612fm.cpp   - Code of MAME YM2612 emulator by Jarek Burczyński and Tatsuyuki Satoh, improved by Eke-Eke
 
 * chips/nuked_opn2.h  - Header of emulator frontent over Nuked OPN2 emulator
 * chips/nuked_opn2.cpp  - Code of emulator frontent over Nuked OPN2 emulator
 * chips/nuked/ym3438.h  - Nuked OPN2 Emulation header
-* chips/nuked/ym3438.cpp   - Code of Nuked OPN2 emulator by Stéphane Dallongeville, improved by Shay Green
+* chips/nuked/ym3438.cpp   - Code of Nuked OPN2 emulator by Alexey Khokholov
+
+* chips/np2/*	-  Code of Neko Project 2 YM2608 emulator by cisc.
+
+* chips/mamefm/* - Code of MAME YM2608 emulator by Jarek Burczynski and Tatsuyuki Satoh.
 
 * wopn/*        - WOPN bank format library
 
@@ -138,7 +149,7 @@ To remove MIDI Sequencer, define `OPNMIDI_DISABLE_MIDI_SEQUENCER` macro and remo
 * midi_sequencer.hpp	- MIDI Sequencer C++ declaration
 * midi_sequencer_impl.hpp	- MIDI Sequencer C++ implementation (must be once included into one of CPP together with interfaces initializations)
 
-**Important**: Please use GENS emulator for on mobile or any non-power devices because it requires very small CPU power. Nuked OPN2 emulator is very accurate (compared to real OPN2 chip), however, it requires a VERY POWERFUL device even for a single chip emulation and is a high probability that your device will lag and playback will be dirty and choppy.
+**Important**: Please use GENS emulator only on mobile or any non-power devices because it requires very small CPU power. Nuked OPN2 emulator is very accurate (compared to real OPN2 chip), however, it requires a VERY POWERFUL device even for a single chip emulation and is a high probability that your device will lag and playback will be dirty and choppy. Use of MAME OPN2 is recommended in such cases.
 
 # Working demos
 
@@ -147,7 +158,7 @@ To remove MIDI Sequencer, define `OPNMIDI_DISABLE_MIDI_SEQUENCER` macro and remo
 
 # Changelog
 ## 1.4.1   <dev>
- * Added support for OPNA chip with Neko Project II Kai YM2602 emulator usage (Thanks to [Jean Pierre Cimalando](https://github.com/jpcima) for a work!)
+ * Added support for OPNA chip with Neko Project II Kai YM2608 emulator usage (Thanks to [Jean Pierre Cimalando](https://github.com/jpcima) for a work!)
  * Added VGM file dumper which allows to output OPN2 commands into VGM file. (A new MIDI to VGM tool is now created with basing on libOPNMIDI)
  * Fixed an incorrect work of CC-121 (See https://github.com/Wohlstand/libADLMIDI/issues/227 for details)
 
