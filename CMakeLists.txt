@@ -134,6 +134,10 @@ option(WITH_DAC_UTIL        "Build also OPN2 DAC testing utility" OFF)
 
 option(WITH_EXTRA_BANKS     "Install extra bank files" OFF)
 
+if(WIN32)
+    option(WITH_WINMMDRV    "Build a WinMM MIDI driver" OFF)
+endif()
+
 set(libOPNMIDI_INSTALLS)
 
 include_directories(${libOPNMIDI_SOURCE_DIR}/include)
@@ -346,6 +350,10 @@ if(WITH_DAC_UTIL)
     add_subdirectory(utils/dac_test)
 endif()
 
+if(WIN32 AND WITH_WINMMDRV)
+    add_subdirectory(utils/winmm_drv)
+endif()
+
 if(WITH_HQ_RESAMPLER)
     find_library(ZITA_RESAMPLER_LIBRARY "zita-resampler" REQUIRED)
     add_definitions(-DOPNMIDI_ENABLE_HQ_RESAMPLER)
@@ -431,6 +439,9 @@ message("===== Utils and extras =====")
 message("WITH_MIDIPLAY            = ${WITH_MIDIPLAY}")
 message("WITH_VLC_PLUGIN          = ${WITH_VLC_PLUGIN}")
 message("WITH_DAC_UTIL            = ${WITH_DAC_UTIL}")
+if(WIN32)
+    message("WITH_WINMMDRV            = ${WITH_WINMMDRV}")
+endif()
 if(NOT APPLE)
     message("WITH_EXTRA_BANKS         = ${WITH_EXTRA_BANKS}")
 endif()

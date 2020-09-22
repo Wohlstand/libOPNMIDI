@@ -66,7 +66,10 @@ The library is licensed under in it's parts LGPL 2.1+, GPL v2+, GPL v3+, and MIT
 * **CMAKE_PREFIX_PATH** - destination folder where libOPNMIDI will be installed. On Linux it is /usr/local/ by default.
 * **CMAKE_BUILD_TYPE** - Build types: **Debug** or **Release**
 * **WITH_MIDIPLAY** - (ON/OFF, default OFF) Build demo MIDI player (Requires SDL2 and also pthread on Windows with MinGW)
-* **WITH_VLC_PLUGIN** - (ON/OFF, default OFF) Compile VLC plugin. For now, works on Linux and VLC version 2.2.2. Support for newer VLC versions and other platforms comming soon!
+* **WITH_VLC_PLUGIN** - (ON/OFF, default OFF) Compile VLC plugin. For now, works on Linux and VLC. Support for other platforms comming soon!
+* **WITH_WINMMDRV** - (ON/OFF, default OFF) (Windows platform only) Compile the WinMM MIDI driver to use libOPNMIDI as a system MIDI device.
+  * **WITH_WINMMDRV_PTHREADS** - (ON/OFF, default ON) Link libwinpthreads statically (when using pthread-based builds).
+  * **WITH_WINMMDRV_MINGWEX** - (ON/OFF, default OFF) Link libmingwex statically (when using vanilla MinGW builds). Useful for targetting to pre-XP Windows versions.
 * **WITH_MIDI2VGM** - (ON/OFF, default OFF) Build MIDI to VGM converter tool.
 * **WITH_DAC_UTIL** - (ON/OFF, default OFF) Build YM2612 CH6 DAC testing utility.
 * **WITH_MIDI_SEQUENCER** - (ON/OFF, default ON) Enable built-in MIDI sequencer to play loaded MIDI files. When you will disable MIDI sequencer, Real-Time functions only will work. Use this option when you are making MIDI plugin or real-time MIDI driver.
