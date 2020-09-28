@@ -20,9 +20,9 @@ __inline int c99_vsnprintf(char *outBuf, size_t size, const char *format, va_lis
 {
     int count = -1;
 
-    if (size != 0)
+    if(size != 0)
         count = _vsnprintf_s(outBuf, size, _TRUNCATE, format, ap);
-    if (count == -1)
+    if(count == -1)
         count = _vscprintf(format, ap);
 
     return count;
@@ -73,7 +73,7 @@ static MutexType g_audioBuffer_lock;
 static void SDL_AudioCallbackX(void *, uint8_t *stream, int len)
 {
     audio_lock();
-    short *target = reinterpret_cast<int16_t*>(stream);
+    short *target = reinterpret_cast<int16_t *>(stream);
     g_audioBuffer_lock.Lock();
     size_t ate = size_t(len) / 2; // number of shorts
     if(ate > g_audioBuffer.size()) ate = g_audioBuffer.size();
@@ -82,6 +82,44 @@ static void SDL_AudioCallbackX(void *, uint8_t *stream, int len)
     g_audioBuffer.erase(g_audioBuffer.begin(), g_audioBuffer.begin() + AudioBuff::difference_type(ate));
     g_audioBuffer_lock.Unlock();
     audio_unlock();
+}
+
+const char* audio_format_to_str(int format, int is_msb)
+{
+    switch(format)
+    {
+    case OPNMIDI_SampleType_S8:
+        return "S8";
+    case OPNMIDI_SampleType_U8:
+        return "U8";
+    case OPNMIDI_SampleType_S16:
+        return is_msb ? "S16MSB" : "S16";
+    case OPNMIDI_SampleType_U16:
+        return is_msb ? "U16MSB" : "U16";
+    case OPNMIDI_SampleType_S32:
+        return is_msb ? "S32MSB" : "S32";
+    case OPNMIDI_SampleType_F32:
+        return is_msb ? "F32MSB" : "F32";
+    }
+    return "UNK";
+}
+
+const char* volume_model_to_str(int vm)
+{
+    switch(vm)
+    {
+    default:
+    case OPNMIDI_VolumeModel_Generic:
+        return "Generic";
+    case OPNMIDI_VolumeModel_NativeOPN2:
+        return "Native OPN2";
+    case OPNMIDI_VolumeModel_DMX:
+        return "DMX";
+    case OPNMIDI_VolumeModel_APOGEE:
+        return "Apogee Sound System";
+    case OPNMIDI_VolumeModel_9X:
+        return "9X";
+    }
 }
 
 static void printError(const char *err)
@@ -93,13 +131,18 @@ static void printError(const char *err)
 static int stop = 0;
 static void sighandler(int dum)
 {
-    if((dum == SIGINT)
-        || (dum == SIGTERM)
-    #ifndef _WIN32
-        || (dum == SIGHUP)
-    #endif
-    )
+    switch(dum)
+    {
+    case SIGINT:
+    case SIGTERM:
+#ifndef _WIN32
+    case SIGHUP:
+#endif
         stop = 1;
+        break;
+    default:
+        break;
+    }
 }
 
 
@@ -134,7 +177,7 @@ static inline void secondsToHMSM(double seconds_full, char *hmsm_buffer, size_t 
     unsigned int minutes = static_cast<unsigned int>(std::fmod(seconds_full / 60, 60.0));
     unsigned int hours   = static_cast<unsigned int>(seconds_full / 3600);
     std::memset(hmsm_buffer, 0, hmsm_buffer_size);
-    if (hours > 0)
+    if(hours > 0)
         snprintf(hmsm_buffer, hmsm_buffer_size, "%02u:%02u:%02u,%03u", hours, minutes, seconds, milliseconds);
     else
         snprintf(hmsm_buffer, hmsm_buffer_size, "%02u:%02u,%03u", minutes, seconds, milliseconds);
@@ -159,7 +202,7 @@ static std::string findDefaultBank()
         "../share/sounds/wopn/" DEFAULT_BANK_NAME,
         "../share/opnmidiplay/" DEFAULT_BANK_NAME,
     };
-    const size_t paths_count = sizeof(paths) / sizeof(const char*);
+    const size_t paths_count = sizeof(paths) / sizeof(const char *);
     std::string ret;
 
     for(size_t i = 0; i < paths_count; i++)
@@ -180,8 +223,8 @@ static std::string findDefaultBank()
 int main(int argc, char **argv)
 {
     std::fprintf(stdout, "==========================================\n"
-                         "         libOPNMIDI demo utility\n"
-                         "==========================================\n\n");
+                 "         libOPNMIDI demo utility\n"
+                 "==========================================\n\n");
     std::fflush(stdout);
 
     if(argc < 2 || std::string(argv[1]) == "--help" || std::string(argv[1]) == "-h")
@@ -194,10 +237,14 @@ int main(int argc, char **argv)
             " <bankfile>.wopn   Path to WOPN bank file\n"
             " <midifilename>    Path to music file to play\n"
             "\n"
-            //" -p Enables adlib percussion instrument mode\n"
-            //" -t Enables tremolo amplification mode\n"
-            //" -v Enables vibrato amplification mode\n"
             " -s                Enables scaling of modulator volumes\n"
+            " -vm <num> Chooses one of volume models: \n"
+            "    0 auto (default)\n"
+            "    1 Generic\n"
+            "    2 Native OPN2\n"
+            "    3 DMX\n"
+            "    4 Apogee Sound System\n"
+            "    5 9x\n"
             " -frb              Enables full-ranged CC74 XG Brightness controller\n"
             " -nl               Quit without looping\n"
             " -w                Write WAV file rather than playing\n"
@@ -248,6 +295,7 @@ int main(int argc, char **argv)
     int loopEnabled = 1;
     bool fullPanEnabled = false;
     int emulator = OPNMIDI_EMU_MAME;
+    int volumeModel = OPNMIDI_VolumeModel_AUTO;
     size_t soloTrack = ~static_cast<size_t>(0u);
     int chipsCount = -1;//Auto-choose chips count by emulator (Nuked 3, others 8)
 
@@ -281,6 +329,15 @@ int main(int argc, char **argv)
             fullPanEnabled = true;
         else if(!std::strcmp("-s", argv[arg]))
             scaleModulators = true;
+        else if(!std::strcmp("-vm", argv[arg]))
+        {
+            if(arg + 1 >= argc)
+            {
+                printError("The option -vm requires an argument!\n");
+                return 1;
+            }
+            volumeModel = static_cast<int>(std::strtol(argv[++arg], NULL, 10));
+        }
         else if(!std::strcmp("--chips", argv[arg]))
         {
             if(arg + 1 >= argc)
@@ -288,7 +345,7 @@ int main(int argc, char **argv)
                 printError("The option --chips requires an argument!\n");
                 return 1;
             }
-            chipsCount = static_cast<int>(std::strtoul(argv[++arg], NULL, 0));
+            chipsCount = static_cast<int>(std::strtoul(argv[++arg], NULL, 10));
         }
         else if(!std::strcmp("--solo", argv[arg]))
         {
@@ -317,7 +374,7 @@ int main(int argc, char **argv)
         {
             sampleRate = obtained.freq;
             std::fprintf(stderr, " - Audio wanted (samples=%u,rate=%u,channels=%u);\n"
-                                 " - Audio obtained (samples=%u,rate=%u,channels=%u)\n",
+                         " - Audio obtained (samples=%u,rate=%u,channels=%u)\n",
                          spec.samples,    spec.freq,    spec.channels,
                          obtained.samples, obtained.freq, obtained.channels);
         }
@@ -340,8 +397,7 @@ int main(int argc, char **argv)
         }
         musPath = argv[arg];
     }
-    else
-    if(arg > argc - 1)
+    else if(arg > argc - 1)
     {
         printError("Missing music file path!\n");
         return 2;
@@ -366,11 +422,11 @@ int main(int argc, char **argv)
         opn2_setSoftPanEnabled(myDevice, 1);
     opn2_setLoopEnabled(myDevice, recordWave ? 0 : loopEnabled);
     opn2_setVolumeRangeModel(myDevice, OPNMIDI_VolumeModel_Generic);
-    #ifdef DEBUG_TRACE_ALL_EVENTS
+#ifdef DEBUG_TRACE_ALL_EVENTS
     //Hook all MIDI events are ticking while generating an output buffer
     if(!recordWave)
         opn2_setRawEventHook(myDevice, debugPrintEvent, NULL);
-    #endif
+#endif
 
     if(opn2_switchEmulator(myDevice, emulator) != 0)
     {
@@ -400,6 +456,9 @@ int main(int argc, char **argv)
         chipsCount = 8;
     opn2_setNumChips(myDevice, chipsCount);
 
+    if(volumeModel != OPNMIDI_VolumeModel_AUTO)
+        opn2_setVolumeRangeModel(myDevice, volumeModel);
+
     if(opn2_openFile(myDevice, musPath.c_str()) != 0)
     {
         printError(opn2_errorInfo(myDevice));
@@ -408,6 +467,7 @@ int main(int argc, char **argv)
 
     std::fprintf(stdout, " - Number of chips %d\n", opn2_getNumChipsObtained(myDevice));
     std::fprintf(stdout, " - Track count: %lu\n", static_cast<unsigned long>(opn2_trackCount(myDevice)));
+    std::fprintf(stdout, " - Volume model: %s\n", volume_model_to_str(opn2_getVolumeRangeModel(myDevice)));
 
     if(soloTrack != ~static_cast<size_t>(0u))
     {
@@ -420,9 +480,9 @@ int main(int argc, char **argv)
 
     signal(SIGINT, sighandler);
     signal(SIGTERM, sighandler);
-    #ifndef _WIN32
+#ifndef _WIN32
     signal(SIGHUP, sighandler);
-    #endif
+#endif
 
     double total        = opn2_totalTimeLength(myDevice);
     double loopStart    = opn2_loopStartTime(myDevice);
@@ -447,15 +507,20 @@ int main(int argc, char **argv)
 
         audio_start();
 
-        #ifdef DEBUG_SEEKING_TEST
+#ifdef DEBUG_SEEKING_TEST
         int delayBeforeSeek = 50;
         std::fprintf(stdout, "DEBUG: === Random position set test is active! ===\n");
         std::fflush(stdout);
-        #endif
+#endif
 
         short buff[4096];
         char posHMS[25];
         uint64_t milliseconds_prev = ~0u;
+        int printsCounter = 0;
+        int printsCounterPeriod = 1;
+
+        std::fprintf(stdout, "                                               \r");
+
         while(!stop)
         {
             size_t got = static_cast<size_t>(opn2_play(myDevice, 4096, buff));
@@ -476,11 +541,16 @@ int main(int argc, char **argv)
             uint64_t milliseconds = static_cast<uint64_t>(time_pos * 1000.0);
             if(milliseconds != milliseconds_prev)
             {
-                secondsToHMSM(time_pos, posHMS, 25);
-                std::fprintf(stdout, "                                               \r");
-                std::fprintf(stdout, "Time position: %s / %s\r", posHMS, totalHMS);
-                std::fflush(stdout);
-                milliseconds_prev = milliseconds;
+                if(printsCounter >= printsCounterPeriod)
+                {
+                    printsCounter = -1;
+                    secondsToHMSM(time_pos, posHMS, 25);
+                    std::fprintf(stdout, "                                               \r");
+                    std::fprintf(stdout, "Time position: %s / %s\r", posHMS, totalHMS);
+                    std::fflush(stdout);
+                    milliseconds_prev = milliseconds;
+                }
+                printsCounter++;
             }
 #endif
 
@@ -493,15 +563,13 @@ int main(int argc, char **argv)
 
             const AudioOutputSpec &cur_spec = obtained;
             while(!stop && (g_audioBuffer.size() > static_cast<size_t>(cur_spec.samples + (cur_spec.freq * 2) * OurHeadRoomLength)))
-            {
                 audio_delay(1);
-            }
 
 #ifdef DEBUG_SEEKING_TEST
             if(delayBeforeSeek-- <= 0)
             {
                 delayBeforeSeek = rand() % 50;
-                double seekTo = double((rand() % int(opn2_totalTimeLength(myDevice)) - delayBeforeSeek - 1 ));
+                double seekTo = double((rand() % int(opn2_totalTimeLength(myDevice)) - delayBeforeSeek - 1));
                 opn2_positionSeek(myDevice, seekTo);
             }
 #endif
