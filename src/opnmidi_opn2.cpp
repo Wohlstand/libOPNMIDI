@@ -400,7 +400,7 @@ void OPN2::touchNote(size_t c,
         if(volume > minVolume)
         {
             double lv = std::log(static_cast<double>(volume));
-            volume = static_cast<uint_fast32_t>(lv * c1 - c2) * 2.0;
+            volume = static_cast<uint_fast32_t>(lv * c1 - c2) * 2;
         }
         else
             volume = 0;
