@@ -1,0 +1,4 @@
+LIBRARY      opnmidisynth
+EXPORTS
+    DriverProc
+    modMessage
