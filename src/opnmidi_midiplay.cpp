@@ -24,7 +24,9 @@
 #include "opnmidi_midiplay.hpp"
 #include "opnmidi_opn2.hpp"
 #include "opnmidi_private.hpp"
+#ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
 #include "midi_sequencer.hpp"
+#endif
 #include "chips/opn_chip_base.h"
 
 // Minimum life time of percussion notes

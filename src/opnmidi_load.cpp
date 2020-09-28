@@ -26,7 +26,9 @@
 #include "opnmidi_private.hpp"
 #include "opnmidi_cvt.hpp"
 #include "file_reader.hpp"
+#ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
 #include "midi_sequencer.hpp"
+#endif
 #include "wopn/wopn_file.h"
 
 bool OPNMIDIplay::LoadBank(const std::string &filename)
