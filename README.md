@@ -160,6 +160,9 @@ To remove MIDI Sequencer, define `OPNMIDI_DISABLE_MIDI_SEQUENCER` macro and remo
 * [OPNMIDI Player for Android](https://github.com/Wohlstand/OPNMIDI-Player-Java/) - a little MIDI-player for Android which uses libOPNMIDI to play MIDI files and provides flexible GUI with ability to change bank, flags, number of emulated chips, etc.
 
 # Changelog
+## 1.5.0.1 2020-10-11
+ * Fixed an incorrect timer processing when using a real-time interface
+
 ## 1.5.0   2020-09-28
  * Drum note length expanding is now supported in real-time mode (Thanks to [Jean Pierre Cimalando](https://github.com/jpcima) for a work!)
  * Added support for OPNA chip with Neko Project II Kai YM2602 emulator usage (Thanks to [Jean Pierre Cimalando](https://github.com/jpcima) for a work!)
