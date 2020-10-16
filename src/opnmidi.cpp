@@ -1044,8 +1044,6 @@ OPNMIDI_EXPORT int opn2_playFormat(OPN2_MIDIPlayer *device, int sampleCount,
     while(left > 0)
     {
         {//
-            if(setup.delay <= 0.0)
-                setup.delay = double(left / 2) / double(setup.PCM_RATE);
             const double eat_delay = setup.delay < setup.maxdelay ? setup.delay : setup.maxdelay;
             if(hasSkipped)
             {
