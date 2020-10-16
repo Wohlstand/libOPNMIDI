@@ -210,7 +210,9 @@ static OpnInstMeta makeEmptyInstrument()
 const OpnInstMeta OPN2::m_emptyInstrument = makeEmptyInstrument();
 
 OPN2::OPN2() :
+    m_numChannels(0),
     m_regLFOSetup(0),
+    m_lastEmulator(-1),
     m_numChips(1),
     m_scaleModulators(false),
     m_runAtPcmRate(false),
@@ -586,6 +588,7 @@ void OPN2::clearChips()
     for(size_t i = 0; i < m_chips.size(); i++)
         m_chips[i].reset(NULL);
     m_chips.clear();
+    m_lastEmulator = -1;
 }
 
 void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *audioTickHandler)
@@ -593,14 +596,18 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
 #if !defined(ADLMIDI_AUDIO_TICK_HANDLER)
     ADL_UNUSED(audioTickHandler);
 #endif
-    clearChips();
     m_insCache.clear();
     m_regLFOSens.clear();
+
+    if(m_numChips != m_chips.size())
+    {
+        clearChips();
 #ifdef OPNMIDI_MIDI2VGM
-    if(emulator == OPNMIDI_VGM_DUMPER && (m_numChips > 2))
-        m_numChips = 2;// VGM Dumper can't work in multichip mode
+        if(emulator == OPNMIDI_VGM_DUMPER && (m_numChips > 2))
+            m_numChips = 2;// VGM Dumper can't work in multichip mode
 #endif
-    m_chips.resize(m_numChips, AdlMIDI_SPtr<OPNChipBase>());
+        m_chips.resize(m_numChips, AdlMIDI_SPtr<OPNChipBase>());
+    }
 
 #ifdef OPNMIDI_MIDI2VGM
     m_loopStartHook = NULL;
@@ -613,60 +620,69 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
     {
         OPNChipBase *chip;
 
-        switch(emulator)
+        if(m_lastEmulator != emulator)
         {
-        default:
-            assert(false);
-            abort();
+            switch(emulator)
+            {
+            default:
+                assert(false);
+                abort();
 #ifndef OPNMIDI_DISABLE_MAME_EMULATOR
-        case OPNMIDI_EMU_MAME:
-            chip = new MameOPN2(family);
-            break;
+            case OPNMIDI_EMU_MAME:
+                chip = new MameOPN2(family);
+                break;
 #endif
 #ifndef OPNMIDI_DISABLE_NUKED_EMULATOR
-        case OPNMIDI_EMU_NUKED:
-            chip = new NukedOPN2(family);
-            break;
+            case OPNMIDI_EMU_NUKED:
+                chip = new NukedOPN2(family);
+                break;
 #endif
 #ifndef OPNMIDI_DISABLE_GENS_EMULATOR
-        case OPNMIDI_EMU_GENS:
-            chip = new GensOPN2(family);
-            break;
+            case OPNMIDI_EMU_GENS:
+                chip = new GensOPN2(family);
+                break;
 #endif
 #ifndef OPNMIDI_DISABLE_GX_EMULATOR
-        case OPNMIDI_EMU_GX:
-            chip = new GXOPN2(family);
-            break;
+            case OPNMIDI_EMU_GX:
+                chip = new GXOPN2(family);
+                break;
 #endif
 #ifndef OPNMIDI_DISABLE_NP2_EMULATOR
-        case OPNMIDI_EMU_NP2:
-            chip = new NP2OPNA<>(family);
-            break;
+            case OPNMIDI_EMU_NP2:
+                chip = new NP2OPNA<>(family);
+                break;
 #endif
 #ifndef OPNMIDI_DISABLE_MAME_2608_EMULATOR
-        case OPNMIDI_EMU_MAME_2608:
-            chip = new MameOPNA(family);
-            break;
+            case OPNMIDI_EMU_MAME_2608:
+                chip = new MameOPNA(family);
+                break;
 #endif
 #ifndef OPNMIDI_DISABLE_PMDWIN_EMULATOR
-        case OPNMIDI_EMU_PMDWIN:
-            chip = new PMDWinOPNA(family);
-            break;
+            case OPNMIDI_EMU_PMDWIN:
+                chip = new PMDWinOPNA(family);
+                break;
 #endif
 #ifdef OPNMIDI_MIDI2VGM
-        case OPNMIDI_VGM_DUMPER:
-            chip = new VGMFileDumper(family);
-            if(i == 0)//Set hooks for first chip only
-            {
-                m_loopStartHook = &VGMFileDumper::loopStartHook;
-                m_loopStartHookData = chip;
-                m_loopEndHook  = &VGMFileDumper::loopEndHook;
-                m_loopEndHookData = chip;
-            }
-            break;
+            case OPNMIDI_VGM_DUMPER:
+                chip = new VGMFileDumper(family);
+                if(i == 0)//Set hooks for first chip only
+                {
+                    m_loopStartHook = &VGMFileDumper::loopStartHook;
+                    m_loopStartHookData = chip;
+                    m_loopEndHook  = &VGMFileDumper::loopEndHook;
+                    m_loopEndHookData = chip;
+                }
+                break;
 #endif
+            }
+
+            m_chips[i].reset(chip);
         }
-        m_chips[i].reset(chip);
+        else
+        {
+            chip = m_chips[i].get();
+        }
+
         chip->setChipId(static_cast<uint32_t>(i));
         chip->setRate(static_cast<uint32_t>(PCM_RATE), chip->nativeClockRate());
         if(m_runAtPcmRate)
@@ -676,6 +692,8 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
 #endif
         family = chip->family();
     }
+
+    m_lastEmulator = emulator;
 
     m_chipFamily = family;
     m_numChannels = m_numChips * 6;

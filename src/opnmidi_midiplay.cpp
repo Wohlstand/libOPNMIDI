@@ -146,8 +146,7 @@ void OPNMIDIplay::applySetup()
         chipType = m_setup.chipType;
 
     synth.reset(m_setup.emulator, m_setup.PCM_RATE, static_cast<OPNFamily>(chipType), this);
-    m_chipChannels.clear();
-    m_chipChannels.resize(synth.m_numChannels, OpnChannel());
+    resetChipChannels();
     resetMIDIDefaults();
 #if defined(OPNMIDI_MIDI2VGM) && !defined(OPNMIDI_DISABLE_MIDI_SEQUENCER)
     m_sequencerInterface->onloopStart = synth.m_loopStartHook;
@@ -167,8 +166,7 @@ void OPNMIDIplay::partialReset()
     m_setup.tick_skip_samples_delay = 0;
     synth.m_runAtPcmRate = m_setup.runAtPcmRate;
     synth.reset(m_setup.emulator, m_setup.PCM_RATE, synth.chipFamily(), this);
-    m_chipChannels.clear();
-    m_chipChannels.resize(synth.m_numChannels);
+    resetChipChannels();
     resetMIDIDefaults();
 #if defined(OPNMIDI_MIDI2VGM) && !defined(OPNMIDI_DISABLE_MIDI_SEQUENCER)
     m_sequencerInterface->onloopStart = synth.m_loopStartHook;
@@ -187,14 +185,41 @@ void OPNMIDIplay::resetMIDI()
     m_synthMode = Mode_XG;
     m_arpeggioCounter = 0;
 
-    m_midiChannels.clear();
-    m_midiChannels.resize(16, MIDIchannel());
-
+    resetMidiChannels();
     resetMIDIDefaults();
 
     caugh_missing_instruments.clear();
     caugh_missing_banks_melodic.clear();
     caugh_missing_banks_percussion.clear();
+}
+
+void OPNMIDIplay::resetChipChannels()
+{
+    Synth &synth = *m_synth;
+    if(m_chipChannels.size() != synth.m_numChannels)
+    {
+        m_chipChannels.clear();
+        m_chipChannels.resize(synth.m_numChannels);
+    }
+    else
+    {
+        for(size_t i = 0; i < m_chipChannels.size(); i++)
+            m_chipChannels[i].reset();
+    }
+}
+
+void OPNMIDIplay::resetMidiChannels()
+{
+    if(m_midiChannels.size() != 16)
+    {
+        m_midiChannels.clear();
+        m_midiChannels.resize(16, MIDIchannel());
+    }
+    else
+    {
+        for(size_t i = 0; i < m_midiChannels.size(); i++)
+            m_midiChannels[i].resetAll();
+    }
 }
 
 void OPNMIDIplay::resetMIDIDefaults(int offset)

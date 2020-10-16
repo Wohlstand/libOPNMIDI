@@ -65,6 +65,8 @@ public:
     void resetMIDI();
 
 private:
+    void resetChipChannels();
+    void resetMidiChannels();
     void resetMIDIDefaults(int offset = 0);
 
 public:
@@ -384,15 +386,21 @@ public:
                 --extended_note_count;
         }
 
-        MIDIchannel() :
-            def_volume(100),
-            def_bendsense_lsb(0),
-            def_bendsense_msb(2),
-            activenotes(128)
+        void resetAll()
         {
+            def_volume = 100;
+            def_bendsense_lsb = 0;
+            def_bendsense_msb = 2;
+            activenotes.clear();
             gliding_note_count = 0;
             extended_note_count = 0;
             reset();
+        }
+
+        MIDIchannel() :
+            activenotes(128)
+        {
+            resetAll();
         }
     };
 
@@ -466,10 +474,18 @@ public:
             return it;
         }
 
-        // For channel allocation:
-        OpnChannel(): koff_time_until_neglible_us(0), users(128)
+        void reset()
         {
+            koff_time_until_neglible_us = 0;
+            users.clear();
             std::memset(&recent_ins, 0, sizeof(MIDIchannel::NoteInfo::Phys));
+        }
+
+        // For channel allocation:
+        OpnChannel() :
+            users(128)
+        {
+            reset();
         }
 
         OpnChannel(const OpnChannel &oth): koff_time_until_neglible_us(oth.koff_time_until_neglible_us), users(oth.users)
