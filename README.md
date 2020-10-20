@@ -63,8 +63,9 @@ The library is licensed under in it's parts LGPL 2.1+, GPL v2+, GPL v3+, and MIT
 * Other parts of library are licensed under GPLv3+.
 
 ## Available CMake options
-* **CMAKE_PREFIX_PATH** - destination folder where libOPNMIDI will be installed. On Linux it is /usr/local/ by default.
-* **CMAKE_BUILD_TYPE** - Build types: **Debug** or **Release**
+* **CMAKE_INSTALL_PREFIX** - destination folder where libOPNMIDI will be installed. On Linux it is /usr/local/ by default.
+* **CMAKE_BUILD_TYPE** - Build types: **Debug** or **Release**. Also **MinSizeRel** or **RelWithDebInfo**.
+
 * **WITH_MIDIPLAY** - (ON/OFF, default OFF) Build demo MIDI player (Requires SDL2 and also pthread on Windows with MinGW)
 * **WITH_VLC_PLUGIN** - (ON/OFF, default OFF) Compile VLC plugin. For now, works on Linux and VLC. Support for other platforms comming soon!
 * **WITH_WINMMDRV** - (ON/OFF, default OFF) (Windows platform only) Compile the WinMM MIDI driver to use libOPNMIDI as a system MIDI device.
