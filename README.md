@@ -58,6 +58,9 @@ The library is licensed under in it's parts LGPL 2.1+, GPL v2+, GPL v3+, and MIT
 * GENS 2.10 emulator is licensed under LGPL v2.1+.
 * MAME YM2612 emulator is licensed under GPL v2+.
 * Genesis Plus GX emulator is licensed under GPL v2+.
+* Neko Project II Kai (fmgen, developed by "cisc" <cisc@retropc.net>) OPNA emulator is licensed under MIT-compatible license.
+* PMDWin emulator OPNA emulator is licensed under BSD 2-Clause.
+* MAME YM2608 emulator is licensed under GPL v2+.
 * Chip interfaces are licensed under LGPL v2.1+.
 * File Reader class and MIDI Sequencer is licensed under MIT.
 * Other parts of library are licensed under GPLv3+.
