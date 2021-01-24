@@ -249,6 +249,7 @@ int main(int argc, char **argv)
             " -nl               Quit without looping\n"
             " -w                Write WAV file rather than playing\n"
             " -fp               Enables full-panning stereo support\n"
+            " -na               Disable the auto-arpeggio\n"
             " --emu-mame        Use MAME YM2612 Emulator\n"
             " --emu-gens        Use GENS 2.10 Emulator\n"
             " --emu-nuked       Use Nuked OPN2 Emulator\n"
@@ -293,6 +294,7 @@ int main(int argc, char **argv)
     bool scaleModulators = false;
     bool fullRangedBrightness = false;
     int loopEnabled = 1;
+    int autoArpeggioEnabled = 1;
     bool fullPanEnabled = false;
     int emulator = OPNMIDI_EMU_MAME;
     int volumeModel = OPNMIDI_VolumeModel_AUTO;
@@ -311,6 +313,8 @@ int main(int argc, char **argv)
             fullRangedBrightness = true;
         else if(!std::strcmp("-nl", argv[arg]))
             loopEnabled = 0; //Enable loop
+        else if(!std::strcmp("-na", argv[arg]))
+            autoArpeggioEnabled = 0; //Enable automatical arpeggio
         else if(!std::strcmp("--emu-nuked", argv[arg]))
             emulator = OPNMIDI_EMU_NUKED;
         else if(!std::strcmp("--emu-gens", argv[arg]))
@@ -422,6 +426,7 @@ int main(int argc, char **argv)
         opn2_setSoftPanEnabled(myDevice, 1);
     opn2_setLoopEnabled(myDevice, recordWave ? 0 : loopEnabled);
     opn2_setVolumeRangeModel(myDevice, OPNMIDI_VolumeModel_Generic);
+    opn2_setAutoArpeggio(myDevice, autoArpeggioEnabled);
 #ifdef DEBUG_TRACE_ALL_EVENTS
     //Hook all MIDI events are ticking while generating an output buffer
     if(!recordWave)
@@ -474,6 +479,8 @@ int main(int argc, char **argv)
         std::fprintf(stdout, " - Solo track: %lu\n", static_cast<unsigned long>(soloTrack));
         opn2_setTrackOptions(myDevice, soloTrack, OPNMIDI_TrackOption_Solo);
     }
+
+    std::fprintf(stdout, " - Automatic arpeggion is turned %s\n", autoArpeggioEnabled ? "ON" : "OFF");
 
     std::fprintf(stdout, " - File [%s] opened!\n", musPath.c_str());
     std::fflush(stdout);

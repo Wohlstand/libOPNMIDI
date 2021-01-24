@@ -175,7 +175,7 @@ int main(int argc, char **argv)
     {
         std::printf(
             "Usage:\n"
-            "   midi2vgm [-s] [-w] [-nl] \\\n"
+            "   midi2vgm [-s] [-w] [-l] [-na] [-z] [-frb] \\\n"
             "               [--chips <count>] [<bankfile>.wopn] <midifilename>\n"
             "\n"
             " <bankfile>.wopn   Path to WOPN bank file\n"
@@ -183,6 +183,7 @@ int main(int argc, char **argv)
             "\n"
             " -l                Enables in-song looping support\n"
             " -s                Enables scaling of modulator volumes\n"
+            " -na               Disables the automatical arpeggio\n"
             " -z                Make a compressed VGZ file\n"
             " -frb              Enables full-ranged CC74 XG Brightness controller\n"
             " --chips <count>   Choose a count of chips (1 by default, 2 maximum)\n"
@@ -214,6 +215,7 @@ int main(int argc, char **argv)
     bool makeVgz = false;
     bool fullRangedBrightness = false;
     int loopEnabled = 0;
+    int autoArpeggioEnabled = 1;
     size_t soloTrack = ~static_cast<size_t>(0);
     int chipsCount = 1;// Single-chip by default
 
@@ -231,6 +233,8 @@ int main(int argc, char **argv)
             makeVgz = true;
         else if(!std::strcmp("-l", argv[arg]))
             loopEnabled = 1;
+        else if(!std::strcmp("-na", argv[arg]))
+            autoArpeggioEnabled = 0; //Enable automatical arpeggio
         else if(!std::strcmp("--chips", argv[arg]))
         {
             if(arg + 1 >= argc)
@@ -299,12 +303,13 @@ int main(int argc, char **argv)
         opn2_setFullRangeBrightness(myDevice, 1);//Turn on a full-ranged XG CC74 Brightness
     opn2_setSoftPanEnabled(myDevice, 0);
     opn2_setLoopEnabled(myDevice, loopEnabled);
+    opn2_setAutoArpeggio(myDevice, autoArpeggioEnabled);
     opn2_setVolumeRangeModel(myDevice, OPNMIDI_VolumeModel_Generic);
-    #ifdef DEBUG_TRACE_ALL_EVENTS
+#ifdef DEBUG_TRACE_ALL_EVENTS
     //Hook all MIDI events are ticking while generating an output buffer
     if(!recordWave)
         opn2_setRawEventHook(myDevice, debugPrintEvent, NULL);
-    #endif
+#endif
 
     if(opn2_switchEmulator(myDevice, OPNMIDI_VGM_DUMPER) != 0)
     {
@@ -348,6 +353,8 @@ int main(int argc, char **argv)
         std::fprintf(stdout, " - Solo track: %lu\n", (unsigned long)soloTrack);
         opn2_setTrackOptions(myDevice, soloTrack, OPNMIDI_TrackOption_Solo);
     }
+
+    std::fprintf(stdout, " - Automatic arpeggion is turned %s\n", autoArpeggioEnabled ? "ON" : "OFF");
 
     std::fprintf(stdout, " - File [%s] opened!\n", musPath.c_str());
     std::fflush(stdout);

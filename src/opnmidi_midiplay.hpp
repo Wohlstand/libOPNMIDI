@@ -521,6 +521,7 @@ public:
         //unsigned int SkipForward;
         int     ScaleModulators;
         bool    fullRangeBrightnessCC74;
+        bool    enableAutoArpeggio;
 
         double delay;
         double carry;

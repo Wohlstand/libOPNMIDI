@@ -30,7 +30,7 @@ extern "C" {
 
 #define OPNMIDI_VERSION_MAJOR       1
 #define OPNMIDI_VERSION_MINOR       5
-#define OPNMIDI_VERSION_PATCHLEVEL  0
+#define OPNMIDI_VERSION_PATCHLEVEL  1
 
 #define OPNMIDI_TOSTR_I(s) #s
 #define OPNMIDI_TOSTR(s) OPNMIDI_TOSTR_I(s)
@@ -415,6 +415,14 @@ extern OPNMIDI_DECLSPEC void opn2_setScaleModulators(struct OPN2_MIDIPlayer *dev
  * @param fr_brightness 0 - disabled, 1 - enabled
  */
 extern OPNMIDI_DECLSPEC void opn2_setFullRangeBrightness(struct OPN2_MIDIPlayer *device, int fr_brightness);
+
+/**
+ * @brief Enable(1) or Disable(0) the automatical arpeggio system
+  *
+ * @param device Instance of the library
+ * @param aaEn 0 - disabled, 1 - enabled
+ */
+extern OPNMIDI_DECLSPEC void opn2_setAutoArpeggio(struct OPN2_MIDIPlayer *device, int aaEn);
 
 /**
  * @brief Enable or disable built-in loop (built-in loop supports 'loopStart' and 'loopEnd' tags to loop specific part)

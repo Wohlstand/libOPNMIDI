@@ -89,6 +89,7 @@ OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
     //m_setup.SkipForward = 0;
     m_setup.ScaleModulators     = 0;
     m_setup.fullRangeBrightnessCC74 = false;
+    m_setup.enableAutoArpeggio = true;
     m_setup.delay = 0.0;
     m_setup.carry = 0.0;
     m_setup.tick_skip_samples_delay = 0;
@@ -1407,6 +1408,9 @@ void OPNMIDIplay::killOrEvacuate(size_t from_channel,
     {
         uint16_t cs = static_cast<uint16_t>(c);
 
+        if(!m_setup.enableAutoArpeggio)
+            break; // Arpeggio disabled completely
+
         if(c >= maxChannels)
             break;
         if(c == from_channel)
@@ -1639,9 +1643,16 @@ void OPNMIDIplay::updateArpeggio(double) // amount = amount of time passed
 
     Synth &synth = *m_synth;
 
-    #if 0
+    if(!m_setup.enableAutoArpeggio) // Arpeggio was disabled
+    {
+        if(m_arpeggioCounter != 0)
+            m_arpeggioCounter = 0;
+        return;
+    }
+
+#if 0
     const unsigned desired_arpeggio_rate = 40; // Hz (upper limit)
-    #if 1
+#   if 1
     static unsigned cache = 0;
     amount = amount; // Ignore amount. Assume we get a constant rate.
     cache += MaxSamplesAtTime * desired_arpeggio_rate;
@@ -1649,15 +1660,15 @@ void OPNMIDIplay::updateArpeggio(double) // amount = amount of time passed
     if(cache < PCM_RATE) return;
 
     cache %= PCM_RATE;
-    #else
+#   else
     static double arpeggio_cache = 0;
     arpeggio_cache += amount * desired_arpeggio_rate;
 
     if(arpeggio_cache < 1.0) return;
 
     arpeggio_cache = 0.0;
-    #endif
-    #endif
+#   endif
+#endif
 
     ++m_arpeggioCounter;
 
