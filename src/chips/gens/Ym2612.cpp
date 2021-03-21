@@ -71,6 +71,7 @@ unsigned int Ym2612Private::ENV_TAB[2 * ENV_LENGTH * 8];	// ENV CURVE TABLE (att
 unsigned int Ym2612Private::DECAY_TO_ATTACK[ENV_LENGTH];	// Conversion from decay to attack phase
 
 // libOPNMIDI: Fixed the compatibility with the error: "floating-point literal cannot appear in a constant-expression"
+int Ym2612Private::LIMIT_CH_OUT = ((int) (((1 << OUT_BITS) * 1.5) - 1));
 int Ym2612Private::PG_CUT_OFF = ((int) (78.0 / ENV_STEP));
 int Ym2612Private::ENV_CUT_OFF = ((int) (68.0 / ENV_STEP));
 int Ym2612Private::LFO_FMS_BASE = ((int) (0.05946309436 * 0.0338 * (double) (1 << LFO_FMS_LBITS)));
@@ -119,10 +120,10 @@ const uint8_t Ym2612Private::LFO_AMS_TAB[4] = {
 };
 
 const uint8_t Ym2612Private::LFO_FMS_TAB[8] = {
-	LFO_FMS_BASE * 0, LFO_FMS_BASE * 1,
-	LFO_FMS_BASE * 2, LFO_FMS_BASE * 3,
-	LFO_FMS_BASE * 4, LFO_FMS_BASE * 6,
-	LFO_FMS_BASE * 12, LFO_FMS_BASE * 24
+	static_cast<uint8_t>(LFO_FMS_BASE * 0), static_cast<uint8_t>(LFO_FMS_BASE * 1),
+	static_cast<uint8_t>(LFO_FMS_BASE * 2), static_cast<uint8_t>(LFO_FMS_BASE * 3),
+	static_cast<uint8_t>(LFO_FMS_BASE * 4), static_cast<uint8_t>(LFO_FMS_BASE * 6),
+	static_cast<uint8_t>(LFO_FMS_BASE * 12), static_cast<uint8_t>(LFO_FMS_BASE * 24)
 };
 
 /*

@@ -205,7 +205,7 @@ class Ym2612Private
 
 		static const int OUT_BITS = (OUTPUT_BITS - 2);
 		static const int OUT_SHIFT = (MAX_OUT_BITS - OUT_BITS);
-		static const int LIMIT_CH_OUT = ((int) (((1 << OUT_BITS) * 1.5) - 1));
+		static /*const */int LIMIT_CH_OUT/* = ((int) (((1 << OUT_BITS) * 1.5) - 1))*/;
 
 		static int PG_CUT_OFF/* = ((int) (78.0 / ENV_STEP))*/;
 		static int ENV_CUT_OFF/* = ((int) (68.0 / ENV_STEP))*/;
