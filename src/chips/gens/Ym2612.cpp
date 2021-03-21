@@ -70,6 +70,11 @@ unsigned int Ym2612Private::ENV_TAB[2 * ENV_LENGTH * 8];	// ENV CURVE TABLE (att
 //unsigned int Ym2612Private::ATTACK_TO_DECAY[ENV_LENGTH];	// Conversion from attack to decay phase
 unsigned int Ym2612Private::DECAY_TO_ATTACK[ENV_LENGTH];	// Conversion from decay to attack phase
 
+// libOPNMIDI: Fixed the compatibility with the error: "floating-point literal cannot appear in a constant-expression"
+int Ym2612Private::PG_CUT_OFF = ((int) (78.0 / ENV_STEP));
+int Ym2612Private::ENV_CUT_OFF = ((int) (68.0 / ENV_STEP));
+int Ym2612Private::LFO_FMS_BASE = ((int) (0.05946309436 * 0.0338 * (double) (1 << LFO_FMS_LBITS)));
+
 // Next Enveloppe phase functions pointer table
 const Ym2612Private::Env_Event Ym2612Private::ENV_NEXT_EVENT[8] = {
 	Env_Attack_Next,

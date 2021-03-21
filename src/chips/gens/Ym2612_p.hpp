@@ -207,8 +207,8 @@ class Ym2612Private
 		static const int OUT_SHIFT = (MAX_OUT_BITS - OUT_BITS);
 		static const int LIMIT_CH_OUT = ((int) (((1 << OUT_BITS) * 1.5) - 1));
 
-		static const int PG_CUT_OFF = ((int) (78.0 / ENV_STEP));
-		static const int ENV_CUT_OFF = ((int) (68.0 / ENV_STEP));
+		static int PG_CUT_OFF/* = ((int) (78.0 / ENV_STEP))*/;
+		static int ENV_CUT_OFF/* = ((int) (68.0 / ENV_STEP))*/;
 
 		static const int AR_RATE = 399128;
 		static const int DR_RATE = 5514396;
@@ -217,7 +217,7 @@ class Ym2612Private
 		//static const int DR_RATE = (AR_RATE * 12);
 
 		static const int LFO_FMS_LBITS = 9;	// FIXED (LFO_FMS_BASE gives somethink as 1)
-		static const int LFO_FMS_BASE = ((int) (0.05946309436 * 0.0338 * (double) (1 << LFO_FMS_LBITS)));
+		static /*const*/ int LFO_FMS_BASE/* = ((int) (0.05946309436 * 0.0338 * (double) (1 << LFO_FMS_LBITS)))*/;
 
 		enum ADSR {
 			ATTACK	= 0,
