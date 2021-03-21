@@ -23,10 +23,10 @@
 
 #include "opn_chip_base.h"
 
-class Ym2612_Emu;
+namespace LibGens { class Ym2612; }
 class GensOPN2 final : public OPNChipBaseBufferedT<GensOPN2>
 {
-    Ym2612_Emu *chip;
+    LibGens::Ym2612 *chip;
 public:
     explicit GensOPN2(OPNFamily f);
     ~GensOPN2() override;

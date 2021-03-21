@@ -25,12 +25,13 @@
 #include <opnmidi_private.hpp>
 
 //! FIXME: Replace this ugly crap with proper public call
-static const char *g_vgm_path = "output.vgm";
-
+static const char *g_vgm_path = "kek.vgm";
 extern "C"
-OPNMIDI_EXPORT void opn2_set_vgm_out_path(const char *path)
 {
-    g_vgm_path = path;
+    OPNMIDI_EXPORT void opn2_set_vgm_out_path(const char *path)
+    {
+        g_vgm_path = path;
+    }
 }
 
 static int g_chip_index = 0;
@@ -90,13 +91,7 @@ void VGMFileDumper::writeWait(uint_fast16_t value)
         return;
     uint8_t out[3];
     out[0] = 0x61;
-    if(value < 17)
-    {
-        out[0] = uint8_t(0x6F + value);
-        std::fwrite(&out, 1, 1, m_output);
-        m_bytes_written += 1;
-    }
-    else if(value == 735)
+    if(value == 735)
     {
         out[0] = 0x62;
         std::fwrite(&out, 1, 1, m_output);
@@ -121,8 +116,6 @@ void VGMFileDumper::writeWait(uint_fast16_t value)
 
 void VGMFileDumper::flushWait()
 {
-    initFile();
-
     if(!m_output)
         return;
 
@@ -169,17 +162,6 @@ VGMFileDumper::VGMFileDumper(OPNFamily f)
     m_end_caught = false;
     setRate(m_rate, m_clock);
     std::memset(&m_vgm_head, 0, sizeof(VgmHead));
-    m_needInit = (m_chip_index == 0);
-    m_output = NULL;
-    if(m_chip_index == 0)
-        g_master = this;
-}
-
-void VGMFileDumper::initFile()
-{
-    if(!m_needInit)
-        return;
-
     if(m_chip_index == 0)
     {
         m_output = std::fopen(g_vgm_path, "wb");
@@ -190,8 +172,6 @@ void VGMFileDumper::initFile()
         std::fseek(m_output, VGM_SONG_DATA_START, SEEK_SET);
         g_master = this;
     }
-
-    m_needInit = false;
 }
 
 VGMFileDumper::~VGMFileDumper()
@@ -200,18 +180,15 @@ VGMFileDumper::~VGMFileDumper()
     if(m_chip_index > 0)
         return;
 
-    if(m_output)
-    {
-        uint8_t out[1];
-        out[0] = 0x66;// end of sound data
-        std::fwrite(&out, 1, 1, m_output);
-        m_bytes_written += 1;
+    uint8_t out[1];
+    out[0] = 0x66;// end of sound data
+    std::fwrite(&out, 1, 1, m_output);
+    m_bytes_written += 1;
 
-        m_vgm_head.total_samples = m_samples_written;
-        m_vgm_head.loop_samples = m_samples_loop;
-        m_vgm_head.eof_offset = (VGM_SONG_DATA_START + m_bytes_written - 4);
-        m_vgm_head.offset_data = 0x04;
-    }
+    m_vgm_head.total_samples = m_samples_written;
+    m_vgm_head.loop_samples = m_samples_loop;
+    m_vgm_head.eof_offset = (VGM_SONG_DATA_START + m_bytes_written - 4);
+    m_vgm_head.offset_data = 0x04;
 
     writeHead();
 
@@ -242,15 +219,15 @@ void VGMFileDumper::reset()
 
 void VGMFileDumper::writeReg(uint32_t port, uint16_t addr, uint8_t data)
 {
+    if(!m_output)
+        return;
+
     if(m_chip_index > 0) // When it's a second chip
     {
         if(g_master)
             g_master->writeReg(port + 2, addr, data);
         return;
     }
-
-    if(!m_output)
-        return;
 
     if(port >= 4u)
         return; // VGM DOESN'T SUPPORTS MORE THAN 2 CHIPS

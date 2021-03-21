@@ -173,7 +173,7 @@ endif()
 if(USE_GENS_EMULATOR)
     list(APPEND libOPNMIDI_SOURCES
         ${libOPNMIDI_SOURCE_DIR}/src/chips/gens_opn2.cpp
-        ${libOPNMIDI_SOURCE_DIR}/src/chips/gens/Ym2612_Emu.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/gens/Ym2612.cpp
     )
     set(HAS_EMULATOR TRUE)
 else()
