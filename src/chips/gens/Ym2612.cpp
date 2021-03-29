@@ -46,7 +46,7 @@
 #include <cassert>
 
 /* Message logging. */
-#define LOG_MSG(...)
+//#define LOG_MSG(...)
 //#include "macros/log_msg.h"
 
 #if 0
@@ -198,12 +198,12 @@ void Ym2612Private::doStaticInit(void)
 		SIN_TAB[i] = SIN_TAB[(SIN_LENGTH / 2) - i] = &TL_TAB[j];
 		SIN_TAB[(SIN_LENGTH / 2) + i] = SIN_TAB[SIN_LENGTH - i] = &TL_TAB[TL_LENGTH + j];
 
-		LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG3,
-			"SIN[%d][0] = %.8X    SIN[%d][0] = %.8X    SIN[%d][0] = %.8X    SIN[%d][0] = %.8X",
-			i, SIN_TAB[i][0], (SIN_LENGTH / 2) - i,
-			SIN_TAB[(SIN_LENGTH / 2) - i][0], (SIN_LENGTH / 2) + i,
-			SIN_TAB[(SIN_LENGTH / 2) + i][0], SIN_LENGTH - i,
-			SIN_TAB[SIN_LENGTH - i][0]);
+//		LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG3,
+//			"SIN[%d][0] = %.8X    SIN[%d][0] = %.8X    SIN[%d][0] = %.8X    SIN[%d][0] = %.8X",
+//			i, SIN_TAB[i][0], (SIN_LENGTH / 2) - i,
+//			SIN_TAB[(SIN_LENGTH / 2) - i][0], (SIN_LENGTH / 2) + i,
+//			SIN_TAB[(SIN_LENGTH / 2) + i][0], SIN_LENGTH - i,
+//			SIN_TAB[SIN_LENGTH - i][0]);
 	}
 
 	// LFO table:
@@ -220,8 +220,8 @@ void Ym2612Private::doStaticInit(void)
 
 		LFO_FREQ_TAB[i] = (int) x;
 
-		LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG3,
-			"LFO[%d] = %.8X", i, LFO_ENV_TAB[i]);
+//		LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG3,
+//			"LFO[%d] = %.8X", i, LFO_ENV_TAB[i]);
 	}
 
 	// Envelope table:
@@ -240,9 +240,9 @@ void Ym2612Private::doStaticInit(void)
 
 		ENV_TAB[ENV_LENGTH + i] = (int)x;
 
-		LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG3,
-			"ATTACK[%d] = %d   DECAY[%d] = %d",
-			i, ENV_TAB[i], i, ENV_TAB[ENV_LENGTH + i]);
+//		LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG3,
+//			"ATTACK[%d] = %d   DECAY[%d] = %d",
+//			i, ENV_TAB[i], i, ENV_TAB[ENV_LENGTH + i]);
 	}
 
 	ENV_TAB[ENV_END >> ENV_LBITS] = ENV_LENGTH - 1;	// for the stopped state
@@ -288,9 +288,9 @@ void Ym2612Private::doStaticInit(void)
 			TL_TAB[TL_LENGTH + i] = -TL_TAB[i];
 		}
 
-		LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG3,
-			"TL_TAB[%d] = %.8X    TL_TAB[%d] = %.8X",
-			i, TL_TAB[i], TL_LENGTH + i, TL_TAB[TL_LENGTH + i]);
+//		LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG3,
+//			"TL_TAB[%d] = %.8X    TL_TAB[%d] = %.8X",
+//			i, TL_TAB[i], TL_LENGTH + i, TL_TAB[TL_LENGTH + i]);
 	}
 
 	// NULL frequency rate table.
@@ -309,8 +309,8 @@ inline void Ym2612Private::CALC_FINC_SL(slot_t *SL, int finc, int kc)
 	SL->Finc = (finc + SL->DT[kc]) * SL->MUL;
 	ksr = kc >> SL->KSR_S;	// keycode atténuation
 
-	LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-		"FINC = %d  SL->Finc = %d", finc, SL->Finc);
+//	LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//		"FINC = %d  SL->Finc = %d", finc, SL->Finc);
 
 	if (SL->KSR != ksr) {
 		// si le KSR a changé alors
@@ -333,9 +333,9 @@ inline void Ym2612Private::CALC_FINC_SL(slot_t *SL, int finc, int kc)
 			SL->Einc = SL->EincR;
 		}
 
-		LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-			"KSR = %.4X  EincA = %.8X EincD = %.8X EincS = %.8X EincR = %.8X",
-			ksr, SL->EincA, SL->EincD, SL->EincS, SL->EincR);
+//		LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//			"KSR = %.4X  EincA = %.8X EincD = %.8X EincS = %.8X EincR = %.8X",
+//			ksr, SL->EincA, SL->EincD, SL->EincS, SL->EincR);
 	}
 }
 
@@ -441,8 +441,8 @@ int Ym2612Private::SLOT_SET(int address, uint8_t data)
 
 			SL->DT = DT_TAB[(data >> 4) & 7];
 			CH->_SLOT[0].Finc = -1;
-			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-				"CHANNEL[%d], SLOT[%d] DTMUL = %.2X", nch, nsl, data & 0x7F);
+//			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//				"CHANNEL[%d], SLOT[%d] DTMUL = %.2X", nch, nsl, data & 0x7F);
 			break;
 
 		case 0x40:
@@ -457,8 +457,8 @@ int Ym2612Private::SLOT_SET(int address, uint8_t data)
 			SL->TLL = SL->TL << (ENV_HBITS - 7);
 		#endif
 
-			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-				"CHANNEL[%d], SLOT[%d] TL = %.2X", nch, nsl, SL->TL);
+//			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//				"CHANNEL[%d], SLOT[%d] TL = %.2X", nch, nsl, SL->TL);
 			break;
 
 		case 0x50:
@@ -475,8 +475,8 @@ int Ym2612Private::SLOT_SET(int address, uint8_t data)
 			if (SL->Ecurp == ATTACK)
 				SL->Einc = SL->EincA;
 
-			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-				"CHANNEL[%d], SLOT[%d] AR = %.2X  EincA = %.6X", nch, nsl, data, SL->EincA);
+//			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//				"CHANNEL[%d], SLOT[%d] AR = %.2X  EincA = %.6X", nch, nsl, data, SL->EincA);
 			break;
 
 		case 0x60:
@@ -496,9 +496,9 @@ int Ym2612Private::SLOT_SET(int address, uint8_t data)
 			if (SL->Ecurp == DECAY)
 				SL->Einc = SL->EincD;
 
-			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-				"CHANNEL[%d], SLOT[%d] AMS = %d  DR = %.2X  EincD = %.6X",
-				nch, nsl, SL->AMSon, data, SL->EincD);
+//			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//				"CHANNEL[%d], SLOT[%d] AMS = %d  DR = %.2X  EincD = %.6X",
+//				nch, nsl, SL->AMSon, data, SL->EincD);
 			break;
 
 		case 0x70:
@@ -512,9 +512,9 @@ int Ym2612Private::SLOT_SET(int address, uint8_t data)
 			if ((SL->Ecurp == SUSTAIN) && (SL->Ecnt < ENV_END))
 				SL->Einc = SL->EincS;
 
-			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-				"CHANNEL[%d], SLOT[%d] SR = %.2X  EincS = %.6X",
-				nch, nsl, data, SL->EincS);
+//			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//				"CHANNEL[%d], SLOT[%d] SR = %.2X  EincS = %.6X",
+//				nch, nsl, data, SL->EincS);
 			break;
 
 		case 0x80:
@@ -524,11 +524,11 @@ int Ym2612Private::SLOT_SET(int address, uint8_t data)
 			if ((SL->Ecurp == RELEASE) && (SL->Ecnt < ENV_END))
 				SL->Einc = SL->EincR;
 
-			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-				"CHANNEL[%d], SLOT[%d] SL = %.8X", nch, nsl, SL->SLL);
-			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-				"CHANNEL[%d], SLOT[%d] RR = %.2X  EincR = %.2X",
-				nch, nsl, ((data & 0xF) << 1) | 2, SL->EincR);
+//			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//				"CHANNEL[%d], SLOT[%d] SL = %.8X", nch, nsl, SL->SLL);
+//			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//				"CHANNEL[%d], SLOT[%d] RR = %.2X  EincR = %.2X",
+//				nch, nsl, ((data & 0xF) << 1) | 2, SL->EincR);
 			break;
 
 		case 0x90:
@@ -556,8 +556,8 @@ int Ym2612Private::SLOT_SET(int address, uint8_t data)
 				SL->SEG = 0;
 			}
 
-			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-				"CHANNEL[%d], SLOT[%d] SSG-EG = %.2X", nch, nsl, data);
+//			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//				"CHANNEL[%d], SLOT[%d] SSG-EG = %.2X", nch, nsl, data);
 			break;
 	}
 
@@ -588,9 +588,9 @@ int Ym2612Private::CHANNEL_SET(int address, uint8_t data)
 
 			CH->_SLOT[0].Finc = -1;
 
-			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-				"CHANNEL[%d] part1 FNUM = %d  KC = %d",
-				nch, CH->FNUM[0], CH->KC[0]);
+//			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//				"CHANNEL[%d] part1 FNUM = %d  KC = %d",
+//				nch, CH->FNUM[0], CH->KC[0]);
 			break;
 
 		case 0xA4:
@@ -602,9 +602,9 @@ int Ym2612Private::CHANNEL_SET(int address, uint8_t data)
 
 			CH->_SLOT[0].Finc = -1;
 
-			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-				"CHANNEL[%d] part2 FNUM = %d  FOCT = %d  KC = %d",
-				nch, CH->FNUM[0], CH->FOCT[0], CH->KC[0]);
+//			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//				"CHANNEL[%d] part2 FNUM = %d  FOCT = %d  KC = %d",
+//				nch, CH->FNUM[0], CH->FOCT[0], CH->KC[0]);
 			break;
 
 		case 0xA8:
@@ -620,10 +620,10 @@ int Ym2612Private::CHANNEL_SET(int address, uint8_t data)
 
 				state.CHANNEL[2]._SLOT[0].Finc = -1;
 
-				LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-					"CHANNEL[2] part1 FNUM[%d] = %d  KC[%d] = %d",
-					nsl, state.CHANNEL[2].FNUM[nsl],
-					nsl, state.CHANNEL[2].KC[nsl]);
+//				LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//					"CHANNEL[2] part1 FNUM[%d] = %d  KC[%d] = %d",
+//					nsl, state.CHANNEL[2].FNUM[nsl],
+//					nsl, state.CHANNEL[2].KC[nsl]);
 			}
 			break;
 
@@ -642,11 +642,11 @@ int Ym2612Private::CHANNEL_SET(int address, uint8_t data)
 
 				state.CHANNEL[2]._SLOT[0].Finc = -1;
 
-				LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-					"CHANNEL[2] part2 FNUM[%d] = %d  FOCT[%d] = %d  KC[%d] = %d",
-					nsl, state.CHANNEL[2].FNUM[nsl],
-					nsl, state.CHANNEL[2].FOCT[nsl],
-					nsl, state.CHANNEL[2].KC[nsl]);
+//				LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//					"CHANNEL[2] part2 FNUM[%d] = %d  FOCT[%d] = %d  KC[%d] = %d",
+//					nsl, state.CHANNEL[2].FNUM[nsl],
+//					nsl, state.CHANNEL[2].FOCT[nsl],
+//					nsl, state.CHANNEL[2].KC[nsl]);
 			}
 			break;
 
@@ -672,8 +672,8 @@ int Ym2612Private::CHANNEL_SET(int address, uint8_t data)
 				CH->FB = 31;
 			}*/
 
-			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-				"CHANNEL[%d] ALGO = %d  FB = %d", nch, CH->ALGO, CH->FB);
+//			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//				"CHANNEL[%d] ALGO = %d  FB = %d", nch, CH->ALGO, CH->FB);
 			break;
 
 		case 0xB4:
@@ -691,8 +691,8 @@ int Ym2612Private::CHANNEL_SET(int address, uint8_t data)
 				SL->AMS = (SL->AMSon ? CH->AMS : 31);
 			}
 
-			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG1,
-				"CHANNEL[%d] AMS = %d  FMS = %d", nch, CH->AMS, CH->FMS);
+//			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG1,
+//				"CHANNEL[%d] AMS = %d  FMS = %d", nch, CH->AMS, CH->FMS);
 			break;
 	}
 
@@ -713,12 +713,12 @@ int Ym2612Private::YM_SET(int address, uint8_t data)
 				// Cool Spot music 1, LFO modified severals time which
 				// distord the sound, have to check that on a real genesis...
 				state.LFOinc = LFO_INC_TAB[data & 7];
-				LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG1,
-					"LFO Enable, LFOinc = %.8X   %d", state.LFOinc, data & 7);
+//				LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG1,
+//					"LFO Enable, LFOinc = %.8X   %d", state.LFOinc, data & 7);
 			} else {
 				state.LFOinc = state.LFOcnt = 0;
-				LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG1,
-					"LFO Disable");
+//				LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG1,
+//					"LFO Disable");
 			}
 			break;
 
@@ -726,8 +726,8 @@ int Ym2612Private::YM_SET(int address, uint8_t data)
 			state.TimerA = (state.TimerA & 0x003) | (((int)data) << 2);
 			if (state.TimerAL != (1024 - state.TimerA) << 12) {
 				state.TimerAcnt = state.TimerAL = (1024 - state.TimerA) << 12;
-				LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-					"Timer A Set = %.8X", state.TimerAcnt);
+//				LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//					"Timer A Set = %.8X", state.TimerAcnt);
 			}
 			break;
 
@@ -735,8 +735,8 @@ int Ym2612Private::YM_SET(int address, uint8_t data)
 			state.TimerA = (state.TimerA & 0x3FC) | (data & 3);
 			if (state.TimerAL != (1024 - state.TimerA) << 12) {
 				state.TimerAcnt = state.TimerAL = (1024 - state.TimerA) << 12;
-				LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-					"Timer A Set = %.8X", state.TimerAcnt);
+//				LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//					"Timer A Set = %.8X", state.TimerAcnt);
 			}
 			break;
 
@@ -744,8 +744,8 @@ int Ym2612Private::YM_SET(int address, uint8_t data)
 			state.TimerB = data;
 			if (state.TimerBL != (256 - state.TimerB) << (4 + 12)) {
 				state.TimerBcnt = state.TimerBL = (256 - state.TimerB) << (4 + 12);
-				LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-					"Timer B Set = %.8X", state.TimerBcnt);
+//				LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//					"Timer B Set = %.8X", state.TimerBcnt);
 			}
 			break;
 
@@ -779,8 +779,8 @@ int Ym2612Private::YM_SET(int address, uint8_t data)
 
 			state.Mode = data;
 
-			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG1,
-				"Mode reg = %.2X", data);
+//			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG1,
+//				"Mode reg = %.2X", data);
 			break;
 
 		case 0x28: {
@@ -812,8 +812,8 @@ int Ym2612Private::YM_SET(int address, uint8_t data)
 			else
 				KEY_OFF(CH, S3);	// On relâche la touche pour le slot 4
 
-			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG1,
-				"CHANNEL[%d]  KEY %.1X", nch, ((data & 0xF0) >> 4));
+//			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG1,
+//				"CHANNEL[%d]  KEY %.1X", nch, ((data & 0xF0) >> 4));
 			break;
 		}
 
@@ -1191,8 +1191,8 @@ inline void Ym2612Private::T_Update_Chan(channel_t *CH, int32_t *bufL, int32_t *
 			return;
 	}
 
-	LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-		"Algo %d len = %d", algo, length);
+//	LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//		"Algo %d len = %d", algo, length);
 
 	for (int i = 0; i < length; i++) {
 		int in0, in1, in2, in3;		// current phase calculation
@@ -1259,8 +1259,8 @@ inline void Ym2612Private::T_Update_Chan_LFO(channel_t *CH, int32_t *bufL, int32
 
 	int env_LFO, freq_LFO;
 
-	LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-		"Algo %d LFO len = %d", algo, length);
+//	LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//		"Algo %d LFO len = %d", algo, length);
 
 	for (int i = 0; i < length; i++) {
 		int in0, in1, in2, in3;		// current phase calculation
@@ -1329,8 +1329,8 @@ inline void Ym2612Private::T_Update_Chan_Int(channel_t *CH, int32_t *bufL, int32
 			return;
 	}
 
-	LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-		"Algo %d Int len = %d", algo, length);
+//	LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//		"Algo %d Int len = %d", algo, length);
 
 	int_cnt = state.Inter_Cnt;
 
@@ -1400,8 +1400,8 @@ inline void Ym2612Private::T_Update_Chan_LFO_Int(channel_t *CH, int32_t *bufL, i
 	int_cnt = state.Inter_Cnt;
 	int env_LFO, freq_LFO;
 
-	LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-		"Algo %d LFO Int len = %d", algo, length);
+//	LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//		"Algo %d LFO Int len = %d", algo, length);
 
 	for (int i = 0; i < length; i++) {
 		int in0, in1, in2, in3;		// current phase calculation
@@ -1567,9 +1567,9 @@ int Ym2612::reInit(int clock, int rate)
 		d->state.Inter_Cnt = 0;
 	}
 
-	LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
-		"YM2612 frequency = %g, rate = %d, interp step = %.8X",
-		d->state.Frequence, d->state.Rate, d->state.Inter_Step);
+//	LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG2,
+//		"YM2612 frequency = %g, rate = %d, interp step = %.8X",
+//		d->state.Frequence, d->state.Rate, d->state.Inter_Step);
 
 	// Frequency Step table.
 	for (int i = 0; i < 2048; i++) {
@@ -1655,8 +1655,8 @@ void Ym2612::write_pan(int channel, int data)
  */
 void Ym2612::reset(void)
 {
-	LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG1,
-		"Starting reseting YM2612 ...");
+//	LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG1,
+//		"Starting reseting YM2612 ...");
 
 	d->state.LFOcnt = 0;
 	d->state.TimerA = 0;
@@ -1728,8 +1728,8 @@ void Ym2612::reset(void)
 	this->write(0, 0x2A);
 	this->write(1, 0x80);
 
-	LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG1,
-		"Finishing reseting YM2612 ...");
+//	LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG1,
+//		"Finishing reseting YM2612 ...");
 }
 
 /**
@@ -1866,8 +1866,8 @@ int Ym2612::write(unsigned int address, uint8_t data)
  */
 void Ym2612::update(int32_t *bufL, int32_t *bufR, int length)
 {
-	LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG4,
-		"Starting generating sound...");
+//	LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG4,
+//		"Starting generating sound...");
 
 	// Mise à jour des pas des compteurs-fréquences s'ils ont été modifiés
  	if (d->state.CHANNEL[0]._SLOT[0].Finc == -1) {
@@ -1937,9 +1937,9 @@ void Ym2612::update(int32_t *bufL, int32_t *bufR, int length)
 			d->LFO_ENV_UP[i] = d->LFO_ENV_TAB[j];
 			d->LFO_FREQ_UP[i] = d->LFO_FREQ_TAB[j];
 
-			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG4,
-				"LFO_ENV_UP[%d] = %d   LFO_FREQ_UP[%d] = %d",
-				i, d->LFO_ENV_UP[i], i, d->LFO_FREQ_UP[i]);
+//			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG4,
+//				"LFO_ENV_UP[%d] = %d   LFO_FREQ_UP[%d] = %d",
+//				i, d->LFO_ENV_UP[i], i, d->LFO_FREQ_UP[i]);
 		}
 
 		algo_type |= 8;
@@ -1957,8 +1957,8 @@ void Ym2612::update(int32_t *bufL, int32_t *bufR, int length)
 
 	d->state.Inter_Cnt = d->int_cnt;
 
-	LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG4,
-		"Finishing generating sound...");
+//	LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG4,
+//		"Finishing generating sound...");
 }
 
 /**
@@ -1987,8 +1987,8 @@ void Ym2612::updateDacAndTimers(int32_t *bufL, int32_t *bufR, int length)
 			d->state.status |= (d->state.Mode & 0x04) >> 2;
 			d->state.TimerAcnt += d->state.TimerAL;
 
-			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG1,
-				"Counter A overflow");
+//			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG1,
+//				"Counter A overflow");
 
 			if (d->state.Mode & 0x80) {
 				d->CSM_Key_Control();
@@ -2003,8 +2003,8 @@ void Ym2612::updateDacAndTimers(int32_t *bufL, int32_t *bufR, int length)
 			d->state.status |= (d->state.Mode & 0x08) >> 2;
 			d->state.TimerBcnt += d->state.TimerBL;
 
-			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG1,
-				"Counter B overflow");
+//			LOG_MSG(ym2612, LOG_MSG_LEVEL_DEBUG1,
+//				"Counter B overflow");
 		}
 	}
 }
