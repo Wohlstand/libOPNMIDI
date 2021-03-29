@@ -24,6 +24,13 @@
 #include <cassert>
 #include "gens/Ym2612.hpp"
 
+#ifndef INT16_MIN
+#define INT16_MIN   (-0x7fff - 1)
+#endif
+#ifndef INT16_MAX
+#define INT16_MAX   0x7fff
+#endif
+
 GensOPN2::GensOPN2(OPNFamily f)
     : OPNChipBaseBufferedT(f),
       chip(new LibGens::Ym2612())
