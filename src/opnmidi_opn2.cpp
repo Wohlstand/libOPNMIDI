@@ -412,6 +412,9 @@ void OPN2::touchNote(size_t c,
         volume = velocity * channelVolume * channelExpression;
         //volume = volume * m_masterVolume / (127 * 127 * 127) / 2;
         volume = (volume * m_masterVolume) / 4096766;
+
+        if(volume > 0)
+            volume += 64;//OPN has 0~127 range. As 0...63 is almost full silence, but at 64 to 127 is very closed to OPL3, just add 64.
     }
     break;
 
