@@ -226,15 +226,15 @@ void VGMFileDumper::reset()
 
 void VGMFileDumper::writeReg(uint32_t port, uint16_t addr, uint8_t data)
 {
-    if(!m_output)
-        return;
-
     if(m_chip_index > 0) // When it's a second chip
     {
         if(m_first)
             m_first->writeReg(port + 2, addr, data);
         return;
     }
+
+    if(!m_output)
+        return;
 
     if(port >= 4u)
         return; // VGM DOESN'T SUPPORTS MORE THAN 2 CHIPS
