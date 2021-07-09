@@ -79,14 +79,14 @@ OPNMIDI_EXPORT int opn2_setDeviceIdentifier(OPN2_MIDIPlayer *device, unsigned id
     return 0;
 }
 
-OPNMIDI_EXPORT int opn2_setNumChips(OPN2_MIDIPlayer *device, int numCards)
+OPNMIDI_EXPORT int opn2_setNumChips(OPN2_MIDIPlayer *device, int numChips)
 {
     if(device == NULL)
         return -2;
 
     MidiPlayer *play = GET_MIDI_PLAYER(device);
     assert(play);
-    play->m_setup.numChips = static_cast<unsigned int>(numCards);
+    play->m_setup.numChips = static_cast<unsigned int>(numChips);
     if(play->m_setup.numChips < 1 || play->m_setup.numChips > OPN_MAX_CHIPS)
     {
         play->setErrorString("number of chips may only be 1.." OPN_MAX_CHIPS_STR ".\n");

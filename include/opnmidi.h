@@ -186,7 +186,7 @@ struct OPN2_MIDIPlayer
  * @param numChips Count of virtual chips to emulate
  * @return 0 on success, <0 when any error has occurred
  */
-extern OPNMIDI_DECLSPEC int  opn2_setNumChips(struct OPN2_MIDIPlayer *device, int numCards);
+extern OPNMIDI_DECLSPEC int  opn2_setNumChips(struct OPN2_MIDIPlayer *device, int numChips);
 
 /**
  * @brief Get current number of emulated chips

@@ -603,6 +603,7 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
     if(emulator == OPNMIDI_VGM_DUMPER && (m_numChips > 2))
         m_numChips = 2;// VGM Dumper can't work in multichip mode
 #endif
+    m_chips.clear();
     m_chips.resize(m_numChips, AdlMIDI_SPtr<OPNChipBase>());
 
 #ifdef OPNMIDI_MIDI2VGM
@@ -614,7 +615,7 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
 
     for(size_t i = 0; i < m_chips.size(); i++)
     {
-        OPNChipBase *chip;
+        OPNChipBase *chip = NULL;
 
         switch(emulator)
         {
@@ -658,7 +659,9 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
 #endif
 #ifdef OPNMIDI_MIDI2VGM
         case OPNMIDI_VGM_DUMPER:
-            chip = new VGMFileDumper(family);
+            fprintf(stdout, "======= Создан чип: %d\n", (int)i);
+            fflush(stdout);
+            chip = new VGMFileDumper(family, i, (i == 0 ? NULL : m_chips[0].get()));
             if(i == 0)//Set hooks for first chip only
             {
                 m_loopStartHook = &VGMFileDumper::loopStartHook;
@@ -669,11 +672,14 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
             break;
 #endif
         }
+
         m_chips[i].reset(chip);
         chip->setChipId(static_cast<uint32_t>(i));
         chip->setRate(static_cast<uint32_t>(PCM_RATE), chip->nativeClockRate());
+
         if(m_runAtPcmRate)
             chip->setRunningAtPcmRate(true);
+
 #if defined(ADLMIDI_AUDIO_TICK_HANDLER)
         chip->setAudioTickHandlerInstance(audioTickHandler);
 #endif
@@ -688,18 +694,18 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
     uint8_t regLFOSetup = (m_lfoEnable ? 8 : 0) | (m_lfoFrequency & 7);
     m_regLFOSetup = regLFOSetup;
 
-    for(size_t card = 0; card < m_numChips; ++card)
+    for(size_t chip = 0; chip < m_numChips; ++chip)
     {
-        writeReg(card, 0, 0x22, regLFOSetup);//push current LFO state
-        writeReg(card, 0, 0x27, 0x00);  //set Channel 3 normal mode
-        writeReg(card, 0, 0x2B, 0x00);  //Disable DAC
+        writeReg(chip, 0, 0x22, regLFOSetup);//push current LFO state
+        writeReg(chip, 0, 0x27, 0x00);  //set Channel 3 normal mode
+        writeReg(chip, 0, 0x2B, 0x00);  //Disable DAC
         //Shut up all channels
-        writeReg(card, 0, 0x28, 0x00 ); //Note Off 0 channel
-        writeReg(card, 0, 0x28, 0x01 ); //Note Off 1 channel
-        writeReg(card, 0, 0x28, 0x02 ); //Note Off 2 channel
-        writeReg(card, 0, 0x28, 0x04 ); //Note Off 3 channel
-        writeReg(card, 0, 0x28, 0x05 ); //Note Off 4 channel
-        writeReg(card, 0, 0x28, 0x06 ); //Note Off 5 channel
+        writeReg(chip, 0, 0x28, 0x00); //Note Off 0 channel
+        writeReg(chip, 0, 0x28, 0x01); //Note Off 1 channel
+        writeReg(chip, 0, 0x28, 0x02); //Note Off 2 channel
+        writeReg(chip, 0, 0x28, 0x04); //Note Off 3 channel
+        writeReg(chip, 0, 0x28, 0x05); //Note Off 4 channel
+        writeReg(chip, 0, 0x28, 0x06); //Note Off 5 channel
     }
 
     silenceAll();

@@ -34,8 +34,6 @@ extern "C"
     }
 }
 
-static int g_chip_index = 0;
-static VGMFileDumper* g_master = NULL;
 
 #define VGM_LOOP_START_BASE 0x1C
 #define VGM_SONG_DATA_START 0x38
@@ -62,9 +60,12 @@ void VGMFileDumper::writeHead()
 {
     if(!m_output)
         return;
+
     off_t offset = std::ftell(m_output);
+
     if(offset < 0)
         return; // FATAL ERROR:
+
     std::fseek(m_output, 0x00, SEEK_SET);
     std::fwrite(m_vgm_head.magic, 1, 4, m_output);
     g_write_le(m_output, m_vgm_head.eof_offset);
@@ -151,17 +152,22 @@ void VGMFileDumper::writeCommand(uint_fast8_t cmd, uint_fast16_t key, uint_fast8
     m_bytes_written += 3;
 }
 
-VGMFileDumper::VGMFileDumper(OPNFamily f)
+VGMFileDumper::VGMFileDumper(OPNFamily f, int index, void *first)
     : OPNChipBaseBufferedT(f)
 {
-    m_chip_index = g_chip_index++;
+    m_output = NULL;
     m_bytes_written = 0;
     m_samples_written = 0;
     m_samples_loop = 0;
+    m_actual_rate = 0;
     m_delay = 0;
     m_end_caught = false;
-    setRate(m_rate, m_clock);
+    m_chip_index = index;
+    m_first = NULL;
+
+    VGMFileDumper::setRate(m_rate, m_clock);
     std::memset(&m_vgm_head, 0, sizeof(VgmHead));
+
     if(m_chip_index == 0)
     {
         m_output = std::fopen(g_vgm_path, "wb");
@@ -170,13 +176,15 @@ VGMFileDumper::VGMFileDumper(OPNFamily f)
         m_vgm_head.version = 0x00000150;
         m_vgm_head.offset_loop = VGM_LOOP_START_BASE;
         std::fseek(m_output, VGM_SONG_DATA_START, SEEK_SET);
-        g_master = this;
+    }
+    else
+    {
+        m_first = reinterpret_cast<VGMFileDumper*>(first);
     }
 }
 
 VGMFileDumper::~VGMFileDumper()
 {
-    g_chip_index--;
     if(m_chip_index > 0)
         return;
 
@@ -194,7 +202,6 @@ VGMFileDumper::~VGMFileDumper()
 
     if(m_output)
         std::fclose(m_output);
-    g_master = NULL;
 }
 
 void VGMFileDumper::setRate(uint32_t rate, uint32_t clock)
@@ -224,8 +231,8 @@ void VGMFileDumper::writeReg(uint32_t port, uint16_t addr, uint8_t data)
 
     if(m_chip_index > 0) // When it's a second chip
     {
-        if(g_master)
-            g_master->writeReg(port + 2, addr, data);
+        if(m_first)
+            m_first->writeReg(port + 2, addr, data);
         return;
     }
 

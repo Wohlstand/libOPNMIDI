@@ -41,6 +41,8 @@ class VGMFileDumper final : public OPNChipBaseBufferedT<VGMFileDumper>
     bool     m_end_caught;
     //! Index of chip (0'th is master, 1 is a helper)
     int      m_chip_index;
+    //! First chip
+    VGMFileDumper* m_first;
 
     struct VgmHead
     {
@@ -68,7 +70,7 @@ class VGMFileDumper final : public OPNChipBaseBufferedT<VGMFileDumper>
     void writeWait(uint_fast16_t value);
     void flushWait();
 public:
-    explicit VGMFileDumper(OPNFamily f);
+    explicit VGMFileDumper(OPNFamily f, int index, void *first);
     ~VGMFileDumper() override;
 
     bool canRunAtPcmRate() const override { return true; }
