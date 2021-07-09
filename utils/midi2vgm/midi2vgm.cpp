@@ -183,6 +183,13 @@ int main(int argc, char **argv)
             "\n"
             " -l                Enables in-song looping support\n"
             " -s                Enables scaling of modulator volumes\n"
+            " -vm <num> Chooses one of volume models: \n"
+            "    0 auto (default)\n"
+            "    1 Generic\n"
+            "    2 Native OPN2\n"
+            "    3 DMX\n"
+            "    4 Apogee Sound System\n"
+            "    5 9x\n"
             " -na               Disables the automatical arpeggio\n"
             " -z                Make a compressed VGZ file\n"
             " -frb              Enables full-ranged CC74 XG Brightness controller\n"
@@ -215,6 +222,7 @@ int main(int argc, char **argv)
     bool makeVgz = false;
     bool fullRangedBrightness = false;
     int loopEnabled = 0;
+    int volumeModel = OPNMIDI_VolumeModel_AUTO;
     int autoArpeggioEnabled = 1;
     size_t soloTrack = ~static_cast<size_t>(0);
     int chipsCount = 1;// Single-chip by default
@@ -235,6 +243,15 @@ int main(int argc, char **argv)
             loopEnabled = 1;
         else if(!std::strcmp("-na", argv[arg]))
             autoArpeggioEnabled = 0; //Enable automatical arpeggio
+        else if(!std::strcmp("-vm", argv[arg]))
+        {
+            if(arg + 1 >= argc)
+            {
+                printError("The option -vm requires an argument!\n");
+                return 1;
+            }
+            volumeModel = static_cast<int>(std::strtol(argv[++arg], NULL, 10));
+        }
         else if(!std::strcmp("--chips", argv[arg]))
         {
             if(arg + 1 >= argc)
@@ -304,7 +321,6 @@ int main(int argc, char **argv)
     opn2_setSoftPanEnabled(myDevice, 0);
     opn2_setLoopEnabled(myDevice, loopEnabled);
     opn2_setAutoArpeggio(myDevice, autoArpeggioEnabled);
-    opn2_setVolumeRangeModel(myDevice, OPNMIDI_VolumeModel_Generic);
 #ifdef DEBUG_TRACE_ALL_EVENTS
     //Hook all MIDI events are ticking while generating an output buffer
     if(!recordWave)
@@ -338,6 +354,9 @@ int main(int argc, char **argv)
     else if(chipsCount > 2)
         chipsCount = 2;
     opn2_setNumChips(myDevice, chipsCount);
+
+    if(volumeModel != OPNMIDI_VolumeModel_AUTO)
+        opn2_setVolumeRangeModel(myDevice, volumeModel);
 
     if(opn2_openFile(myDevice, musPath.c_str()) != 0)
     {
