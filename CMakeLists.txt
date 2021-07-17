@@ -54,6 +54,11 @@ if(NOT MSVC AND NOT MSDOS)
         set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined" )
         set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,--no-undefined" )
     endif()
+# Supress the std::vector::insert() GCC change warning
+    if(VITA)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fcompare-debug-second")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcompare-debug-second")
+    endif()
 endif()
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -68,12 +73,6 @@ ENDIF()
 # Disable bogus MSVC warnings
 if(MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-ENDIF()
-
-# -fPIC thing
-IF(NOT WIN32 AND NOT DJGPP AND NOT MSDOS)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 ENDIF()
 
 if(OPENBSD_LOCALBASE)
@@ -108,8 +107,22 @@ function(set_visibility_hidden destTarget)
 endfunction()
 #===========================================================================================
 
-option(libOPNMIDI_STATIC   "Build static library of libOPNMIDI" ON)
-option(libOPNMIDI_SHARED   "Build shared library of libOPNMIDI" OFF)
+if(VITA OR 3DS)
+    set(DEFAULT_HEAVY_EMULATORS OFF)
+else()
+    set(DEFAULT_HEAVY_EMULATORS ON)
+endif()
+
+if(NOT EMSCRIPTEN
+   AND NOT VITA
+   AND NOT 3DS
+   AND NOT MSDOS)
+    option(libOPNMIDI_STATIC   "Build static library of libOPNMIDI" ON)
+    option(libOPNMIDI_SHARED   "Build shared library of libOPNMIDI" OFF)
+else()
+    set(libOPNMIDI_STATIC ON)
+    set(libOPNMIDI_SHARED OFF)
+endif()
 
 option(WITH_MIDI_SEQUENCER  "Build with embedded MIDI sequencer. Disable this if you want use library in real-time MIDI drivers or plugins.)" ON)
 option(WITH_HQ_RESAMPLER    "Build with support for high quality resampling" OFF)
@@ -117,7 +130,7 @@ option(WITH_MUS_SUPPORT     "Build with support for DMX MUS files)" ON)
 option(WITH_XMI_SUPPORT     "Build with support for AIL XMI files)" ON)
 option(USE_MAME_EMULATOR    "Use MAME YM2612 emulator (for most of hardware)" ON)
 option(USE_GENS_EMULATOR    "Use GENS 2.10 emulator (fastest, very outdated, inaccurate)" ON)
-option(USE_NUKED_EMULATOR   "Use Nuked OPN2 emulator (most accurate, heavy)" ON)
+option(USE_NUKED_EMULATOR   "Use Nuked OPN2 emulator (most accurate, heavy)" ${DEFAULT_HEAVY_EMULATORS})
 option(USE_GX_EMULATOR      "Use Genesis Plus GX emulator (experimental)" OFF)
 option(USE_NP2_EMULATOR     "Use Neko Project II emulator" ON)
 option(USE_MAME_2608_EMULATOR "Use MAME YM2608 emulator" ON)
@@ -262,6 +275,15 @@ if(NOT WITH_MIDI_SEQUENCER)
     add_definitions(-DOPNMIDI_DISABLE_MIDI_SEQUENCER)
 endif()
 
+if(NOT WIN32
+   AND NOT VITA
+   AND NOT EMSCRIPTEN
+   AND NOT MSDOS)
+    option(ENABLE_FPIC "Build static libraries as position independent code" ON)
+else()
+    set(ENABLE_FPIC OFF)
+endif()
+
 # === Static library ====
 if(libOPNMIDI_STATIC OR WITH_VLC_PLUGIN)
     add_library(OPNMIDI_static STATIC ${libOPNMIDI_SOURCES})
@@ -274,6 +296,12 @@ if(libOPNMIDI_STATIC OR WITH_VLC_PLUGIN)
     set_legacy_standard(OPNMIDI_static)
     set_visibility_hidden(OPNMIDI_static)
     list(APPEND libOPNMIDI_INSTALLS OPNMIDI_static)
+
+    # -fPIC thing
+    if(ENABLE_FPIC)
+        set_target_properties(OPNMIDI_static PROPERTIES COMPILE_FLAGS "-fPIC")
+    endif()
+
     if(NOT libOPNMIDI_STATIC)
         set_target_properties(OPNMIDI_static PROPERTIES EXCLUDE_FROM_ALL TRUE)
     endif()
@@ -291,6 +319,7 @@ if(libOPNMIDI_SHARED)
     set_legacy_standard(OPNMIDI_shared)
     set_visibility_hidden(OPNMIDI_shared)
     list(APPEND libOPNMIDI_INSTALLS OPNMIDI_shared)
+
     if(WIN32)
         target_compile_definitions(OPNMIDI_shared PRIVATE "-DOPNMIDI_BUILD_DLL")
         if(CMAKE_COMPILER_IS_GNUCXX)
@@ -298,6 +327,7 @@ if(libOPNMIDI_SHARED)
             set_property(TARGET OPNMIDI_shared APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-Bstatic,--whole-archive -lpthread -Wl,-Bdynamic,--no-whole-archive")
         endif()
     endif()
+
     if(OPENBSD_LOCALBASE)
         set_property(TARGET OPNMIDI_shared APPEND_STRING PROPERTY LINK_FLAGS " -lc")
     endif()
