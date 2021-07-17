@@ -1601,6 +1601,8 @@ static bool ymf271_write_fm(YMF271_DATA *chip, UINT8 Port, UINT8 Register, UINT8
     UINT8 SyncReg;
     UINT8 RetVal;
 
+    (void)slot; // Supress the "never used" warning
+
     if((Register & 0x03) == 0x03)
         return true;
 
@@ -1702,6 +1704,8 @@ bool ymf271_write(UINT8 Port, UINT8 Register, UINT8 Data)
     UINT8 GrpNum;
     UINT8 SlotNum;
     UINT8 Addr;
+
+    (void)Addr; // Supress the "never used" warning
 
     switch(Port)
     {

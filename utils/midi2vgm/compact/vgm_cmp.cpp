@@ -551,7 +551,7 @@ static void CompressVGMData(void)
                 CmdLen = 0x02;
                 break;
             case 0xBD:  // SAA1099 write
-                SetChipSet((VGMPnt[0x01] & 0x80) >> 7);
+                SetChipSet((VGMPnt[0x01] & 0x80) >> 7); // fallthrough
             case 0x51:  // YM2413 write
                 WriteEvent = ym2413_write(VGMPnt[0x01], VGMPnt[0x02]);
                 CmdLen = 0x03;
@@ -564,6 +564,7 @@ static void CompressVGMData(void)
                 break;
             case 0x67:  // PCM Data Stream
                 TempByt = VGMPnt[0x02];
+                (void)TempByt; // Supres the "never used" warning
                 memcpy(&TempLng, &VGMPnt[0x03], 0x04);
 
                 ChipID = (TempLng & 0x80000000) >> 31;
