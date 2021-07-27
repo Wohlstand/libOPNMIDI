@@ -32,15 +32,26 @@
 extern "C" {
 #endif
 
-#if !defined(__STDC_VERSION__) || (defined(__STDC_VERSION__) && (__STDC_VERSION__ < 199901L)) \
-  || defined(__STRICT_ANSI__) || !defined(__cplusplus)
-/* Solaris defines the integer types regardless of what C/C++ standard is actually available, so avoid defining them at all by ourselves. */
-#ifndef __sun
+/* Solaris defines the integer types regardless of what C/C++ standard is actually available,
+ * so avoid defining them at all by ourselves. */
+#if !defined(WOPN_STDINT_TYPEDEFS_NOT_NEEDED) && defined(__sun)
+#   define WOPN_STDINT_TYPEDEFS_NOT_NEEDED
+#endif
+
+#if !defined(WOPN_STDINT_TYPEDEFS_NEEDED) && !defined(WOPN_STDINT_TYPEDEFS_NOT_NEEDED)
+#   if !defined(__STDC_VERSION__) || \
+       (defined(__STDC_VERSION__) && (__STDC_VERSION__ < 199901L)) || \
+        defined(__STRICT_ANSI__) || \
+       !defined(__cplusplus)
+#       define WOPN_STDINT_TYPEDEFS_NEEDED
+#   endif
+#endif
+
+#ifdef WOPN_STDINT_TYPEDEFS_NEEDED
 typedef signed char int8_t;
 typedef unsigned char uint8_t;
 typedef signed short int int16_t;
 typedef unsigned short int uint16_t;
-#endif
 #endif
 
 /* Type of chip for which a bank has been designed */
