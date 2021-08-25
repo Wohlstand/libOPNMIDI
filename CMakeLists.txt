@@ -364,7 +364,7 @@ if(WITH_MIDI2VGM)
     add_subdirectory(utils/midi2vgm)
 endif()
 
-if(NOT ANDROID AND NOT EMSCRIPTEN)
+if(NOT ANDROID AND NOT EMSCRIPTEN AND NOT VITA AND NOT 3DS)
     add_subdirectory(utils/wopn2hpp)
 endif()
 
