@@ -408,6 +408,21 @@ OPNMIDI_EXPORT void opn2_setLoopEnabled(OPN2_MIDIPlayer *device, int loopEn)
 #endif
 }
 
+OPNMIDI_EXPORT void opn2_setLoopCount(OPN2_MIDIPlayer *device, int loopCount)
+{
+#ifndef ADLMIDI_DISABLE_MIDI_SEQUENCER
+    if(!device)
+        return;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
+    play->m_sequencer->setLoopsCount(loopCount);
+#else
+    ADL_UNUSED(device);
+    ADL_UNUSED(loopCount);
+#endif
+}
+
+
 OPNMIDI_EXPORT void opn2_setSoftPanEnabled(OPN2_MIDIPlayer *device, int softPanEn)
 {
     if(!device)
