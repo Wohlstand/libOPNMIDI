@@ -1289,6 +1289,25 @@ OPNMIDI_EXPORT int opn2_setTrackOptions(struct OPN2_MIDIPlayer *device, size_t t
 #endif
 }
 
+OPNMIDI_EXPORT int opn2_setChannelEnabled(struct OPN2_MIDIPlayer *device, size_t channelNumber, int enabled)
+{
+#ifndef ADLMIDI_DISABLE_MIDI_SEQUENCER
+    if(!device)
+        return -1;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
+    MidiSequencer &seq = *play->m_sequencer;
+    if(!seq.setChannelEnabled(channelNumber, (bool)enabled))
+        return -1;
+    return 0;
+#else
+    ADL_UNUSED(device);
+    ADL_UNUSED(channelNumber);
+    ADL_UNUSED(enabled);
+    return -1;
+#endif
+}
+
 OPNMIDI_EXPORT void opn2_panic(struct OPN2_MIDIPlayer *device)
 {
     if(!device)

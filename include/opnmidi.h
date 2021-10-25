@@ -924,6 +924,15 @@ enum OPNMIDI_TrackOptions
  */
 extern OPNMIDI_DECLSPEC int opn2_setTrackOptions(struct OPN2_MIDIPlayer *device, size_t trackNumber, unsigned trackOptions);
 
+/**
+ * @brief Sets the channel of the current sequence enable state
+ * @param device Instance of the library
+ * @param channelNumber Number of the channel (from 0 to 15)
+ * @param enabled 1 to enable and 0 to disable
+ * @return 0 on success, <0 when any error has occurred
+ */
+extern OPNMIDI_DECLSPEC int opn2_setChannelEnabled(struct OPN2_MIDIPlayer *device, size_t channelNumber, int enabled);
+
 
 
 
