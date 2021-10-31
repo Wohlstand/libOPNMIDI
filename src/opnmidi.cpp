@@ -410,7 +410,7 @@ OPNMIDI_EXPORT void opn2_setLoopEnabled(OPN2_MIDIPlayer *device, int loopEn)
 
 OPNMIDI_EXPORT void opn2_setLoopCount(OPN2_MIDIPlayer *device, int loopCount)
 {
-#ifndef ADLMIDI_DISABLE_MIDI_SEQUENCER
+#ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
     if(!device)
         return;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
@@ -1291,7 +1291,7 @@ OPNMIDI_EXPORT int opn2_setTrackOptions(struct OPN2_MIDIPlayer *device, size_t t
 
 OPNMIDI_EXPORT int opn2_setChannelEnabled(struct OPN2_MIDIPlayer *device, size_t channelNumber, int enabled)
 {
-#ifndef ADLMIDI_DISABLE_MIDI_SEQUENCER
+#ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
     if(!device)
         return -1;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
