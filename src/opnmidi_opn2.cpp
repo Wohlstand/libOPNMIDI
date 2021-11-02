@@ -659,8 +659,6 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
 #endif
 #ifdef OPNMIDI_MIDI2VGM
         case OPNMIDI_VGM_DUMPER:
-            fprintf(stdout, "======= Создан чип: %d\n", (int)i);
-            fflush(stdout);
             chip = new VGMFileDumper(family, i, (i == 0 ? NULL : m_chips[0].get()));
             if(i == 0)//Set hooks for first chip only
             {
