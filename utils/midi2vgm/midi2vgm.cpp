@@ -161,6 +161,15 @@ static std::string findDefaultBank()
     return ret;
 }
 
+static bool is_number(const std::string &s)
+{
+    std::string::const_iterator it = s.begin();
+    while(it != s.end() && std::isdigit(*it))
+        ++it;
+    return !s.empty() && it == s.end();
+}
+
+
 int main(int argc, char **argv)
 {
     std::fprintf(stdout, "==========================================================\n"
@@ -193,6 +202,9 @@ int main(int argc, char **argv)
             " -na               Disables the automatical arpeggio\n"
             " -z                Make a compressed VGZ file\n"
             " -frb              Enables full-ranged CC74 XG Brightness controller\n"
+            " -mc <nums>        Mute selected MIDI channels"
+            "                     where <num> - space separated numbers list (0-based!):"
+            "                     Example: \"-mc 2 5 6 will\" mute channels 2, 5 and 6.\n"
             " --chips <count>   Choose a count of chips (1 by default, 2 maximum)\n"
             "\n"
             "----------------------------------------------------------\n"
@@ -226,6 +238,7 @@ int main(int argc, char **argv)
     int autoArpeggioEnabled = 1;
     size_t soloTrack = ~static_cast<size_t>(0);
     int chipsCount = 1;// Single-chip by default
+    std::vector<int> muteChannels;
 
     std::string bankPath;
     std::string musPath;
@@ -270,6 +283,21 @@ int main(int argc, char **argv)
             }
             soloTrack = std::strtoul(argv[++arg], NULL, 0);
         }
+        else if(!std::strcmp("-mc", argv[arg]) || !std::strcmp("--mute-channels", argv[arg]))
+        {
+            if(arg + 1 >= argc)
+            {
+                printError("The option -mc/--mute-channels requires an argument!\n");
+                return 1;
+            }
+
+            while(arg + 1 < argc && is_number(argv[arg + 1]))
+            {
+                int num = static_cast<int>(std::strtoul(argv[++arg], NULL, 0));
+                if(num >= 0 && num <= 15)
+                    muteChannels.push_back(num);
+            }
+        }
         else if(!std::strcmp("--", argv[arg]))
             break;
         else
@@ -293,8 +321,7 @@ int main(int argc, char **argv)
         }
         musPath = argv[arg];
     }
-    else
-    if(arg > argc - 1)
+    else if(arg > argc - 1)
     {
         printError("Missing music file path!\n");
         return 2;
@@ -321,6 +348,7 @@ int main(int argc, char **argv)
     opn2_setSoftPanEnabled(myDevice, 0);
     opn2_setLoopEnabled(myDevice, loopEnabled);
     opn2_setAutoArpeggio(myDevice, autoArpeggioEnabled);
+
 #ifdef DEBUG_TRACE_ALL_EVENTS
     //Hook all MIDI events are ticking while generating an output buffer
     if(!recordWave)
@@ -340,6 +368,7 @@ int main(int argc, char **argv)
 
     std::fprintf(stdout, " - Use bank [%s]...", bankPath.c_str());
     std::fflush(stdout);
+
     if(opn2_openBankFile(myDevice, bankPath.c_str()) != 0)
     {
         std::fprintf(stdout, "FAILED!\n");
@@ -371,6 +400,20 @@ int main(int argc, char **argv)
     {
         std::fprintf(stdout, " - Solo track: %lu\n", (unsigned long)soloTrack);
         opn2_setTrackOptions(myDevice, soloTrack, OPNMIDI_TrackOption_Solo);
+    }
+
+    if(!muteChannels.empty())
+    {
+        std::printf(" - Mute MIDI channels:");
+
+        for(size_t i = 0; i < muteChannels.size(); ++i)
+        {
+            opn2_setChannelEnabled(myDevice, muteChannels[i], 0);
+            std::printf(" %d", muteChannels[i]);
+        }
+
+        std::printf("\n");
+        std::fflush(stdout);
     }
 
     std::fprintf(stdout, " - Automatic arpeggion is turned %s\n", autoArpeggioEnabled ? "ON" : "OFF");
