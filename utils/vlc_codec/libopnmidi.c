@@ -82,6 +82,10 @@
 #define FULL_RANGE_CC74_LONGTEXT N_( \
     "Scale range of CC-74 \"Brightness\" with full 0~127 range. By default is only 0~64 affects the sounding.")
 
+#define ENABLE_AUTO_ARPEGGIO_TEXT N_("Enable auto-arpeggio")
+#define ENABLE_AUTO_ARPEGGIO_LONGTEXT N_( \
+    "Enables an automatical arpeggio to keep chords playing when there is no enough free physical voices of chips.")
+
 static const int volume_models_values[] = { 0, 1, 2, 3, 4, 5 };
 static const char * const volume_models_descriptions[] =
 {
@@ -158,6 +162,9 @@ vlc_module_begin ()
     add_bool( CONFIG_PREFIX "full-range-brightness", false, FULL_RANGE_CC74_TEXT,
               FULL_RANGE_CC74_LONGTEXT, true )
 
+    add_bool( CONFIG_PREFIX "enable-auto-arpeggio", true, ENABLE_AUTO_ARPEGGIO_TEXT,
+              ENABLE_AUTO_ARPEGGIO_LONGTEXT, true )
+
     add_bool( CONFIG_PREFIX "full-panning", true, FULL_PANNING_TEXT,
               FULL_PANNING_LONGTEXT, true )
 
@@ -212,6 +219,8 @@ static int Open (vlc_object_t *p_this)
     opn2_setSoftPanEnabled(p_sys->synth, var_InheritBool(p_this, CONFIG_PREFIX "full-panning"));
 
     opn2_setFullRangeBrightness(p_sys->synth, var_InheritBool(p_this, CONFIG_PREFIX "full-range-brightness"));
+
+    opn2_setAutoArpeggio(p_sys->synth, var_InheritBool(p_this, CONFIG_PREFIX "enable-auto-arpeggio"));
 
     char *font_path = var_InheritString (p_this, CONFIG_PREFIX "custombank");
     if (font_path != NULL)
