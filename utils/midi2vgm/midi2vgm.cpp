@@ -1,7 +1,7 @@
 /*
  * MIDI to VGM converter, an additional tool included with libOPNMIDI library
  *
- * Copyright (c) 2015-2021 Vitaly Novichkov <admin@wohlnet.ru>
+ * Copyright (c) 2015-2022 Vitaly Novichkov <admin@wohlnet.ru>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
