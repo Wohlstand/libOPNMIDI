@@ -89,7 +89,7 @@ OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
     //m_setup.SkipForward = 0;
     m_setup.ScaleModulators     = 0;
     m_setup.fullRangeBrightnessCC74 = false;
-    m_setup.enableAutoArpeggio = true;
+    m_setup.enableAutoArpeggio = false;
     m_setup.delay = 0.0;
     m_setup.carry = 0.0;
     m_setup.tick_skip_samples_delay = 0;

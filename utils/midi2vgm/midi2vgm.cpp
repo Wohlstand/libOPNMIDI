@@ -235,7 +235,7 @@ int main(int argc, char **argv)
     bool fullRangedBrightness = false;
     int loopEnabled = 0;
     int volumeModel = OPNMIDI_VolumeModel_AUTO;
-    int autoArpeggioEnabled = 1;
+    int autoArpeggioEnabled = 0;
     size_t soloTrack = ~static_cast<size_t>(0);
     int chipsCount = 1;// Single-chip by default
     std::vector<int> muteChannels;
@@ -255,7 +255,9 @@ int main(int argc, char **argv)
         else if(!std::strcmp("-l", argv[arg]))
             loopEnabled = 1;
         else if(!std::strcmp("-na", argv[arg]))
-            autoArpeggioEnabled = 0; //Enable automatical arpeggio
+            autoArpeggioEnabled = 0;
+        else if(!std::strcmp("-ea", argv[arg]))
+            autoArpeggioEnabled = 1; //Enable automatical arpeggio
         else if(!std::strcmp("-vm", argv[arg]))
         {
             if(arg + 1 >= argc)
@@ -416,7 +418,7 @@ int main(int argc, char **argv)
         std::fflush(stdout);
     }
 
-    std::fprintf(stdout, " - Automatic arpeggion is turned %s\n", autoArpeggioEnabled ? "ON" : "OFF");
+    std::fprintf(stdout, " - Automatic arpeggion is turned %s\n", opn2_getAutoArpeggio(myDevice) ? "ON" : "OFF");
 
     std::fprintf(stdout, " - File [%s] opened!\n", musPath.c_str());
     std::fflush(stdout);

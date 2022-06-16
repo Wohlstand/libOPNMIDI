@@ -425,6 +425,13 @@ extern OPNMIDI_DECLSPEC void opn2_setFullRangeBrightness(struct OPN2_MIDIPlayer 
 extern OPNMIDI_DECLSPEC void opn2_setAutoArpeggio(struct OPN2_MIDIPlayer *device, int aaEn);
 
 /**
+ * @brief Get the state of the automatical arpeggio system enable state
+ * @param device Instalce of the library
+ * @return 0 - disabled, 1 - enabled
+ */
+extern OPNMIDI_DECLSPEC int opn2_getAutoArpeggio(struct OPN2_MIDIPlayer *device);
+
+/**
  * @brief Enable or disable built-in loop (built-in loop supports 'loopStart' and 'loopEnd' tags to loop specific part)
  * @param device Instance of the library
  * @param loopEn 0 - disabled, 1 - enabled
