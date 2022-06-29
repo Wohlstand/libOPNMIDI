@@ -251,7 +251,7 @@ static int Open (vlc_object_t *p_this)
     }
     else
     {
-        if (opn2_openBankData(p_sys->synth, g_gm_opn2_bank, sizeof(g_gm_opn2_bank)))
+        if (opn2_openBankData(p_sys->synth, g_xg_wopn_bank, sizeof(g_xg_wopn_bank)))
         {
             msg_Err (p_this, "cannot load default bank file: %s", opn2_errorInfo(p_sys->synth));
 #if (LIBVLC_VERSION_MAJOR < 3)
@@ -457,4 +457,3 @@ drop:
     return p_out;
 #endif
 }
-
