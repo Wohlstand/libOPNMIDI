@@ -1274,14 +1274,39 @@ int64_t OPNMIDIplay::calculateChipChannelGoodness(size_t c, const MIDIchannel::N
     const OpnChannel &chan = m_chipChannels[c];
     int64_t koff_ms = chan.koff_time_until_neglible_us / 1000;
     int64_t s = -koff_ms;
+    OPNMIDI_ChannelAlloc allocType = synth.m_channelAlloc;
+
+    if(allocType == OPNMIDI_ChanAlloc_AUTO)
+    {
+        if(synth.m_musicMode == Synth::MODE_CMF)
+            allocType = OPNMIDI_ChanAlloc_SameInst;
+        else
+            allocType = OPNMIDI_ChanAlloc_OffDelay;
+    }
 
     // Rate channel with a releasing note
     if(s < 0 && chan.users.empty())
     {
+        bool isSame = (chan.recent_ins == ins);
         s -= 40000;
+
         // If it's same instrument, better chance to get it when no free channels
-        if(chan.recent_ins == ins)
-            s = (synth.m_musicMode == Synth::MODE_CMF) ? 0 : -koff_ms;
+        switch(allocType)
+        {
+        case OPNMIDI_ChanAlloc_SameInst:
+            if(isSame)
+                s = 0; // Re-use releasing channel with the same instrument
+            break;
+        case OPNMIDI_ChanAlloc_AnyReleased:
+            s = 0; // Re-use any releasing channel
+            break;
+        default:
+        case OPNMIDI_ChanAlloc_OffDelay:
+            if(isSame)
+                s =  -koff_ms; // Wait until releasing sound will complete
+            break;
+        }
+
         return s;
     }
 

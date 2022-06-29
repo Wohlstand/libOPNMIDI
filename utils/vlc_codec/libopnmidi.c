@@ -78,6 +78,10 @@
 #define VOLUME_MODEL_LONGTEXT N_( \
     "Declares volume scaling model which will affect volume levels.")
 
+#define CHANNEL_ALLOCATION_TEXT N_("Channel allocation mode")
+#define CHANNEL_ALLOCATION_LONGTEXT N_( \
+    "Declares the method of chip channel allocation for new notes.")
+
 #define FULL_RANGE_CC74_TEXT N_("Full-range of brightness")
 #define FULL_RANGE_CC74_LONGTEXT N_( \
     "Scale range of CC-74 \"Brightness\" with full 0~127 range. By default is only 0~64 affects the sounding.")
@@ -95,6 +99,16 @@ static const char * const volume_models_descriptions[] =
     N_("DMX"),
     N_("Apogee Sound System"),
     N_("Win9x OPL driver"),
+    NULL
+};
+
+static const int channel_alloc_values[] = { -1, 0, 1, 2 };
+static const char * const channel_alloc_descriptions[] =
+{
+    N_("Auto (defined by bank)"),
+    N_("By sounding delays"),
+    N_("Released channel of same instrument"),
+    N_("Any released channel"),
     NULL
 };
 
@@ -149,6 +163,9 @@ vlc_module_begin ()
 
     add_integer (CONFIG_PREFIX "volume-model", 0, VOLUME_MODEL_TEXT, VOLUME_MODEL_LONGTEXT, false )
         change_integer_list( volume_models_values, volume_models_descriptions )
+
+    add_integer (CONFIG_PREFIX "channel-allocation", -1, CHANNEL_ALLOCATION_TEXT, CHANNEL_ALLOCATION_LONGTEXT, false )
+        change_integer_list( channel_alloc_values, channel_alloc_descriptions )
 
     add_integer (CONFIG_PREFIX "emulator-type", 0, EMULATOR_TYPE_TEXT, EMULATOR_TYPE_LINGTEXT, false)
         change_integer_list( emulator_type_values, emulator_type_descriptions )
@@ -215,6 +232,8 @@ static int Open (vlc_object_t *p_this)
     opn2_setNumChips(p_sys->synth, (int)var_InheritInteger(p_this, CONFIG_PREFIX "emulated-chips"));
 
     opn2_setVolumeRangeModel(p_sys->synth, var_InheritInteger(p_this, CONFIG_PREFIX "volume-model"));
+
+    opn2_setChannelAllocMode(p_sys->synth, var_InheritInteger(p_this, CONFIG_PREFIX "channel-allocation"));
 
     opn2_setSoftPanEnabled(p_sys->synth, var_InheritBool(p_this, CONFIG_PREFIX "full-panning"));
 

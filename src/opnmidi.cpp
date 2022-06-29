@@ -459,7 +459,7 @@ OPNMIDI_EXPORT void opn2_setLogarithmicVolumes(struct OPN2_MIDIPlayer *device, i
     }
 }
 
-OPNMIDI_EXPORT void opn2_setVolumeRangeModel(OPN2_MIDIPlayer *device, int volumeModel)
+OPNMIDI_EXPORT void opn2_setVolumeRangeModel(struct OPN2_MIDIPlayer *device, int volumeModel)
 {
     if(!device)
         return;
@@ -474,6 +474,27 @@ OPNMIDI_EXPORT void opn2_setVolumeRangeModel(OPN2_MIDIPlayer *device, int volume
         else
             synth.setVolumeScaleModel(static_cast<OPNMIDI_VolumeModels>(volumeModel));
     }
+}
+
+OPNMIDI_EXPORT void opn2_setChannelAllocMode(struct OPN2_MIDIPlayer *device, int chanalloc)
+{
+    if(!device)
+        return;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
+    Synth &synth = *play->m_synth;
+    if(chanalloc < -1 || chanalloc >= OPNMIDI_ChanAlloc_Count)
+        chanalloc = OPNMIDI_ChanAlloc_AUTO;
+    synth.m_channelAlloc = static_cast<OPNMIDI_ChannelAlloc>(chanalloc);
+}
+
+OPNMIDI_EXPORT int opn2_getChannelAllocMode(struct OPN2_MIDIPlayer *device)
+{
+    if(!device)
+        return -1;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
+    return static_cast<int>(play->m_synth->m_channelAlloc);
 }
 
 OPNMIDI_EXPORT int opn2_getVolumeRangeModel(struct OPN2_MIDIPlayer *device)

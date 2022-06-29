@@ -123,7 +123,26 @@ enum OPNMIDI_VolumeModels
     /*! Logarithmic volume scale, used in Apogee Sound System. */
     OPNMIDI_VolumeModel_APOGEE,
     /*! Aproximated and shorted volume map table. Similar to general, but has less granularity. */
-    OPNMIDI_VolumeModel_9X
+    OPNMIDI_VolumeModel_9X,
+    /*! Count of available volume model modes */
+    OPNMIDI_VolumeModel_Count
+};
+
+/*!
+ * \brief Algorithms of channel allocation for new notes
+ */
+enum OPNMIDI_ChannelAlloc
+{
+    /*! Automatical choise of the method according to the volume model and internal preferrences */
+    OPNMIDI_ChanAlloc_AUTO = -1,
+    /*! Take only channels that has expired sounding delay */
+    OPNMIDI_ChanAlloc_OffDelay,
+    /*! Take any first released channel with the same instrument */
+    OPNMIDI_ChanAlloc_SameInst,
+    /*! Take any first released channel */
+    OPNMIDI_ChanAlloc_AnyReleased,
+    /*! Count of available channel allocation modes */
+    OPNMIDI_ChanAlloc_Count
 };
 
 /**
@@ -476,6 +495,20 @@ extern OPNMIDI_DECLSPEC void opn2_setVolumeRangeModel(struct OPN2_MIDIPlayer *de
  * @return volume model on success, <0 when any error has occurred
  */
 extern OPNMIDI_DECLSPEC int opn2_getVolumeRangeModel(struct OPN2_MIDIPlayer *device);
+
+/**
+ * @brief Set the channel allocation mode
+ * @param device Instance of the library
+ * @param chanalloc Channel allocation mode (#ADLMIDI_ChannelAlloc)
+ */
+extern OPNMIDI_DECLSPEC void opn2_setChannelAllocMode(struct OPN2_MIDIPlayer *device, int chanalloc);
+
+/**
+ * @brief Get the current channel allocation mode
+ * @param device Instance of the library
+ * @return Channel allocation mode (#ADLMIDI_ChannelAlloc)
+ */
+extern OPNMIDI_DECLSPEC int opn2_getChannelAllocMode(struct OPN2_MIDIPlayer *device);
 
 /**
  * @brief Load WOPN bank file from File System

@@ -130,6 +130,9 @@ public:
         VOLUME_9X
     } m_volumeScale;
 
+    //! Channel allocation algorithm
+    OPNMIDI_ChannelAlloc m_channelAlloc;
+
     //! Reserved
     bool m_lfoEnable;
     uint8_t m_lfoFrequency;

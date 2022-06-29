@@ -68,6 +68,40 @@ extern "C"
     extern OPNMIDI_DECLSPEC void opn2_set_vgm_out_path(const char *path);
 }
 
+const char* volume_model_to_str(int vm)
+{
+    switch(vm)
+    {
+    default:
+    case OPNMIDI_VolumeModel_Generic:
+        return "Generic";
+    case OPNMIDI_VolumeModel_NativeOPN2:
+        return "Native OPN2";
+    case OPNMIDI_VolumeModel_DMX:
+        return "DMX";
+    case OPNMIDI_VolumeModel_APOGEE:
+        return "Apogee Sound System";
+    case OPNMIDI_VolumeModel_9X:
+        return "9X";
+    }
+}
+
+const char* chanalloc_to_str(int vm)
+{
+    switch(vm)
+    {
+    default:
+    case OPNMIDI_ChanAlloc_AUTO:
+        return "<auto>";
+    case OPNMIDI_ChanAlloc_OffDelay:
+        return "Off Delay";
+    case OPNMIDI_ChanAlloc_SameInst:
+        return "Same instrument";
+    case OPNMIDI_ChanAlloc_AnyReleased:
+        return "Any released";
+    }
+}
+
 static void printError(const char *err)
 {
     std::fprintf(stderr, "\nERROR: %s\n\n", err);
@@ -199,6 +233,10 @@ int main(int argc, char **argv)
             "    3 DMX\n"
             "    4 Apogee Sound System\n"
             "    5 9x\n"
+            " -ca <num> Chooses one of chip channel allocation modes: \n"
+            "    0 Sounding delay"
+            "    1 Released channel with the same instrument"
+            "    2 Any released channel"
             " -na               Disables the automatical arpeggio\n"
             " -z                Make a compressed VGZ file\n"
             " -frb              Enables full-ranged CC74 XG Brightness controller\n"
@@ -236,6 +274,7 @@ int main(int argc, char **argv)
     int loopEnabled = 0;
     int volumeModel = OPNMIDI_VolumeModel_AUTO;
     int autoArpeggioEnabled = 0;
+    int chanAlloc = OPNMIDI_ChanAlloc_AUTO;
     size_t soloTrack = ~static_cast<size_t>(0);
     int chipsCount = 1;// Single-chip by default
     std::vector<int> muteChannels;
@@ -266,6 +305,15 @@ int main(int argc, char **argv)
                 return 1;
             }
             volumeModel = static_cast<int>(std::strtol(argv[++arg], NULL, 10));
+        }
+        else if(!std::strcmp("-ca", argv[arg]))
+        {
+            if(arg + 1 >= argc)
+            {
+                printError("The option -carequires an argument!\n");
+                return 1;
+            }
+            chanAlloc = static_cast<int>(std::strtol(argv[++arg], NULL, 10));
         }
         else if(!std::strcmp("--chips", argv[arg]))
         {
@@ -350,6 +398,7 @@ int main(int argc, char **argv)
     opn2_setSoftPanEnabled(myDevice, 0);
     opn2_setLoopEnabled(myDevice, loopEnabled);
     opn2_setAutoArpeggio(myDevice, autoArpeggioEnabled);
+    opn2_setChannelAllocMode(myDevice, chanAlloc);
 
 #ifdef DEBUG_TRACE_ALL_EVENTS
     //Hook all MIDI events are ticking while generating an output buffer
@@ -397,6 +446,8 @@ int main(int argc, char **argv)
 
     std::fprintf(stdout, " - Number of chips %d\n", opn2_getNumChipsObtained(myDevice));
     std::fprintf(stdout, " - Track count: %lu\n", (unsigned long)opn2_trackCount(myDevice));
+    std::fprintf(stdout, " - Volume model: %s\n", volume_model_to_str(opn2_getVolumeRangeModel(myDevice)));
+    std::fprintf(stdout, " - Channel allocation mode: %s\n", chanalloc_to_str(opn2_getChannelAllocMode(myDevice)));
 
     if(soloTrack != ~(size_t)0)
     {
