@@ -107,7 +107,7 @@ function(set_visibility_hidden destTarget)
 endfunction()
 #===========================================================================================
 
-if(VITA OR 3DS)
+if(VITA OR NINTENDO_3DS OR NINTENDO_WII OR NINTENDO_WIIU)
     set(DEFAULT_HEAVY_EMULATORS OFF)
 else()
     set(DEFAULT_HEAVY_EMULATORS ON)
@@ -115,7 +115,10 @@ endif()
 
 if(NOT EMSCRIPTEN
    AND NOT VITA
-   AND NOT 3DS
+   AND NOT NINTENDO_3DS
+   AND NOT NINTENDO_WII
+   AND NOT NINTENDO_WIIU
+   AND NOT NINTENDO_SWITCH
    AND NOT MSDOS)
     option(libOPNMIDI_STATIC   "Build static library of libOPNMIDI" ON)
     option(libOPNMIDI_SHARED   "Build shared library of libOPNMIDI" OFF)
@@ -277,7 +280,9 @@ endif()
 
 if(NOT WIN32
    AND NOT VITA
-   AND NOT 3DS
+   AND NOT NINTENDO_3DS
+   AND NOT NINTENDO_WII
+   AND NOT NINTENDO_WIIU
    AND NOT EMSCRIPTEN
    AND NOT MSDOS)
     option(ENABLE_FPIC "Build static libraries as position independent code" ON)
@@ -365,7 +370,13 @@ if(WITH_MIDI2VGM)
     add_subdirectory(utils/midi2vgm)
 endif()
 
-if(NOT ANDROID AND NOT EMSCRIPTEN AND NOT VITA AND NOT 3DS)
+if(NOT ANDROID
+   AND NOT EMSCRIPTEN
+   AND NOT VITA
+   AND NOT NINTENDO_3DS
+   AND NOT NINTENDO_WII
+   AND NOT NINTENDO_WIIU
+   AND NOT NINTENDO_SWITCH)
     add_subdirectory(utils/wopn2hpp)
 endif()
 
