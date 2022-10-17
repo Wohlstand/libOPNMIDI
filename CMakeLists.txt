@@ -171,6 +171,24 @@ list(APPEND libOPNMIDI_SOURCES
     ${libOPNMIDI_SOURCE_DIR}/src/wopn/wopn_file.c
 )
 
+# Make headers being properly visible at IDEs
+file(GLOB libOPNMIDI_HEADERS
+    ${libOPNMIDI_SOURCE_DIR}/include/*.h
+    ${libOPNMIDI_SOURCE_DIR}/src/*.h
+    ${libOPNMIDI_SOURCE_DIR}/src/*.hpp
+    ${libOPNMIDI_SOURCE_DIR}/src/wopn/*.h
+    ${libOPNMIDI_SOURCE_DIR}/src/structures/*.hpp
+    ${libOPNMIDI_SOURCE_DIR}/src/chips/*.h
+    ${libOPNMIDI_SOURCE_DIR}/src/chips/gens/*.hpp
+    ${libOPNMIDI_SOURCE_DIR}/src/chips/gx/*.h
+    ${libOPNMIDI_SOURCE_DIR}/src/chips/mame/*.h
+    ${libOPNMIDI_SOURCE_DIR}/src/chips/mamefm/*.h
+    ${libOPNMIDI_SOURCE_DIR}/src/chips/np2/*.h
+    ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked/*.h
+    ${libOPNMIDI_SOURCE_DIR}/src/chips/pmdwin/*.h
+)
+list(APPEND libOPNMIDI_SOURCES ${libOPNMIDI_HEADERS})
+
 if(WITH_MIDI_SEQUENCER)
     list(APPEND libOPNMIDI_SOURCES
         ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_sequencer.cpp
