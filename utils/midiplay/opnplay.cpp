@@ -278,6 +278,7 @@ int main(int argc, char **argv)
             " -mc <nums>        Mute selected MIDI channels"
             "                     where <num> - space separated numbers list (0-based!):"
             "                     Example: \"-mc 2 5 6 will\" mute channels 2, 5 and 6.\n"
+            " --song <song ID 0...N-1> Selects a song to play (if XMI)\n"
             " -nl               Quit without looping\n"
             " -w                Write WAV file rather than playing\n"
             " -fp               Enables full-panning stereo support\n"
@@ -332,6 +333,7 @@ int main(int argc, char **argv)
     int emulator = OPNMIDI_EMU_MAME;
     int volumeModel = OPNMIDI_VolumeModel_AUTO;
     size_t soloTrack = ~static_cast<size_t>(0u);
+    int songNumLoad = -1;
     int chipsCount = -1;//Auto-choose chips count by emulator (Nuked 3, others 8)
     std::vector<int> muteChannels;
 
@@ -403,7 +405,16 @@ int main(int argc, char **argv)
                 printError("The option --solo requires an argument!\n");
                 return 1;
             }
-            soloTrack = std::strtoul(argv[++arg], NULL, 0);
+            soloTrack = std::strtoul(argv[++arg], NULL, 10);
+        }
+        else if(!std::strcmp("--song", argv[arg]))
+        {
+            if(argc <= 3)
+            {
+                printError("The option --song requires an argument!\n");
+                return 1;
+            }
+            songNumLoad = std::strtol(argv[++arg], NULL, 10);
         }
         else if(!std::strcmp("-mc", argv[arg]) || !std::strcmp("--mute-channels", argv[arg]))
         {
@@ -494,6 +505,9 @@ int main(int argc, char **argv)
         opn2_setRawEventHook(myDevice, debugPrintEvent, NULL);
 #endif
 
+    if(songNumLoad >= 0)
+        opn2_selectSongNum(myDevice, songNumLoad);
+
     if(opn2_switchEmulator(myDevice, emulator) != 0)
     {
         std::fprintf(stdout, "FAILED!\n");
@@ -535,6 +549,12 @@ int main(int argc, char **argv)
     std::fprintf(stdout, " - Track count: %lu\n", static_cast<unsigned long>(opn2_trackCount(myDevice)));
     std::fprintf(stdout, " - Volume model: %s\n", volume_model_to_str(opn2_getVolumeRangeModel(myDevice)));
     std::fprintf(stdout, " - Channel allocation mode: %s\n", chanalloc_to_str(opn2_getChannelAllocMode(myDevice)));
+
+    int songsCount = opn2_getSongsCount(myDevice);
+    if(songNumLoad >= 0)
+        std::fprintf(stdout, " - Attempt to load song number: %d / %d\n", songNumLoad, songsCount);
+    else if(songsCount > 0)
+        std::fprintf(stdout, " - File contains %d song(s)\n", songsCount);
 
     if(soloTrack != ~static_cast<size_t>(0u))
     {

@@ -171,6 +171,8 @@ To remove MIDI Sequencer, define `OPNMIDI_DISABLE_MIDI_SEQUENCER` macro and remo
  * Added an ability to disable/enable playing of selected MIDI channels
  * Fixed memory damages and crashes while playing XMI files
  * Added the chip channels allocation mode option
+ * Fixed the playback of multi-song XMI files
+ * Added an ability to switch the XMI song on the fly
 
 ## 1.5.0.1 2020-10-11
  * Fixed an incorrect timer processing when using a real-time interface

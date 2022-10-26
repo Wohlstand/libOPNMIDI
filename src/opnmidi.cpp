@@ -431,6 +431,19 @@ OPNMIDI_EXPORT void opn2_setLoopCount(OPN2_MIDIPlayer *device, int loopCount)
 #endif
 }
 
+OPNMIDI_EXPORT void opn2_setLoopHooksOnly(OPN2_MIDIPlayer *device, int loopHooksOnly)
+{
+#ifndef ADLMIDI_DISABLE_MIDI_SEQUENCER
+    if(!device)
+        return;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
+    play->m_sequencer->setLoopHooksOnly(loopHooksOnly);
+#else
+    ADL_UNUSED(device);
+    ADL_UNUSED(loopHooksOnly);
+#endif
+}
 
 OPNMIDI_EXPORT void opn2_setSoftPanEnabled(OPN2_MIDIPlayer *device, int softPanEn)
 {
@@ -559,6 +572,36 @@ OPNMIDI_EXPORT int opn2_openData(OPN2_MIDIPlayer *device, const void *mem, unsig
 
     OPN2MIDI_ErrorString = "Can't load file: OPN2 MIDI is not initialized";
     return -1;
+}
+
+OPNMIDI_EXPORT void opn2_selectSongNum(struct OPN2_MIDIPlayer *device, int songNumber)
+{
+#ifndef ADLMIDI_DISABLE_MIDI_SEQUENCER
+    if(!device)
+        return;
+
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
+    play->m_sequencer->setSongNum(songNumber);
+#else
+    ADL_UNUSED(device);
+    ADL_UNUSED(songNumber);
+#endif
+}
+
+OPNMIDI_EXPORT int opn2_getSongsCount(struct OPN2_MIDIPlayer *device)
+{
+#ifndef ADLMIDI_DISABLE_MIDI_SEQUENCER
+    if(!device)
+        return 0;
+
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
+    return play->m_sequencer->getSongsCount();
+#else
+    ADL_UNUSED(device);
+    return 0;
+#endif
 }
 
 OPNMIDI_EXPORT const char *opn2_emulatorName()
@@ -933,6 +976,37 @@ OPNMIDI_EXPORT void opn2_setDebugMessageHook(struct OPN2_MIDIPlayer *device, OPN
     play->m_sequencerInterface->onDebugMessage_userData = userData;
 #endif
 }
+
+/* Set loop start hook */
+OPNMIDI_EXPORT void opn2_setLoopStartHook(struct OPN2_MIDIPlayer *device, OPN2_LoopPointHook loopStartHook, void *userData)
+{
+    if(!device)
+        return;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
+    play->hooks.onLoopStart = loopStartHook;
+    play->hooks.onLoopStart_userData = userData;
+#ifndef ADLMIDI_DISABLE_MIDI_SEQUENCER
+    play->m_sequencerInterface->onloopStart = loopStartHook;
+    play->m_sequencerInterface->onloopStart_userData = userData;
+#endif
+}
+
+/* Set loop end hook */
+OPNMIDI_EXPORT void opn2_setLoopEndHook(struct OPN2_MIDIPlayer *device, OPN2_LoopPointHook loopEndHook, void *userData)
+{
+    if(!device)
+        return;
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
+    play->hooks.onLoopEnd = loopEndHook;
+    play->hooks.onLoopEnd_userData = userData;
+#ifndef ADLMIDI_DISABLE_MIDI_SEQUENCER
+    play->m_sequencerInterface->onloopEnd = loopEndHook;
+    play->m_sequencerInterface->onloopEnd_userData = userData;
+#endif
+}
+
 
 
 template <class Dst>
