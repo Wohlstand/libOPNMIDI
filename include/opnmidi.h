@@ -506,21 +506,21 @@ extern OPNMIDI_DECLSPEC int opn2_getVolumeRangeModel(struct OPN2_MIDIPlayer *dev
 /**
  * @brief Set the channel allocation mode
  * @param device Instance of the library
- * @param chanalloc Channel allocation mode (#ADLMIDI_ChannelAlloc)
+ * @param chanalloc Channel allocation mode (#OPNMIDI_ChannelAlloc)
  */
 extern OPNMIDI_DECLSPEC void opn2_setChannelAllocMode(struct OPN2_MIDIPlayer *device, int chanalloc);
 
 /**
  * @brief Get the current channel allocation mode
  * @param device Instance of the library
- * @return Channel allocation mode (#ADLMIDI_ChannelAlloc)
+ * @return Channel allocation mode (#OPNMIDI_ChannelAlloc)
  */
 extern OPNMIDI_DECLSPEC int opn2_getChannelAllocMode(struct OPN2_MIDIPlayer *device);
 
 /**
  * @brief Load WOPN bank file from File System
  *
- * Is recommended to call adl_reset() to apply changes to already-loaded file player or real-time.
+ * Is recommended to call opn2_reset() to apply changes to already-loaded file player or real-time.
  *
  * @param device Instance of the library
  * @param filePath Absolute or relative path to the WOPL bank file. UTF8 encoding is required, even on Windows.
@@ -531,7 +531,7 @@ extern OPNMIDI_DECLSPEC int opn2_openBankFile(struct OPN2_MIDIPlayer *device, co
 /**
  * @brief Load WOPN bank file from memory data
  *
- * Is recommended to call adl_reset() to apply changes to already-loaded file player or real-time.
+ * Is recommended to call opn2_reset() to apply changes to already-loaded file player or real-time.
  *
  * @param device Instance of the library
  * @param mem Pointer to memory block where is raw data of WOPL bank file is stored
@@ -548,7 +548,7 @@ extern OPNMIDI_DECLSPEC int opn2_openBankData(struct OPN2_MIDIPlayer *device, co
  *
  * @return A string that contains a notice to use `opn2_chipEmulatorName` instead of this function.
  */
-OPNMIDI_DEPRECATED("Use `adl_chipEmulatorName(device)` instead")
+OPNMIDI_DEPRECATED("Use `opn2_chipEmulatorName(device)` instead")
 extern OPNMIDI_DECLSPEC const char *opn2_emulatorName();
 
 /**
@@ -666,7 +666,7 @@ extern OPNMIDI_DECLSPEC const char *opn2_errorInfo(struct OPN2_MIDIPlayer *devic
  *        value as `OPN_OPN2_SAMPLE_RATE` or `OPN_OPNA_SAMPLE_RATE` in dependence on the chip
  *
  * @param sample_rate Output sample rate
- * @return Instance of the library. If NULL was returned, check the `adl_errorString` message for more info.
+ * @return Instance of the library. If NULL was returned, check the `opn2_errorString` message for more info.
  */
 extern OPNMIDI_DECLSPEC struct OPN2_MIDIPlayer *opn2_init(long sample_rate);
 
@@ -706,7 +706,7 @@ extern OPNMIDI_DECLSPEC int opn2_openData(struct OPN2_MIDIPlayer *device, const 
  * @brief Switch another song if multi-song file is playing (for example, XMI)
  *
  * Note: to set the initial song to load, you should call this function
- * BBEFORE calling `adl_openFile` or `adl_openData`.  When loaded file has more than
+ * BBEFORE calling `opn2_openFile` or `opn2_openData`.  When loaded file has more than
  * one built-in songs (Usually XMIformat), it will be started from the selected number.
  * You may call this function to switch another song.
  *
@@ -884,7 +884,7 @@ extern OPNMIDI_DECLSPEC struct Opn2_MarkerEntry opn2_metaMarker(struct OPN2_MIDI
 /**
  * @brief Generate PCM signed 16-bit stereo audio output and iterate MIDI timers
  *
- * Use this function when you are playing MIDI file loaded by `adl_openFile` or by `adl_openData`
+ * Use this function when you are playing MIDI file loaded by `opn2_openFile` or by `opn2_openData`
  * with using of built-in MIDI sequencer.
  *
  * Don't use count of frames, use instead count of samples. One frame is two samples.
@@ -902,7 +902,7 @@ extern OPNMIDI_DECLSPEC int  opn2_play(struct OPN2_MIDIPlayer *device, int sampl
 /**
  * @brief Generate PCM stereo audio output in sample format declared by given context and iterate MIDI timers
  *
- * Use this function when you are playing MIDI file loaded by `adl_openFile` or by `adl_openData`
+ * Use this function when you are playing MIDI file loaded by `opn2_openFile` or by `opn2_openData`
  * with using of built-in MIDI sequencer.
  *
  * Don't use count of frames, use instead count of samples. One frame is two samples.
@@ -1135,12 +1135,12 @@ typedef void (*OPN2_RawEventHook)(void *userdata, OPN2_UInt8 type, OPN2_UInt8 su
 /**
  * @brief Note on/off callback
  * @param userdata Pointer to user data (usually, context of someting)
- * @param adlchn Chip channel where note was played
+ * @param opnchn Chip channel where note was played
  * @param note Note number [between 0 and 127]
  * @param pressure Velocity level, or -1 when it's note off event
  * @param bend Pitch bend offset value
  */
-typedef void (*OPN2_NoteHook)(void *userdata, int adlchn, int note, int ins, int pressure, double bend);
+typedef void (*OPN2_NoteHook)(void *userdata, int opnchn, int note, int ins, int pressure, double bend);
 
 /**
  * @brief Debug messages callback
@@ -1197,7 +1197,7 @@ extern OPNMIDI_DECLSPEC void opn2_setDebugMessageHook(struct OPN2_MIDIPlayer *de
 /**
  * @brief Set the look start point hook
  *
- * CAUTION: Don't call any libADLMIDI API functions from off this hook directly!
+ * CAUTION: Don't call any libOPNMIDI API functions from off this hook directly!
  * Suggestion: Use boolean variables to mark the fact this hook got been called, and then,
  * apply your action outside of this hook, for example, in the next after audio output call.
  *
@@ -1205,23 +1205,23 @@ extern OPNMIDI_DECLSPEC void opn2_setDebugMessageHook(struct OPN2_MIDIPlayer *de
  * @param loopStartHook Pointer to the callback function which will be called on every loop start point passing
  * @param userData Pointer to user data which will be passed through the callback.
  */
-extern OPNMIDI_DECLSPEC void opn2_setLoopStartHook(struct ADL_MIDIPlayer *device, OPN2_LoopPointHook loopStartHook, void *userData);
+extern OPNMIDI_DECLSPEC void opn2_setLoopStartHook(struct OPN2_MIDIPlayer *device, OPN2_LoopPointHook loopStartHook, void *userData);
 
 /**
  * @brief Set the look start point hook
  *
- * CAUTION: Don't call any libADLMIDI API functions from off this hook directly!
+ * CAUTION: Don't call any libOPNMIDI API functions from off this hook directly!
  * Suggestion: Use boolean variables to mark the fact this hook got been called, and then,
  * apply your action outside of this hook, for example, in the next after audio output call.
  *
  * If you want to switch the song after calling this hook, suggested to call the function
- * adl_setLoopHooksOnly(device, 1) to immediately stop the song on reaching the loop point
+ * opn2_setLoopHooksOnly(device, 1) to immediately stop the song on reaching the loop point
  *
  * @param device Instance of the library
  * @param loopStartHook Pointer to the callback function which will be called on every loop start point passing
  * @param userData Pointer to user data which will be passed through the callback.
  */
-extern OPNMIDI_DECLSPEC void opn2_setLoopEndHook(struct ADL_MIDIPlayer *device, OPN2_LoopPointHook loopEndHook, void *userData);
+extern OPNMIDI_DECLSPEC void opn2_setLoopEndHook(struct OPN2_MIDIPlayer *device, OPN2_LoopPointHook loopEndHook, void *userData);
 
 /**
  * @brief Get a textual description of the channel state. For display only.
