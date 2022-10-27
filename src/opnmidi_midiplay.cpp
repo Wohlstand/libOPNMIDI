@@ -206,15 +206,15 @@ void OPNMIDIplay::resetMIDIDefaults(int offset)
     for(size_t c = offset, n = m_midiChannels.size(); c < n; ++c)
     {
         MIDIchannel &ch = m_midiChannels[c];
-        if(synth.m_musicMode == Synth::MODE_XMIDI)
+
+        if(synth.m_musicMode == Synth::MODE_RSXX)
+            ch.def_volume = 127;
+        else if(synth.m_insBankSetup.mt32defaults)
         {
             ch.def_volume = 127;
             ch.def_bendsense_lsb = 0;
             ch.def_bendsense_msb = 12;
         }
-        else
-        if(synth.m_musicMode == Synth::MODE_RSXX)
-            ch.def_volume = 127;
     }
 }
 

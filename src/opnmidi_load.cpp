@@ -115,6 +115,8 @@ bool OPNMIDIplay::LoadBank(FileAndMemReader &fr)
     synth.m_insBankSetup.lfoEnable = (wopn->lfo_freq & 8) != 0;
     synth.m_insBankSetup.lfoFrequency = wopn->lfo_freq & 7;
     synth.m_insBankSetup.chipType = wopn->chip_type;
+    // FIXME: Implement the bank-side flag to enable this
+    synth.m_insBankSetup.mt32defaults = false;
     m_setup.VolumeModel = OPNMIDI_VolumeModel_AUTO;
     m_setup.lfoEnable = -1;
     m_setup.lfoFrequency = -1;

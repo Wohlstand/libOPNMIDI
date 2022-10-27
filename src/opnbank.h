@@ -129,6 +129,7 @@ struct OpnBankSetup
     int lfoEnable;
     int lfoFrequency;
     int chipType;
+    bool mt32defaults;
 };
 
 /**

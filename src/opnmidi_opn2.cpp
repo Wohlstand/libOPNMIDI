@@ -227,6 +227,7 @@ OPN2::OPN2() :
     m_insBankSetup.lfoEnable = false;
     m_insBankSetup.lfoFrequency = 0;
     m_insBankSetup.chipType = OPNChip_OPN2;
+    m_insBankSetup.mt32defaults = false;
 
     // Initialize blank instruments banks
     m_insBanks.clear();
