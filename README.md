@@ -164,7 +164,7 @@ To remove MIDI Sequencer, define `OPNMIDI_DISABLE_MIDI_SEQUENCER` macro and remo
 * [OPNMIDI Player for Android](https://github.com/Wohlstand/OPNMIDI-Player-Java/) - a little MIDI-player for Android which uses libOPNMIDI to play MIDI files and provides flexible GUI with ability to change bank, flags, number of emulated chips, etc.
 
 # Changelog
-## 1.5.1   dev
+## 1.5.1   2022-10-31
  * Added an ability to disable the automatical arpeggio
  * Updated the GENS chip emulator from the 2.10 into GS/II (thanks to @freq-mod for the help)
  * Added an ability to set number of loops
