@@ -2090,7 +2090,7 @@ bool c6280_write(UINT8 Register, UINT8 Data)
 {
     C6280_DATA *chip = &ChDat->C6280;
     C6280_CHANNEL *chan;
-    UINT8 ChnReg;
+    UINT8 ChnReg = 0;
 
     Register &= 0x0F;
     switch(Register)
