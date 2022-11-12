@@ -29,6 +29,8 @@
 bin/*
 obj/*
 
+# macOS garbage
+.DS_Store
 
 # qmake junk
 *.user*
@@ -44,4 +46,3 @@ build/*
 # Ignore CLeon's files
 .idea/*
 cmake-build-*/*
-
