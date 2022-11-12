@@ -61,7 +61,7 @@ void VGMFileDumper::writeHead()
     if(!m_output)
         return;
 
-    off_t offset = std::ftell(m_output);
+    long offset = std::ftell(m_output);
 
     if(offset < 0)
         return; // FATAL ERROR:
