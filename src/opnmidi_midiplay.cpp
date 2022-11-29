@@ -296,10 +296,11 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
         if(!i.is_end())
         {
             MIDIchannel::NoteInfo &ni = i->value;
-            const int veloffset = ni.ains->midiVelocityOffset;
+            const int veloffset = ni.ains ? ni.ains->midiVelocityOffset : 0;
             velocity = static_cast<uint8_t>(std::min(127, std::max(1, static_cast<int>(velocity) + veloffset)));
             ni.vol = velocity;
-            noteUpdate(channel, i, Upd_Volume);
+            if(ni.ains)
+                noteUpdate(channel, i, Upd_Volume);
             return false;
         }
     }
