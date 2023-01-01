@@ -27,7 +27,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 #include <stdint.h>
 #include <stdarg.h>
 #include <math.h>
-#include <unistd.h>
 #include <assert.h>
 #include "op.h"
 #include "psg.h"
