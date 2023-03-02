@@ -120,8 +120,17 @@ if(NOT EMSCRIPTEN
    AND NOT NINTENDO_WIIU
    AND NOT NINTENDO_SWITCH
    AND NOT MSDOS)
-    option(libOPNMIDI_STATIC   "Build static library of libOPNMIDI" ON)
-    option(libOPNMIDI_SHARED   "Build shared library of libOPNMIDI" OFF)
+    set(libOPNMIDI_STATIC_ENABLED_BY_DEFAULT ON)
+    set(libOPNMIDI_SHARED_ENABLED_BY_DEFAULT OFF)
+
+    # When defined, respect CMake's BUILD_SHARED_LIBS setting
+    if (BUILD_SHARED_LIBS)
+        set(libOPNMIDI_SHARED_ENABLED_BY_DEFAULT ON)
+        set(libOPNMIDI_STATIC_ENABLED_BY_DEFAULT OFF)
+    endif()
+
+    option(libOPNMIDI_STATIC   "Build static library of libOPNMIDI" ${libOPNMIDI_STATIC_ENABLED_BY_DEFAULT})
+    option(libOPNMIDI_SHARED   "Build shared library of libOPNMIDI" ${libOPNMIDI_SHARED_ENABLED_BY_DEFAULT})
 else()
     set(libOPNMIDI_STATIC ON)
     set(libOPNMIDI_SHARED OFF)
