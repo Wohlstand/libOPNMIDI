@@ -144,7 +144,7 @@ void ym2612_pre_generate(void *chip);
  * @param chip Chip instance
  * @param buffer One stereo PCM frame
  */
-void ym2612_generate_one_native(void *chip, FMSAMPLE buffer[2]);
+void ym2612_generate_one_native(void *chip, FMSAMPLE *buffer);
 
 /* void ym2612_post_generate(void *chip, int length); */
 

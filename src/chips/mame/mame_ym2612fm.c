@@ -2395,7 +2395,7 @@ void ym2612_pre_generate(void *chip)
 	refresh_fc_eg_chan( OPN, &cch[5] );
 }
 
-void ym2612_generate_one_native(void *chip, FMSAMPLE buffer[])
+void ym2612_generate_one_native(void *chip, FMSAMPLE *buffer)
 {
 	YM2612 *F2612 = (YM2612 *)chip;
 	FM_OPN *OPN   = &F2612->OPN;
