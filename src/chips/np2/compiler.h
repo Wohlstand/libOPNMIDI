@@ -13,7 +13,11 @@
 #define SOUNDCALL FASTCALL
 
 #ifndef MAX_PATH
-#define MAX_PATH 256
+#   ifdef _WIN32
+#       define MAX_PATH 256
+#   else
+#       define MAX_PATH 2048
+#   endif
 #endif
 
 #endif
