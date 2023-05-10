@@ -151,7 +151,7 @@ static void WOPN_parseInstrument(WOPNInstrument *ins, uint8_t *cursor, uint16_t 
 {
     int l;
     strncpy(ins->inst_name, (const char*)cursor, 32);
-    ins->inst_name[32] = '\0';
+    ins->inst_name[31] = '\0';
     ins->note_offset = toSint16BE(cursor + 32);
     ins->midi_velocity_offset = 0;  /* TODO: for future version > 2 */
     ins->percussion_key_number = cursor[34];

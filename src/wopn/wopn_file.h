@@ -121,7 +121,7 @@ typedef struct WOPNOperator
 typedef struct WOPNInstrument
 {
     /* Title of the instrument */
-    char    inst_name[34];
+    char    inst_name[32];
     /* MIDI note key (half-tone) offset for an instrument (or a first voice in pseudo-4-op mode) */
     int16_t note_offset;
     /* Reserved */
