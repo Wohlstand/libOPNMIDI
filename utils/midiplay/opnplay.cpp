@@ -396,6 +396,7 @@ int main(int argc, char **argv)
     spec.format   = OPNMIDI_SampleType_S16;
     spec.channels = 2;
     spec.samples  = uint16_t(static_cast<double>(spec.freq) * AudioBufferLength);
+    spec.is_msb = audio_is_big_endian();
 
     OPN2_MIDIPlayer *myDevice;
 
@@ -570,46 +571,44 @@ int main(int argc, char **argv)
                          audio_format_to_str(spec.format, spec.is_msb),         spec.samples,     spec.freq,     spec.channels,
                          audio_format_to_str(obtained.format, obtained.is_msb), obtained.samples, obtained.freq, obtained.channels);
         }
-
-        switch(obtained.format)
-        {
-        case OPNMIDI_SampleType_S8:
-            g_audioFormat.type = OPNMIDI_SampleType_S8;
-            g_audioFormat.containerSize = sizeof(int8_t);
-            g_audioFormat.sampleOffset = sizeof(int8_t) * 2;
-            break;
-        case OPNMIDI_SampleType_U8:
-            g_audioFormat.type = OPNMIDI_SampleType_U8;
-            g_audioFormat.containerSize = sizeof(uint8_t);
-            g_audioFormat.sampleOffset = sizeof(uint8_t) * 2;
-            break;
-        case OPNMIDI_SampleType_S16:
-            g_audioFormat.type = OPNMIDI_SampleType_S16;
-            g_audioFormat.containerSize = sizeof(int16_t);
-            g_audioFormat.sampleOffset = sizeof(int16_t) * 2;
-            break;
-        case OPNMIDI_SampleType_U16:
-            g_audioFormat.type = OPNMIDI_SampleType_U16;
-            g_audioFormat.containerSize = sizeof(uint16_t);
-            g_audioFormat.sampleOffset = sizeof(uint16_t) * 2;
-            break;
-        case OPNMIDI_SampleType_S32:
-            g_audioFormat.type = OPNMIDI_SampleType_S32;
-            g_audioFormat.containerSize = sizeof(int32_t);
-            g_audioFormat.sampleOffset = sizeof(int32_t) * 2;
-            break;
-        case OPNMIDI_SampleType_F32:
-            g_audioFormat.type = OPNMIDI_SampleType_F32;
-            g_audioFormat.containerSize = sizeof(float);
-            g_audioFormat.sampleOffset = sizeof(float) * 2;
-            break;
-        }
     }
     else
     {
+        std::memcpy(&obtained, &spec, sizeof(AudioOutputSpec));
+    }
+
+    switch(obtained.format)
+    {
+    case OPNMIDI_SampleType_S8:
+        g_audioFormat.type = OPNMIDI_SampleType_S8;
+        g_audioFormat.containerSize = sizeof(int8_t);
+        g_audioFormat.sampleOffset = sizeof(int8_t) * 2;
+        break;
+    case OPNMIDI_SampleType_U8:
+        g_audioFormat.type = OPNMIDI_SampleType_U8;
+        g_audioFormat.containerSize = sizeof(uint8_t);
+        g_audioFormat.sampleOffset = sizeof(uint8_t) * 2;
+        break;
+    case OPNMIDI_SampleType_S16:
         g_audioFormat.type = OPNMIDI_SampleType_S16;
         g_audioFormat.containerSize = sizeof(int16_t);
         g_audioFormat.sampleOffset = sizeof(int16_t) * 2;
+        break;
+    case OPNMIDI_SampleType_U16:
+        g_audioFormat.type = OPNMIDI_SampleType_U16;
+        g_audioFormat.containerSize = sizeof(uint16_t);
+        g_audioFormat.sampleOffset = sizeof(uint16_t) * 2;
+        break;
+    case OPNMIDI_SampleType_S32:
+        g_audioFormat.type = OPNMIDI_SampleType_S32;
+        g_audioFormat.containerSize = sizeof(int32_t);
+        g_audioFormat.sampleOffset = sizeof(int32_t) * 2;
+        break;
+    case OPNMIDI_SampleType_F32:
+        g_audioFormat.type = OPNMIDI_SampleType_F32;
+        g_audioFormat.containerSize = sizeof(float);
+        g_audioFormat.sampleOffset = sizeof(float) * 2;
+        break;
     }
 
     if(arg == argc - 2)
@@ -852,21 +851,35 @@ int main(int argc, char **argv)
         std::fprintf(stdout, " - Recording WAV file %s...\n", wave_out.c_str());
         std::fprintf(stdout, "\n==========================================\n");
         std::fflush(stdout);
+        int wav_format = obtained.format == OPNMIDI_SampleType_F32 ? WAVE_FORMAT_IEEE_FLOAT : WAVE_FORMAT_PCM;
+        int wav_has_sign = obtained.format != OPNMIDI_SampleType_U8 && obtained.format != OPNMIDI_SampleType_U16;
 
-        if(wave_open(static_cast<int>(sampleRate), wave_out.c_str()) == 0)
+        void *wav_ctx = ctx_wave_open(obtained.channels,
+                                      static_cast<long>(sampleRate),
+                                      g_audioFormat.containerSize,
+                                      wav_format,
+                                      wav_has_sign,
+                                      (int)obtained.is_msb,
+                                      wave_out.c_str()
+                                      );
+
+        if(wav_ctx)
         {
-            wave_enable_stereo();
-            short buff[4096];
+            uint8_t buff[16384];
             int complete_prev = -1;
+
             while(!stop)
             {
-                size_t got = static_cast<size_t>(opn2_play(myDevice, 4096, buff));
+                size_t got = (size_t)opn2_playFormat(myDevice, 4096,
+                                                     buff,
+                                                     buff + g_audioFormat.containerSize,
+                                                     &g_audioFormat) * g_audioFormat.containerSize;
                 if(got <= 0)
                     break;
 
-                applyGain(reinterpret_cast<uint8_t*>(buff), got * sizeof(short));
+                applyGain(buff, got);
 
-                wave_write(buff, static_cast<long>(got));
+                ctx_wave_write(wav_ctx, buff, static_cast<long>(got));
 
                 int complete = static_cast<int>(std::floor(100.0 * opn2_positionTell(myDevice) / total));
                 if(complete_prev != complete)
@@ -877,7 +890,8 @@ int main(int argc, char **argv)
                     complete_prev = complete;
                 }
             }
-            wave_close();
+
+            ctx_wave_close(wav_ctx);
             std::fprintf(stdout, "                                               \n\n");
 
             if(stop)
@@ -888,6 +902,8 @@ int main(int argc, char **argv)
         }
         else
         {
+            std::fprintf(stdout, "Failed to open the output file: %s!\n", wave_out.c_str());
+            std::fflush(stdout);
             opn2_close(myDevice);
             return 1;
         }

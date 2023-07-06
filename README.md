@@ -171,6 +171,8 @@ To remove MIDI Sequencer, define `OPNMIDI_DISABLE_MIDI_SEQUENCER` macro and remo
  * Fixed crash on attempt to change the volume of a blank note
  * Removed PMDwin and Genesis Plus GX emulatirs because of their very low quality
  * Added new [YMFM emulators](https://github.com/aaronsgiles/ymfm) for the OPN2 and for the OPNA (will be available for C++14 compilers only. If your compiler doesn't supports C++14, you can disable these emulators by defining the -DOPNMIDI_DISABLE_YMFM_EMULATOR macro if you build the code of libOPNMIDI at your own build tree)
+ * OPNMIDI player tool now has the ganining factor to change the output volume
+ * OPNMIDI player tool now is able to output WAV files of different sample formats
 
 ## 1.5.1   2022-10-31
  * Added an ability to disable the automatical arpeggio
