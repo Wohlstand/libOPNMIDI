@@ -15,8 +15,8 @@ target_compile_options(opnmidi_vlc_plugin PUBLIC
             "-DMODULE_STRING=\"opnmidi\""
             ${VLCPLUGIN_DEFINITIONS})
 
-if(USE_GX_EMULATOR)
-    target_compile_options(opnmidi_vlc_plugin PRIVATE -DUSE_GX_EMULATOR)
+if(USE_YMFM_EMULATOR)
+    target_compile_options(opnmidi_vlc_plugin PRIVATE -DUSE_YMFM_EMULATOR)
 endif()
 
 target_include_directories(opnmidi_vlc_plugin PRIVATE

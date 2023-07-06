@@ -119,22 +119,66 @@ static const char * const channel_alloc_descriptions[] =
 /*TODO: Turn on fourth emulator when complete experiments with it */
 static const int emulator_type_values[] =
 {
-    0, 1, 2
-#ifdef USE_GX_EMULATOR
-    , 3
+#ifndef OPNMIDI_DISABLE_MAME_EMULATOR
+    (int)OPNMIDI_EMU_MAME,
 #endif
-    , 4, 5
+
+#ifndef OPNMIDI_DISABLE_NUKED_EMULATOR
+    (int)OPNMIDI_EMU_NUKED_YM3438,
+    (int)OPNMIDI_EMU_NUKED_YM2612,
+#endif
+
+#ifndef OPNMIDI_DISABLE_GENS_EMULATOR
+    (int)OPNMIDI_EMU_GENS,
+#endif
+
+#ifdef USE_YMFM_EMULATOR
+    (int)OPNMIDI_EMU_YMFM_OPN2,
+#endif
+
+#ifndef OPNMIDI_DISABLE_NP2_EMULATOR
+    (int)OPNMIDI_EMU_NP2,
+#endif
+
+#ifndef OPNMIDI_DISABLE_MAME_2608_EMULATOR
+    (int)OPNMIDI_EMU_MAME_2608,
+#endif
+
+#ifdef USE_YMFM_EMULATOR
+    (int)OPNMIDI_EMU_YMFM_OPNA,
+#endif
+    0
 };
 static const char * const emulator_type_descriptions[] =
 {
+#ifndef OPNMIDI_DISABLE_MAME_EMULATOR
     N_("MAME YM2612 (OPN2)"),
-    N_("Nuked OPN2"),
-    N_("Gens 2.10"),
-#ifdef USE_GX_EMULATOR
-    N_("Genesis Plus GX [Experimental]"),
 #endif
+
+#ifndef OPNMIDI_DISABLE_NUKED_EMULATOR
+    N_("Nuked OPN2 YM3438"),
+    N_("Nuked OPN2 YM2612"),
+#endif
+
+#ifndef OPNMIDI_DISABLE_GENS_EMULATOR
+    N_("GENS/GS II OPN2"),
+#endif
+
+#ifdef USE_YMFM_EMULATOR
+    N_("YMFM OPN2"),
+#endif
+
+#ifndef OPNMIDI_DISABLE_NP2_EMULATOR
     N_("Neko Project II Kai OPNA"),
+#endif
+
+#ifndef OPNMIDI_DISABLE_MAME_2608_EMULATOR
     N_("MAME YM2610 (OPNA)"),
+#endif
+
+#ifdef USE_YMFM_EMULATOR
+    N_("YMFM OPNA"),
+#endif
     NULL
 };
 

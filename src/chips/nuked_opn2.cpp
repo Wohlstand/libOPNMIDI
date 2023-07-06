@@ -22,10 +22,10 @@
 #include "nuked/ym3438.h"
 #include <cstring>
 
-NukedOPN2::NukedOPN2(OPNFamily f)
+NukedOPN2::NukedOPN2(OPNFamily f, bool ym3438)
     : OPNChipBaseT(f)
 {
-    OPN2_SetChipType(ym3438_mode_readmode);
+    OPN2_SetChipType(ym3438 ? ym3438_mode_readmode : ym3438_mode_ym2612);
     chip = new ym3438_t;
     setRate(m_rate, m_clock);
 }

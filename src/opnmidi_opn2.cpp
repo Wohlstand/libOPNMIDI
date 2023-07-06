@@ -46,10 +46,10 @@
 #include "chips/gens_opn2.h"
 #endif
 
-// Genesis Plus GX emulator, Variant of MAME with enhancements
-#ifndef OPNMIDI_DISABLE_GX_EMULATOR
-#include "chips/gx_opn2.h"
-#endif
+//// Genesis Plus GX emulator, Variant of MAME with enhancements
+//#ifndef OPNMIDI_DISABLE_GX_EMULATOR
+//#include "chips/gx_opn2.h"
+//#endif
 
 // Neko Project II OPNA emulator
 #ifndef OPNMIDI_DISABLE_NP2_EMULATOR
@@ -61,10 +61,17 @@
 #include "chips/mame_opna.h"
 #endif
 
-// PMDWin OPNA emulator
-#ifndef OPNMIDI_DISABLE_PMDWIN_EMULATOR
-#include "chips/pmdwin_opna.h"
+//// PMDWin OPNA emulator
+//#ifndef OPNMIDI_DISABLE_PMDWIN_EMULATOR
+//#include "chips/pmdwin_opna.h"
+//#endif
+
+// YMFM emulators
+#ifndef OPNMIDI_DISABLE_YMFM_EMULATOR
+#include "chips/ymfm_opn2.h"
+#include "chips/ymfm_opna.h"
 #endif
+
 
 // VGM File dumper
 #ifdef OPNMIDI_MIDI2VGM
@@ -73,7 +80,8 @@
 
 static const unsigned opn2_emulatorSupport = 0
 #ifndef OPNMIDI_DISABLE_NUKED_EMULATOR
-    | (1u << OPNMIDI_EMU_NUKED)
+    | (1u << OPNMIDI_EMU_NUKED_YM2612)
+    | (1u << OPNMIDI_EMU_NUKED_YM3438)
 #endif
 #ifndef OPNMIDI_DISABLE_MAME_EMULATOR
     | (1u << OPNMIDI_EMU_MAME)
@@ -81,18 +89,22 @@ static const unsigned opn2_emulatorSupport = 0
 #ifndef OPNMIDI_DISABLE_GENS_EMULATOR
     | (1u << OPNMIDI_EMU_GENS)
 #endif
-#ifndef OPNMIDI_DISABLE_GX_EMULATOR
-    | (1u << OPNMIDI_EMU_GX)
+#ifndef OPNMIDI_DISABLE_YMFM_EMULATOR
+    | (1u << OPNMIDI_EMU_YMFM_OPN2)
+    | (1u << OPNMIDI_EMU_YMFM_OPNA)
 #endif
+//#ifndef OPNMIDI_DISABLE_GX_EMULATOR
+//    | (1u << OPNMIDI_EMU_GX)
+//#endif
 #ifndef OPNMIDI_DISABLE_NP2_EMULATOR
     | (1u << OPNMIDI_EMU_NP2)
 #endif
 #ifndef OPNMIDI_DISABLE_MAME_2608_EMULATOR
     | (1u << OPNMIDI_EMU_MAME_2608)
 #endif
-#ifndef OPNMIDI_DISABLE_PMDWIN_EMULATOR
-    | (1u << OPNMIDI_EMU_PMDWIN)
-#endif
+//#ifndef OPNMIDI_DISABLE_PMDWIN_EMULATOR
+//    | (1u << OPNMIDI_EMU_PMDWIN)
+//#endif
 #ifdef OPNMIDI_MIDI2VGM
     | (1u << OPNMIDI_VGM_DUMPER)
 #endif
@@ -631,8 +643,11 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_NUKED_EMULATOR
-        case OPNMIDI_EMU_NUKED:
-            chip = new NukedOPN2(family);
+        case OPNMIDI_EMU_NUKED_YM3438:
+            chip = new NukedOPN2(family, true);
+            break;
+        case OPNMIDI_EMU_NUKED_YM2612:
+            chip = new NukedOPN2(family, false);
             break;
 #endif
 #ifndef OPNMIDI_DISABLE_GENS_EMULATOR
@@ -640,11 +655,16 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
             chip = new GensOPN2(family);
             break;
 #endif
-#ifndef OPNMIDI_DISABLE_GX_EMULATOR
-        case OPNMIDI_EMU_GX:
-            chip = new GXOPN2(family);
+#ifndef OPNMIDI_DISABLE_YMFM_EMULATOR
+        case OPNMIDI_EMU_YMFM_OPN2:
+            chip = new YmFmOPN2(family);
             break;
 #endif
+//#ifndef OPNMIDI_DISABLE_GX_EMULATOR
+//        case OPNMIDI_EMU_GX:
+//            chip = new GXOPN2(family);
+//            break;
+//#endif
 #ifndef OPNMIDI_DISABLE_NP2_EMULATOR
         case OPNMIDI_EMU_NP2:
             chip = new NP2OPNA<>(family);
@@ -655,11 +675,16 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
             chip = new MameOPNA(family);
             break;
 #endif
-#ifndef OPNMIDI_DISABLE_PMDWIN_EMULATOR
-        case OPNMIDI_EMU_PMDWIN:
-            chip = new PMDWinOPNA(family);
+#ifndef OPNMIDI_DISABLE_YMFM_EMULATOR
+        case OPNMIDI_EMU_YMFM_OPNA:
+            chip = new YmFmOPNA(family);
             break;
 #endif
+//#ifndef OPNMIDI_DISABLE_PMDWIN_EMULATOR
+//        case OPNMIDI_EMU_PMDWIN:
+//            chip = new PMDWinOPNA(family);
+//            break;
+//#endif
 #ifdef OPNMIDI_MIDI2VGM
         case OPNMIDI_VGM_DUMPER:
             chip = new VGMFileDumper(family, i, (i == 0 ? NULL : m_chips[0].get()));

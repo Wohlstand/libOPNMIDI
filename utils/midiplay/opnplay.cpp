@@ -285,11 +285,15 @@ int main(int argc, char **argv)
             " -ea               Enable the auto-arpeggio\n"
             " --emu-mame        Use MAME YM2612 Emulator\n"
             " --emu-gens        Use GENS 2.10 Emulator\n"
-            " --emu-nuked       Use Nuked OPN2 Emulator\n"
-            " --emu-gx          Use Genesis Plus GX Emulator\n"
+            " --emu-nuked-3438  Use Nuked OPN2 YM3438 Emulator\n"
+            " --emu-nuked-2612  Use Nuked OPN2 YM2612 Emulator\n"
+            " --emu-nuked       Same as --emu-nuked-3438\n"
+            " --emu-ymfm-opn2   Use the YMFM OPN2\n"
+            // " --emu-gx          Use Genesis Plus GX Emulator\n"
             " --emu-np2         Use Neko Project II Emulator\n"
             " --emu-mame-opna   Use MAME YM2608 Emulator\n"
-            " --emu-pmdwin      Use PMDWin Emulator\n"
+            " --emu-ymfm-opna   Use the YMFM OPNA\n"
+            // " --emu-pmdwin      Use PMDWin Emulator\n"
             " --chips <count>   Choose a count of emulated concurrent chips\n"
             "\n"
         );
@@ -354,19 +358,35 @@ int main(int argc, char **argv)
         else if(!std::strcmp("-ea", argv[arg]))
             autoArpeggioEnabled = 1; //Enable automatical arpeggio
         else if(!std::strcmp("--emu-nuked", argv[arg]))
-            emulator = OPNMIDI_EMU_NUKED;
+            emulator = OPNMIDI_EMU_NUKED_YM3438;
+        else if(!std::strcmp("--emu-nuked-3438", argv[arg]))
+            emulator = OPNMIDI_EMU_NUKED_YM3438;
+        else if(!std::strcmp("--emu-nuked-2612", argv[arg]))
+            emulator = OPNMIDI_EMU_NUKED_YM2612;
         else if(!std::strcmp("--emu-gens", argv[arg]))
             emulator = OPNMIDI_EMU_GENS;
         else if(!std::strcmp("--emu-mame", argv[arg]))
             emulator = OPNMIDI_EMU_MAME;
         else if(!std::strcmp("--emu-gx", argv[arg]))
-            emulator = OPNMIDI_EMU_GX;
+        {
+            std::fprintf(stdout, " - WARNING: GX is deprecated. Using YMFM OPN2 instead.\n");
+            std::fflush(stdout);
+            emulator = OPNMIDI_EMU_YMFM_OPN2;
+        }
+        else if(!std::strcmp("--emu-ymfm-opn2", argv[arg]))
+            emulator = OPNMIDI_EMU_YMFM_OPN2;
         else if(!std::strcmp("--emu-np2", argv[arg]))
             emulator = OPNMIDI_EMU_NP2;
         else if(!std::strcmp("--emu-mame-opna", argv[arg]))
             emulator = OPNMIDI_EMU_MAME_2608;
-        else if(!std::strcmp("--emu-pmdwin", argv[arg]))
-            emulator = OPNMIDI_EMU_PMDWIN;
+        else if(!std::strcmp("--emu-pmdwin", argv[arg])) // DEPRECATED FLAG
+        {
+            std::fprintf(stdout, " - WARNING: PMDWin is deprecated. Using YMFM OPNA instead.\n");
+            std::fflush(stdout);
+            emulator = OPNMIDI_EMU_YMFM_OPNA;
+        }
+        else if(!std::strcmp("--emu-ymfm-opna", argv[arg]))
+            emulator = OPNMIDI_EMU_YMFM_OPNA;
         else if(!std::strcmp("-fp", argv[arg]))
             fullPanEnabled = true;
         else if(!std::strcmp("-s", argv[arg]))

@@ -2,11 +2,30 @@ cmake_minimum_required (VERSION 3.2)
 project(libOPNMIDI VERSION 1.5.1 LANGUAGES C CXX)
 
 include(GNUInstallDirs)
+include(CheckCXXCompilerFlag)
 
 # Prefer C90 standard
 set(CMAKE_C_STANDARD 90)
 # Prefer C++98 standard
 set(CMAKE_CXX_STANDARD 98)
+
+if(MSVC)
+    check_cxx_compiler_flag("/std:c++14" COMPILER_SUPPORTS_CXX14)
+    if(COMPILER_SUPPORTS_CXX14)
+        set(FLAG_CPP14 "/std:c++14")
+    endif()
+else()
+    check_cxx_compiler_flag("-std=c++14" COMPILER_SUPPORTS_CXX14)
+    if(COMPILER_SUPPORTS_CXX14)
+        set(FLAG_CPP14 "-std=c++14")
+    endif()
+endif()
+
+if(COMPILER_SUPPORTS_CXX14)
+    message("== Your C++ compiler supports C++14, YMFM emulator will be ENABLED")
+else()
+    message("== Your C++ compiler does NOT supports C++14, YMFM emulator will be DISABLED")
+endif()
 
 if(NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -159,6 +178,9 @@ option(USE_NP2_EMULATOR     "Use Neko Project II emulator" ON)
 option(USE_MAME_2608_EMULATOR "Use MAME YM2608 emulator" ON)
 option(USE_PMDWIN_EMULATOR  "Use PMDWin emulator (experimental)" OFF)
 option(USE_VGM_FILE_DUMPER  "Use VGM File Dumper (required to build the MIDI2VGM tool)" ON)
+if(COMPILER_SUPPORTS_CXX14)
+    option(USE_YMFM_EMULATOR    "Use YMFM emulator (requires C++14 support)" ON)
+endif()
 # WIP FEATURES
 # option(WITH_CPP_EXTRAS      "Build with support for C++ extras (features are can be found in 'adlmidi.hpp' header)" OFF)
 
@@ -205,6 +227,7 @@ file(GLOB libOPNMIDI_HEADERS
     ${libOPNMIDI_SOURCE_DIR}/src/chips/np2/*.h
     ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked/*.h
     ${libOPNMIDI_SOURCE_DIR}/src/chips/pmdwin/*.h
+    ${libOPNMIDI_SOURCE_DIR}/src/chips/ymfm/*.h
 )
 list(APPEND libOPNMIDI_SOURCES ${libOPNMIDI_HEADERS})
 
@@ -253,15 +276,15 @@ else()
     add_definitions(-DOPNMIDI_DISABLE_NUKED_EMULATOR)
 endif()
 
-if(USE_GX_EMULATOR)
-    list(APPEND libOPNMIDI_SOURCES
-        ${libOPNMIDI_SOURCE_DIR}/src/chips/gx_opn2.cpp
-        ${libOPNMIDI_SOURCE_DIR}/src/chips/gx/gx_ym2612.c
-    )
-    set(HAS_EMULATOR TRUE)
-else()
-    add_definitions(-DOPNMIDI_DISABLE_GX_EMULATOR)
-endif()
+#if(USE_GX_EMULATOR)
+#    list(APPEND libOPNMIDI_SOURCES
+#        ${libOPNMIDI_SOURCE_DIR}/src/chips/gx_opn2.cpp
+#        ${libOPNMIDI_SOURCE_DIR}/src/chips/gx/gx_ym2612.c
+#    )
+#    set(HAS_EMULATOR TRUE)
+#else()
+#    add_definitions(-DOPNMIDI_DISABLE_GX_EMULATOR)
+#endif()
 
 if(USE_NP2_EMULATOR)
     list(APPEND libOPNMIDI_SOURCES
@@ -289,16 +312,16 @@ else()
     add_definitions(-DOPNMIDI_DISABLE_MAME_2608_EMULATOR)
 endif()
 
-if(USE_PMDWIN_EMULATOR)
-    list(APPEND libOPNMIDI_SOURCES
-        ${libOPNMIDI_SOURCE_DIR}/src/chips/pmdwin_opna.cpp
-        ${libOPNMIDI_SOURCE_DIR}/src/chips/pmdwin/opna.c
-        ${libOPNMIDI_SOURCE_DIR}/src/chips/pmdwin/psg.c
-        ${libOPNMIDI_SOURCE_DIR}/src/chips/pmdwin/rhythmdata.c)
-    set(HAS_EMULATOR TRUE)
-else()
-    add_definitions(-DOPNMIDI_DISABLE_PMDWIN_EMULATOR)
-endif()
+#if(USE_PMDWIN_EMULATOR)
+#    list(APPEND libOPNMIDI_SOURCES
+#        ${libOPNMIDI_SOURCE_DIR}/src/chips/pmdwin_opna.cpp
+#        ${libOPNMIDI_SOURCE_DIR}/src/chips/pmdwin/opna.c
+#        ${libOPNMIDI_SOURCE_DIR}/src/chips/pmdwin/psg.c
+#        ${libOPNMIDI_SOURCE_DIR}/src/chips/pmdwin/rhythmdata.c)
+#    set(HAS_EMULATOR TRUE)
+#else()
+#    add_definitions(-DOPNMIDI_DISABLE_PMDWIN_EMULATOR)
+#endif()
 
 if(USE_VGM_FILE_DUMPER)
     list(APPEND libOPNMIDI_SOURCES
@@ -307,8 +330,27 @@ if(USE_VGM_FILE_DUMPER)
     add_definitions(-DOPNMIDI_MIDI2VGM)
 endif()
 
+if(USE_YMFM_EMULATOR)
+    set(YMFM_SOURCES
+        "${libOPNMIDI_SOURCE_DIR}/src/chips/ymfm_opn2.cpp"
+        "${libOPNMIDI_SOURCE_DIR}/src/chips/ymfm_opna.cpp"
+        "${libOPNMIDI_SOURCE_DIR}/src/chips/ymfm/ymfm_opn.cpp"
+        "${libOPNMIDI_SOURCE_DIR}/src/chips/ymfm/ymfm_misc.cpp"
+        "${libOPNMIDI_SOURCE_DIR}/src/chips/ymfm/ymfm_pcm.cpp"
+        "${libOPNMIDI_SOURCE_DIR}/src/chips/ymfm/ymfm_adpcm.cpp"
+        "${libOPNMIDI_SOURCE_DIR}/src/chips/ymfm/ymfm_ssg.cpp"
+    )
+    if(DEFINED FLAG_CPP14)
+        set_source_files_properties(${YMFM_SOURCES} COMPILE_FLAGS ${FLAG_CPP14})
+    endif()
+    list(APPEND libOPNMIDI_SOURCES ${YMFM_SOURCES})
+    set(HAS_EMULATOR TRUE)
+else()
+    add_definitions(-DOPNMIDI_DISABLE_YMFM_EMULATOR)
+endif()
+
 if(NOT HAS_EMULATOR)
-    message(FATAL_ERROR "No emulators enabled! You must enable at least one emulator!")
+    message(FATAL_ERROR "No emulators enabled! You should enable at least one emulator!")
 endif()
 
 if(NOT WITH_MIDI_SEQUENCER)
@@ -524,11 +566,12 @@ message("WITH_XMI_SUPPORT         = ${WITH_XMI_SUPPORT}")
 message("USE_MAME_EMULATOR        = ${USE_MAME_EMULATOR}")
 message("USE_GENS_EMULATOR        = ${USE_GENS_EMULATOR}")
 message("USE_NUKED_EMULATOR       = ${USE_NUKED_EMULATOR}")
-message("USE_GX_EMULATOR          = ${USE_GX_EMULATOR}")
+#message("USE_GX_EMULATOR          = ${USE_GX_EMULATOR}")
 message("USE_NP2_EMULATOR         = ${USE_NP2_EMULATOR}")
 message("USE_MAME_2608_EMULATOR   = ${USE_MAME_2608_EMULATOR}")
-message("USE_PMDWIN_EMULATOR      = ${USE_PMDWIN_EMULATOR}")
+#message("USE_PMDWIN_EMULATOR      = ${USE_PMDWIN_EMULATOR}")
 message("USE_VGM_FILE_DUMPER      = ${USE_VGM_FILE_DUMPER}")
+message("USE_YMFM_EMULATOR        = ${USE_YMFM_EMULATOR}")
 
 message("===== Utils and extras =====")
 message("WITH_MIDIPLAY            = ${WITH_MIDIPLAY}")
