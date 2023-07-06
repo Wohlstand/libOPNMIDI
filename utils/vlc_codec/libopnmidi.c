@@ -147,7 +147,6 @@ static const int emulator_type_values[] =
 #ifdef USE_YMFM_EMULATOR
     (int)OPNMIDI_EMU_YMFM_OPNA,
 #endif
-    0
 };
 static const char * const emulator_type_descriptions[] =
 {
