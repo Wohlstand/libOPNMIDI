@@ -66,20 +66,22 @@ public:
     }
 };
 
-typedef std::deque<int16_t> AudioBuff;
+typedef std::deque<uint8_t> AudioBuff;
 static AudioBuff g_audioBuffer;
 static MutexType g_audioBuffer_lock;
+static OPNMIDI_AudioFormat g_audioFormat;
 
 static void SDL_AudioCallbackX(void *, uint8_t *stream, int len)
 {
     audio_lock();
-    short *target = reinterpret_cast<int16_t *>(stream);
+    //short *target = (short *) stream;
     g_audioBuffer_lock.Lock();
-    size_t ate = size_t(len) / 2; // number of shorts
-    if(ate > g_audioBuffer.size()) ate = g_audioBuffer.size();
-    for(size_t a = 0; a < ate; ++a)
-        target[a] = g_audioBuffer[a];
-    g_audioBuffer.erase(g_audioBuffer.begin(), g_audioBuffer.begin() + AudioBuff::difference_type(ate));
+    unsigned ate = static_cast<unsigned>(len); // number of bytes
+    if(ate > g_audioBuffer.size())
+        ate = (unsigned)g_audioBuffer.size();
+    for(unsigned a = 0; a < ate; ++a)
+        stream[a] = g_audioBuffer[a];
+    g_audioBuffer.erase(g_audioBuffer.begin(), g_audioBuffer.begin() + ate);
     g_audioBuffer_lock.Unlock();
     audio_unlock();
 }
@@ -349,6 +351,18 @@ int main(int argc, char **argv)
     {
         if(!std::strcmp("-w", argv[arg]))
             recordWave = true;//Record library output into WAV file
+        else if(!std::strcmp("-s8", argv[arg]) && !recordWave)
+            spec.format = OPNMIDI_SampleType_S8;
+        else if(!std::strcmp("-u8", argv[arg]) && !recordWave)
+            spec.format = OPNMIDI_SampleType_U8;
+        else if(!std::strcmp("-s16", argv[arg]) && !recordWave)
+            spec.format = OPNMIDI_SampleType_S16;
+        else if(!std::strcmp("-u16", argv[arg]) && !recordWave)
+            spec.format = OPNMIDI_SampleType_U16;
+        else if(!std::strcmp("-s32", argv[arg]) && !recordWave)
+            spec.format = OPNMIDI_SampleType_S32;
+        else if(!std::strcmp("-f32", argv[arg]) && !recordWave)
+            spec.format = OPNMIDI_SampleType_F32;
         else if(!std::strcmp("-frb", argv[arg]))
             fullRangedBrightness = true;
         else if(!std::strcmp("-nl", argv[arg]))
@@ -465,6 +479,7 @@ int main(int argc, char **argv)
             std::fprintf(stderr, "\nERROR: Couldn't open audio: %s\n\n", audio_get_error());
             return 1;
         }
+
         if(spec.samples != obtained.samples || spec.freq != obtained.freq)
         {
             sampleRate = obtained.freq;
@@ -472,6 +487,40 @@ int main(int argc, char **argv)
                          " - Audio obtained (samples=%u,rate=%u,channels=%u)\n",
                          spec.samples,    spec.freq,    spec.channels,
                          obtained.samples, obtained.freq, obtained.channels);
+        }
+
+        switch(obtained.format)
+        {
+        case OPNMIDI_SampleType_S8:
+            g_audioFormat.type = OPNMIDI_SampleType_S8;
+            g_audioFormat.containerSize = sizeof(int8_t);
+            g_audioFormat.sampleOffset = sizeof(int8_t) * 2;
+            break;
+        case OPNMIDI_SampleType_U8:
+            g_audioFormat.type = OPNMIDI_SampleType_U8;
+            g_audioFormat.containerSize = sizeof(uint8_t);
+            g_audioFormat.sampleOffset = sizeof(uint8_t) * 2;
+            break;
+        case OPNMIDI_SampleType_S16:
+            g_audioFormat.type = OPNMIDI_SampleType_S16;
+            g_audioFormat.containerSize = sizeof(int16_t);
+            g_audioFormat.sampleOffset = sizeof(int16_t) * 2;
+            break;
+        case OPNMIDI_SampleType_U16:
+            g_audioFormat.type = OPNMIDI_SampleType_U16;
+            g_audioFormat.containerSize = sizeof(uint16_t);
+            g_audioFormat.sampleOffset = sizeof(uint16_t) * 2;
+            break;
+        case OPNMIDI_SampleType_S32:
+            g_audioFormat.type = OPNMIDI_SampleType_S32;
+            g_audioFormat.containerSize = sizeof(int32_t);
+            g_audioFormat.sampleOffset = sizeof(int32_t) * 2;
+            break;
+        case OPNMIDI_SampleType_F32:
+            g_audioFormat.type = OPNMIDI_SampleType_F32;
+            g_audioFormat.containerSize = sizeof(float);
+            g_audioFormat.sampleOffset = sizeof(float) * 2;
+            break;
         }
     }
 
@@ -636,7 +685,7 @@ int main(int argc, char **argv)
         std::fflush(stdout);
 #endif
 
-        short buff[4096];
+        uint8_t buff[16384];
         char posHMS[25];
         uint64_t milliseconds_prev = ~0u;
         int printsCounter = 0;
@@ -646,7 +695,11 @@ int main(int argc, char **argv)
 
         while(!stop)
         {
-            size_t got = static_cast<size_t>(opn2_play(myDevice, 4096, buff));
+            size_t got = (size_t)opn2_playFormat(myDevice, 4096,
+                                                 buff,
+                                                 buff + g_audioFormat.containerSize,
+                                                 &g_audioFormat) * g_audioFormat.containerSize;
+
             if(got <= 0)
                 break;
 
@@ -684,9 +737,11 @@ int main(int argc, char **argv)
                 g_audioBuffer[pos + p] = buff[p];
             g_audioBuffer_lock.Unlock();
 
-            const AudioOutputSpec &cur_spec = obtained;
-            while(!stop && (g_audioBuffer.size() > static_cast<size_t>(cur_spec.samples + (cur_spec.freq * 2) * OurHeadRoomLength)))
+            const AudioOutputSpec &spec = obtained;
+            while(!stop && (g_audioBuffer.size() > static_cast<size_t>(spec.samples + (spec.freq * g_audioFormat.sampleOffset) * OurHeadRoomLength)))
+            {
                 audio_delay(1);
+            }
 
 #ifdef DEBUG_SEEKING_TEST
             if(delayBeforeSeek-- <= 0)
