@@ -70,17 +70,89 @@ typedef std::deque<uint8_t> AudioBuff;
 static AudioBuff g_audioBuffer;
 static MutexType g_audioBuffer_lock;
 static OPNMIDI_AudioFormat g_audioFormat;
+static float g_gaining = 2.0f;
+
+static void applyGain(uint8_t *buffer, size_t bufferSize)
+{
+    size_t i;
+
+    switch(g_audioFormat.type)
+    {
+    case OPNMIDI_SampleType_S8:
+    {
+        int8_t *buf = reinterpret_cast<int8_t *>(buffer);
+        size_t samples = bufferSize;
+        for(i = 0; i < samples; ++i)
+            *(buf++) *= g_gaining;
+        break;
+    }
+    case OPNMIDI_SampleType_U8:
+    {
+        uint8_t *buf = buffer;
+        size_t samples = bufferSize;
+        for(i = 0; i < samples; ++i)
+        {
+            int8_t s = static_cast<int8_t>(static_cast<int32_t>(*buf) + (-0x7f - 1)) * g_gaining;
+            *(buf++) = static_cast<uint8_t>(static_cast<int32_t>(s) - (-0x7f - 1));
+        }
+        break;
+    }
+    case OPNMIDI_SampleType_S16:
+    {
+        int16_t *buf = reinterpret_cast<int16_t *>(buffer);
+        size_t samples = bufferSize / g_audioFormat.containerSize;
+        for(i = 0; i < samples; ++i)
+            *(buf++) *= g_gaining;
+        break;
+    }
+    case OPNMIDI_SampleType_U16:
+    {
+        uint16_t *buf = reinterpret_cast<uint16_t *>(buffer);
+        size_t samples = bufferSize / g_audioFormat.containerSize;
+        for(i = 0; i < samples; ++i)
+        {
+            int16_t s = static_cast<int16_t>(static_cast<int32_t>(*buf) + (-0x7fff - 1)) * g_gaining;
+            *(buf++) = static_cast<uint16_t>(static_cast<int32_t>(s) - (-0x7fff - 1));
+        }
+        break;
+    }
+    case OPNMIDI_SampleType_S32:
+    {
+        int32_t *buf = reinterpret_cast<int32_t *>(buffer);
+        size_t samples = bufferSize / g_audioFormat.containerSize;
+        for(i = 0; i < samples; ++i)
+            *(buf++) *= g_gaining;
+        break;
+    }
+    case OPNMIDI_SampleType_F32:
+    {
+        float *buf = reinterpret_cast<float *>(buffer);
+        size_t samples = bufferSize / g_audioFormat.containerSize;
+        for(i = 0; i < samples; ++i)
+            *(buf++) *= g_gaining;
+        break;
+    }
+    default:
+        break;
+    }
+}
 
 static void SDL_AudioCallbackX(void *, uint8_t *stream, int len)
 {
+    unsigned ate = static_cast<unsigned>(len); // number of bytes
+
     audio_lock();
     //short *target = (short *) stream;
     g_audioBuffer_lock.Lock();
-    unsigned ate = static_cast<unsigned>(len); // number of bytes
+
     if(ate > g_audioBuffer.size())
         ate = (unsigned)g_audioBuffer.size();
+
     for(unsigned a = 0; a < ate; ++a)
         stream[a] = g_audioBuffer[a];
+
+    applyGain(stream, len);
+
     g_audioBuffer.erase(g_audioBuffer.begin(), g_audioBuffer.begin() + ate);
     g_audioBuffer_lock.Unlock();
     audio_unlock();
@@ -285,6 +357,7 @@ int main(int argc, char **argv)
             " -w                Write WAV file rather than playing\n"
             " -fp               Enables full-panning stereo support\n"
             " -ea               Enable the auto-arpeggio\n"
+            " --gain <value>    Set the gaining factor (default 2.0)\n"
             " --emu-mame        Use MAME YM2612 Emulator\n"
             " --emu-gens        Use GENS 2.10 Emulator\n"
             " --emu-nuked-3438  Use Nuked OPN2 YM3438 Emulator\n"
@@ -405,6 +478,15 @@ int main(int argc, char **argv)
             fullPanEnabled = true;
         else if(!std::strcmp("-s", argv[arg]))
             scaleModulators = true;
+        else if(!std::strcmp("--gain", argv[arg]))
+        {
+            if(arg + 1 >= argc)
+            {
+                printError("The option --gain requires an argument!\n");
+                return 1;
+            }
+            g_gaining = std::atof(argv[++arg]);
+        }
         else if(!std::strcmp("-vm", argv[arg]))
         {
             if(arg + 1 >= argc)
@@ -480,13 +562,13 @@ int main(int argc, char **argv)
             return 1;
         }
 
-        if(spec.samples != obtained.samples || spec.freq != obtained.freq)
+        if(spec.samples != obtained.samples || spec.freq != obtained.freq || spec.format != obtained.format)
         {
             sampleRate = obtained.freq;
-            std::fprintf(stderr, " - Audio wanted (samples=%u,rate=%u,channels=%u);\n"
-                         " - Audio obtained (samples=%u,rate=%u,channels=%u)\n",
-                         spec.samples,    spec.freq,    spec.channels,
-                         obtained.samples, obtained.freq, obtained.channels);
+            std::fprintf(stderr, " - Audio wanted (format=%s,samples=%u,rate=%u,channels=%u);\n"
+                                 " - Audio obtained (format=%s,samples=%u,rate=%u,channels=%u)\n",
+                         audio_format_to_str(spec.format, spec.is_msb),         spec.samples,     spec.freq,     spec.channels,
+                         audio_format_to_str(obtained.format, obtained.is_msb), obtained.samples, obtained.freq, obtained.channels);
         }
 
         switch(obtained.format)
@@ -522,6 +604,12 @@ int main(int argc, char **argv)
             g_audioFormat.sampleOffset = sizeof(float) * 2;
             break;
         }
+    }
+    else
+    {
+        g_audioFormat.type = OPNMIDI_SampleType_S16;
+        g_audioFormat.containerSize = sizeof(int16_t);
+        g_audioFormat.sampleOffset = sizeof(int16_t) * 2;
     }
 
     if(arg == argc - 2)
@@ -618,6 +706,8 @@ int main(int argc, char **argv)
     std::fprintf(stdout, " - Track count: %lu\n", static_cast<unsigned long>(opn2_trackCount(myDevice)));
     std::fprintf(stdout, " - Volume model: %s\n", volume_model_to_str(opn2_getVolumeRangeModel(myDevice)));
     std::fprintf(stdout, " - Channel allocation mode: %s\n", chanalloc_to_str(opn2_getChannelAllocMode(myDevice)));
+
+    std::fprintf(stdout, " - Gain level: %g\n", g_gaining);
 
     int songsCount = opn2_getSongsCount(myDevice);
     if(songNumLoad >= 0)
@@ -773,6 +863,8 @@ int main(int argc, char **argv)
                 size_t got = static_cast<size_t>(opn2_play(myDevice, 4096, buff));
                 if(got <= 0)
                     break;
+
+                applyGain(reinterpret_cast<uint8_t*>(buff), got * sizeof(short));
 
                 wave_write(buff, static_cast<long>(got));
 
