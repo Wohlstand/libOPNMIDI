@@ -10,11 +10,11 @@ environment:
     BUILD_SHARED: ON
     BUILD_STATIC: ON
     BUILD_MIDIPLAY: ON
-    VLC_TARBALL_x32: "https://mirror.yandex.ru/mirrors/ftp.videolan.org/vlc/3.0.4/win32/vlc-3.0.4-win32.7z"
-    VLC_TARBALL_x64: "https://mirror.yandex.ru/mirrors/ftp.videolan.org/vlc/3.0.4/win64/vlc-3.0.4-win64.7z"
+    VLC_TARBALL_x32: "https://mirror.yandex.ru/mirrors/ftp.videolan.org/vlc/3.0.9.2/win32/vlc-3.0.9.2-win32.7z"
+    VLC_TARBALL_x64: "https://mirror.yandex.ru/mirrors/ftp.videolan.org/vlc/3.0.9.2/win64/vlc-3.0.9.2-win64.7z"
     SEVENZIP: "C:\\Program Files\\7-Zip\\7z.exe"
     WGET_BIN: "C:\\msys64\\usr\\bin\\wget.exe"
-    VLC_DIR: "vlc-3.0.4"
+    VLC_DIR: "vlc-3.0.9.2"
   matrix:
     - BUILD_TYPE: MinSizeRel
       COMPILER: MinGW
@@ -27,8 +27,8 @@ environment:
       COMPILER_FAMILY: MinGW
       GENERATOR: "MinGW Makefiles"
       PLATFORM: Win32
-      CMAKEPREFIXPATH: "C:/mingw-w64/i686-6.3.0-posix-dwarf-rt_v5-rev1/mingw32"
-      TOOLCHAIN_BIN: "C:\\mingw-w64\\i686-6.3.0-posix-dwarf-rt_v5-rev1\\mingw32\\bin"
+      CMAKEPREFIXPATH: "C:/mingw-w64/i686-8.1.0-posix-dwarf-rt_v6-rev0/mingw32"
+      TOOLCHAIN_BIN: "C:\\mingw-w64\\i686-8.1.0-posix-dwarf-rt_v6-rev0\\mingw32\\bin"
       VLC_PLUGIN: ON
       PACKAGE_TYPE: VLCPLUGIN
       BUILD_SHARED: OFF
@@ -39,8 +39,8 @@ environment:
       COMPILER_FAMILY: MinGW
       GENERATOR: "MinGW Makefiles"
       PLATFORM: x64
-      CMAKEPREFIXPATH: "C:/mingw-w64/x86_64-6.3.0-posix-seh-rt_v5-rev1/mingw64"
-      TOOLCHAIN_BIN: "C:\\mingw-w64\\x86_64-6.3.0-posix-seh-rt_v5-rev1\\mingw64\\bin"
+      CMAKEPREFIXPATH: "C:/mingw-w64/x86_64-8.1.0-posix-seh-rt_v6-rev0/mingw64"
+      TOOLCHAIN_BIN: "C:\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64\\bin"
       VLC_PLUGIN: ON
       PACKAGE_TYPE: VLCPLUGIN
       BUILD_SHARED: OFF
@@ -177,4 +177,3 @@ deploy:
 
 #on_finish:
 #  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
-
