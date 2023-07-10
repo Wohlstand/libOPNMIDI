@@ -150,8 +150,8 @@ void YmFmOPNA_Private::nativeGenerate(int16_t *frame, void *m_chip, void *m_outp
     int32_t o1 = output_r->data[1 % ymfm::ym2608::OUTPUTS];
     int32_t o2 = output_r->data[2 % ymfm::ym2608::OUTPUTS];
 
-    frame[0] = static_cast<int16_t>(ymfm::clamp((o0 + o2) / 2, -32768, 32767));
-    frame[1] = static_cast<int16_t>(ymfm::clamp((o1 + o2) / 2, -32768, 32767));
+    frame[0] = static_cast<int16_t>(ymfm::clamp(static_cast<int32_t>((o0 + o2) * 0.8f), -32768, 32767));
+    frame[1] = static_cast<int16_t>(ymfm::clamp(static_cast<int32_t>((o1 + o2) * 0.8f), -32768, 32767));
 
     m_pos = (m_pos % m_out_step);
 }

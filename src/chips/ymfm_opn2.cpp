@@ -105,8 +105,8 @@ void YmFmOPN2::nativeGenerate(int16_t *frame)
     }
 
     chip_r->generate(&frames_i);
-    frame[0] = static_cast<int16_t>(ymfm::clamp(frames_i.data[0] / 2, -32768, 32767));
-    frame[1] = static_cast<int16_t>(ymfm::clamp(frames_i.data[1] / 2, -32768, 32767));
+    frame[0] = static_cast<int16_t>(ymfm::clamp(static_cast<int32_t>(frames_i.data[0] * 0.8f), -32768, 32767));
+    frame[1] = static_cast<int16_t>(ymfm::clamp(static_cast<int32_t>(frames_i.data[1] * 0.8f), -32768, 32767));
 }
 
 const char *YmFmOPN2::emulatorName()
