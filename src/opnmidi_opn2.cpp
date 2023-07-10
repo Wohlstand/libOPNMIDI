@@ -525,8 +525,8 @@ void OPN2::setPan(size_t c, uint8_t value)
     else
     {
         int panning = 0;
-        if(value  < 64 + 32) panning |= OPN_PANNING_LEFT;
-        if(value >= 64 - 32) panning |= OPN_PANNING_RIGHT;
+        if(value  < 64 + 16) panning |= OPN_PANNING_LEFT;
+        if(value >= 64 - 16) panning |= OPN_PANNING_RIGHT;
         val = (panning & 0xC0) | (adli.lfosens & 0x3F);
         writePan(chip, c % 6, 64);
         writeRegI(chip, port, 0xB4 + cc, val);
