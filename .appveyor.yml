@@ -29,6 +29,7 @@ environment:
       PLATFORM: Win32
       CMAKEPREFIXPATH: "C:/mingw-w64/i686-8.1.0-posix-dwarf-rt_v6-rev0/mingw32"
       TOOLCHAIN_BIN: "C:\\mingw-w64\\i686-8.1.0-posix-dwarf-rt_v6-rev0\\mingw32\\bin"
+      TOOLCHAIN_ROOT: "C:\\mingw-w64\\i686-8.1.0-posix-dwarf-rt_v6-rev0\\mingw32"
       VLC_PLUGIN: ON
       PACKAGE_TYPE: VLCPLUGIN
       BUILD_SHARED: OFF
@@ -41,6 +42,7 @@ environment:
       PLATFORM: x64
       CMAKEPREFIXPATH: "C:/mingw-w64/x86_64-8.1.0-posix-seh-rt_v6-rev0/mingw64"
       TOOLCHAIN_BIN: "C:\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64\\bin"
+      TOOLCHAIN_ROOT: "C:\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64"
       VLC_PLUGIN: ON
       PACKAGE_TYPE: VLCPLUGIN
       BUILD_SHARED: OFF

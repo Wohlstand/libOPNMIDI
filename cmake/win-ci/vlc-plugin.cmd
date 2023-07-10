@@ -8,7 +8,7 @@ if %errorlevel% neq 0 exit /b %errorlevel%
 "%SEVENZIP%" x C:\vlc-temp\vlcsdk.7z -oC:\vlc-temp
 if %errorlevel% neq 0 exit /b %errorlevel%
 
-xcopy /S /E /Y "C:\vlc-temp\%VLC_DIR%\sdk\*" "%TOOLCHAIN_BIN%\.."
+xcopy /S /E /Y "C:\vlc-temp\%VLC_DIR%\sdk\*" "%TOOLCHAIN_ROOT%\"
 if %errorlevel% neq 0 exit /b %errorlevel%
 
 md build-%COMPILER%-%BUILD_TYPE%-%PLATFORM%
@@ -51,4 +51,3 @@ if %errorlevel% neq 0 exit /b %errorlevel%
 
 appveyor PushArtifact "libOPNMIDI-%VLC_DIR%-codec-%PLATFORM%.7z"
 if %errorlevel% neq 0 exit /b %errorlevel%
-
