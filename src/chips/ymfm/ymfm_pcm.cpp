@@ -30,7 +30,7 @@
 
 #include "ymfm_pcm.h"
 #include "ymfm_fm.h"
-#include "ymfm_fm.ipp"
+#include "ymfm_fm.hpp"
 
 namespace ymfm
 {

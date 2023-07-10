@@ -31,6 +31,32 @@
 namespace ymfm
 {
 
+/*
+ * Pan law table
+ */
+static const unsigned short panlawtable[] =
+{
+	65535, 65529, 65514, 65489, 65454, 65409, 65354, 65289,
+	65214, 65129, 65034, 64929, 64814, 64689, 64554, 64410,
+	64255, 64091, 63917, 63733, 63540, 63336, 63123, 62901,
+	62668, 62426, 62175, 61914, 61644, 61364, 61075, 60776,
+	60468, 60151, 59825, 59489, 59145, 58791, 58428, 58057,
+	57676, 57287, 56889, 56482, 56067, 55643, 55211, 54770,
+	54320, 53863, 53397, 52923, 52441, 51951, 51453, 50947,
+	50433, 49912, 49383, 48846, 48302, 47750, 47191,
+	46340, /* Center left */
+	46340, /* Center right */
+	45472, 44885, 44291, 43690, 43083, 42469, 41848, 41221,
+	40588, 39948, 39303, 38651, 37994, 37330, 36661, 35986,
+	35306, 34621, 33930, 33234, 32533, 31827, 31116, 30400,
+	29680, 28955, 28225, 27492, 26754, 26012, 25266, 24516,
+	23762, 23005, 22244, 21480, 20713, 19942, 19169, 18392,
+	17613, 16831, 16046, 15259, 14469, 13678, 12884, 12088,
+	11291, 10492, 9691, 8888, 8085, 7280, 6473, 5666,
+	4858, 4050, 3240, 2431, 1620, 810, 0
+};
+
+
 //*********************************************************
 //  GLOBAL TABLE LOOKUPS
 //*********************************************************
@@ -801,7 +827,9 @@ fm_channel<RegisterType>::fm_channel(fm_engine_base<RegisterType> &owner, uint32
 	m_feedback_in(0),
 	m_op{ nullptr, nullptr, nullptr, nullptr },
 	m_regs(owner.regs()),
-	m_owner(owner)
+	m_owner(owner),
+	m_panVolumeL(46340),
+	m_panVolumeR(46340)
 {
 }
 
@@ -900,6 +928,14 @@ if (m_choffs == 0x101)
 printf(" -- ");
 }
 */
+}
+
+
+template<class RegisterType>
+void fm_channel<RegisterType>::write_pan(int32_t data)
+{
+	m_panVolumeL = panlawtable[data & 0x7F];
+	m_panVolumeR = panlawtable[0x7F - (data & 0x7F)];
 }
 
 
@@ -1431,6 +1467,25 @@ void fm_engine_base<RegisterType>::write(uint16_t regnum, uint8_t data)
 			m_channel[8]->keyonoff(bitfield(keyon_opmask, 2) | (bitfield(keyon_opmask, 1) << 1), KEYON_RHYTHM, 8);
 		}
 	}
+}
+
+
+template<class RegisterType>
+void fm_engine_base<RegisterType>::write_pan(uint16_t chan, uint8_t data)
+{
+	m_channel[chan]->write_pan(data);
+}
+
+template<class RegisterType>
+int32_t fm_engine_base<RegisterType>::get_pan_l(uint16_t chan)
+{
+	return m_channel[chan]->panL();
+}
+
+template<class RegisterType>
+int32_t fm_engine_base<RegisterType>::get_pan_r(uint16_t chan)
+{
+	return m_channel[chan]->panR();
 }
 
 

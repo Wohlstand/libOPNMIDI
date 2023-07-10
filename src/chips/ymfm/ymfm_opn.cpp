@@ -29,7 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ymfm_opn.h"
-#include "ymfm_fm.ipp"
+#include "ymfm_fm.hpp"
 
 namespace ymfm
 {
@@ -1287,6 +1287,11 @@ void ym2608::write(uint32_t offset, uint8_t data)
 	}
 }
 
+void ym2608::write_pan(uint16_t chan, uint8_t data)
+{
+	m_fm.write_pan(chan, data);
+}
+
 
 //-------------------------------------------------
 //  generate - generate one sample of sound
@@ -2377,6 +2382,11 @@ void ym2612::write(uint32_t offset, uint8_t data)
 	}
 }
 
+void ym2612::write_pan(uint16_t chan, uint8_t data)
+{
+	m_fm.write_pan(chan, data);
+}
+
 
 //-------------------------------------------------
 //  generate - generate one sample of sound
@@ -2398,8 +2408,8 @@ void ym2612::generate(output_data *output, uint32_t numsamples)
 		for (int chan = 0; chan < last_fm_channel; chan++)
 		{
 			m_fm.output(temp.clear(), 5, 256, 1 << chan);
-			output->data[0] += dac_discontinuity(temp.data[0]);
-			output->data[1] += dac_discontinuity(temp.data[1]);
+			output->data[0] += (dac_discontinuity(temp.data[0]) * m_fm.get_pan_l(chan) / 65535);
+			output->data[1] += (dac_discontinuity(temp.data[1]) * m_fm.get_pan_r(chan) / 65535);
 		}
 
 		// add in DAC

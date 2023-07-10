@@ -282,6 +282,11 @@ public:
 	// master clocking function
 	void clock(uint32_t env_counter, int32_t lfo_raw_pm);
 
+	// EXTRA: Write the panning value for a simulated full-panning
+	void write_pan(int32_t data);
+	int32_t panL() const { return m_panVolumeL; }
+	int32_t panR() const { return m_panVolumeR; }
+
 	// specific 2-operator and 4-operator output handlers
 	void output_2op(output_data &output, uint32_t rshift, int32_t clipmax) const;
 	void output_4op(output_data &output, uint32_t rshift, int32_t clipmax) const;
@@ -333,6 +338,9 @@ private:
 	fm_operator<RegisterType> *m_op[4];    // up to 4 operators
 	RegisterType &m_regs;                  // direct reference to registers
 	fm_engine_base<RegisterType> &m_owner; // reference to the owning engine
+	// EXTRA:
+	int32_t m_panVolumeL;                        // Left PCM output channel volume
+	int32_t m_panVolumeR;                        // Right PCM output  channel volume
 };
 
 
@@ -377,6 +385,12 @@ public:
 
 	// write to the OPN registers
 	void write(uint16_t regnum, uint8_t data);
+
+	// EXTRA: Write panning value to the output channel
+	void write_pan(uint16_t chan, uint8_t data);
+
+	int32_t get_pan_l(uint16_t chan);
+	int32_t get_pan_r(uint16_t chan);
 
 	// return the current status
 	uint8_t status() const;

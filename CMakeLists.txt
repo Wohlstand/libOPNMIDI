@@ -231,6 +231,7 @@ file(GLOB libOPNMIDI_HEADERS
     ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked/*.h
     ${libOPNMIDI_SOURCE_DIR}/src/chips/pmdwin/*.h
     ${libOPNMIDI_SOURCE_DIR}/src/chips/ymfm/*.h
+    ${libOPNMIDI_SOURCE_DIR}/src/chips/ymfm/*.hpp
 )
 list(APPEND libOPNMIDI_SOURCES ${libOPNMIDI_HEADERS})
 

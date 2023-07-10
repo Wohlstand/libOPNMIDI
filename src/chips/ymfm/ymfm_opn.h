@@ -543,6 +543,8 @@ public:
 	void write_data_hi(uint8_t data);
 	void write(uint32_t offset, uint8_t data);
 
+	void write_pan(uint16_t chan, uint8_t data);
+
 	// generate one sample of sound
 	void generate(output_data *output, uint32_t numsamples = 1);
 
@@ -757,6 +759,8 @@ public:
 	void write_address_hi(uint8_t data);
 	void write_data_hi(uint8_t data);
 	void write(uint32_t offset, uint8_t data);
+
+	void write_pan(uint16_t chan, uint8_t data);
 
 	// generate one sample of sound
 	void generate(output_data *output, uint32_t numsamples = 1);

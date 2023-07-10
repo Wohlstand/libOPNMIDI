@@ -68,10 +68,10 @@ void YmFmOPN2::writeReg(uint32_t port, uint16_t addr, uint8_t data)
     ++m_queueCount;
 }
 
-void YmFmOPN2::writePan(uint16_t /*addr*/, uint8_t /*data*/)
+void YmFmOPN2::writePan(uint16_t addr, uint8_t data)
 {
-    // ymfm::ym2612 *chip_r = reinterpret_cast<ymfm::ym2612*>(m_chip);
-    // OPL3_WritePan(chip_r, addr, data);
+    ymfm::ym2612 *chip_r = reinterpret_cast<ymfm::ym2612*>(m_chip);
+    chip_r->write_pan(addr, data);
 }
 
 void YmFmOPN2::nativeGenerate(int16_t *frame)
