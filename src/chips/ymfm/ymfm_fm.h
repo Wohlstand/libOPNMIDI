@@ -135,14 +135,14 @@ public:
 protected:
 	// helper to encode four operator numbers into a 32-bit value in the
 	// operator maps for each register class
-	static constexpr uint32_t operator_list(uint8_t o1 = 0xff, uint8_t o2 = 0xff, uint8_t o3 = 0xff, uint8_t o4 = 0xff)
+	static inline uint32_t operator_list(uint8_t o1 = 0xff, uint8_t o2 = 0xff, uint8_t o3 = 0xff, uint8_t o4 = 0xff)
 	{
 		return o1 | (o2 << 8) | (o3 << 16) | (o4 << 24);
 	}
 
 	// helper to apply KSR to the raw ADSR rate, ignoring ksr if the
 	// raw value is 0, and clamping to 63
-	static constexpr uint32_t effective_rate(uint32_t rawrate, uint32_t ksr)
+	static inline uint32_t effective_rate(uint32_t rawrate, uint32_t ksr)
 	{
 		return (rawrate == 0) ? 0 : std::min<uint32_t>(rawrate + ksr, 63);
 	}

@@ -139,7 +139,7 @@ public:
 	void save_restore(ymfm_saved_state &state);
 
 	// map channel number to register offset
-	static constexpr uint32_t channel_offset(uint32_t chnum)
+	static inline uint32_t channel_offset(uint32_t chnum)
 	{
 		assert(chnum < CHANNELS);
 		if (!IsOpnA)
@@ -149,7 +149,7 @@ public:
 	}
 
 	// map operator number to register offset
-	static constexpr uint32_t operator_offset(uint32_t opnum)
+	static inline uint32_t operator_offset(uint32_t opnum)
 	{
 		assert(opnum < OPERATORS);
 		if (!IsOpnA)
