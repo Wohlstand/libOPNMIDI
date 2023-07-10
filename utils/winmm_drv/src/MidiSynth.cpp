@@ -595,10 +595,15 @@ void MidiSynth::loadSetup()
 
 void MidiSynth::LoadSynthSetup()
 {
-    if(!m_setupInit || m_setupCurrent.emulatorId != m_setup.emulatorId)
+    int inEmulatorId = m_setup.emulatorId;
+
+    if(inEmulatorId >= OPNMIDI_VGM_DUMPER)
+        inEmulatorId++; // Skip the VGM dumper
+
+    if(!m_setupInit || m_setupCurrent.emulatorId != inEmulatorId)
     {
-        opn2_switchEmulator(synth, m_setup.emulatorId);
-        m_setupCurrent.emulatorId = m_setup.emulatorId;
+        opn2_switchEmulator(synth, inEmulatorId);
+        m_setupCurrent.emulatorId = inEmulatorId;
     }
 
     if(!m_setupInit || m_setupCurrent.numChips != m_setup.numChips)

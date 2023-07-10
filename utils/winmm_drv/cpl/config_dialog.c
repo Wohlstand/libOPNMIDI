@@ -35,11 +35,13 @@ static const char *const volume_models_descriptions[] =
 static const char * const emulator_type_descriptions[] =
 {
     "MAME YM2612 (OPN2)",
-    "Nuked OPN2",
-    "Gens 2.10",
-    "Genesis Plus GX [Experimental]",
+    "Nuked OPN2 (YM3438)",
+    "GENS/GS II OPN2",
+    "YMFM OPN2",
     "Neko Project II Kai OPNA",
     "MAME YM2610 (OPNA)",
+    "YMFM OPNA",
+    "Nuked OPN2 (YM2612)",
     NULL
 };
 
