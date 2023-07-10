@@ -14,7 +14,7 @@ if(MSVC)
     if(COMPILER_SUPPORTS_CXX14)
         set(FLAG_CPP14 "/std:c++14")
     endif()
-    if(MSVC_VERSION < 1910)
+    if(MSVC_VERSION LESS 1910)
         unset(COMPILER_SUPPORTS_CXX14) # MSVC older than 2017 fails to build YMFM
     endif()
 else()
