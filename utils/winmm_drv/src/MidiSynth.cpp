@@ -657,7 +657,7 @@ void MidiSynth::LoadSynthSetup()
             opn2_openBankFile(synth, pathUtf8);
         }
         else
-            opn2_openBankData(synth, g_gm_opn2_bank, sizeof(g_gm_opn2_bank));
+            opn2_openBankData(synth, g_xg_wopn_bank, sizeof(g_xg_wopn_bank));
 
         m_setupCurrent.useExternalBank = m_setup.useExternalBank;
         wcscpy(m_setupCurrent.bankPath, m_setup.bankPath);
