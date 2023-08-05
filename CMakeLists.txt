@@ -212,6 +212,7 @@ list(APPEND libOPNMIDI_SOURCES
     ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_midiplay.cpp
     ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_opn2.cpp
     ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_private.cpp
+    ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_wave.cpp
     ${libOPNMIDI_SOURCE_DIR}/src/wopn/wopn_file.c
 )
 
@@ -232,6 +233,7 @@ file(GLOB libOPNMIDI_HEADERS
     ${libOPNMIDI_SOURCE_DIR}/src/chips/pmdwin/*.h
     ${libOPNMIDI_SOURCE_DIR}/src/chips/ymfm/*.h
     ${libOPNMIDI_SOURCE_DIR}/src/chips/ymfm/*.hpp
+    ${libOPNMIDI_SOURCE_DIR}/src/chips/tsf/*.h
 )
 list(APPEND libOPNMIDI_SOURCES ${libOPNMIDI_HEADERS})
 

@@ -31,6 +31,7 @@
 #endif
 #include "wopn/wopn_file.h"
 
+
 bool OPNMIDIplay::LoadBank(const std::string &filename)
 {
     FileAndMemReader file;
@@ -152,6 +153,7 @@ bool OPNMIDIplay::LoadBank(FileAndMemReader &fr)
     return true;
 }
 
+
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
 
 bool OPNMIDIplay::LoadMIDI_pre()
@@ -217,14 +219,17 @@ bool OPNMIDIplay::LoadMIDI(const std::string &filename)
 {
     FileAndMemReader file;
     file.openFile(filename.c_str());
+
     if(!LoadMIDI_pre())
         return false;
+
     MidiSequencer &seq = *m_sequencer;
     if(!seq.loadMIDI(file))
     {
         errorStringOut = seq.getErrorString();
         return false;
     }
+
     if(!LoadMIDI_post())
         return false;
     return true;
@@ -234,16 +239,20 @@ bool OPNMIDIplay::LoadMIDI(const void *data, size_t size)
 {
     FileAndMemReader file;
     file.openData(data, size);
+
     if(!LoadMIDI_pre())
         return false;
+
     MidiSequencer &seq = *m_sequencer;
     if(!seq.loadMIDI(file))
     {
         errorStringOut = seq.getErrorString();
         return false;
     }
+
     if(!LoadMIDI_post())
         return false;
+
     return true;
 }
 

@@ -544,7 +544,7 @@ static void tsf_region_operator(struct tsf_region* region, tsf_u16 genOper, unio
 		GEN_FLOAT_MAX1000    = 0xB0, //min 0, max 1000
 		GEN_FLOAT_MAX1440    = 0xC0, //min 0, max 1440
 
-		_GEN_MAX = 59,
+		_GEN_MAX = 59
 	};
 	#define _TSFREGIONOFFSET(TYPE, FIELD) (unsigned char)(((TYPE*)&((struct tsf_region*)0)->FIELD) - (TYPE*)0)
 	#define _TSFREGIONENVOFFSET(TYPE, ENV, FIELD) (unsigned char)(((TYPE*)&((&(((struct tsf_region*)0)->ENV))->FIELD)) - (TYPE*)0)
@@ -925,6 +925,7 @@ static int tsf_decode_samples_ogg(tsf_u8* smplBuffer, tsf_u32 smplLength, float*
 static int tsf_decode_samples(tsf_u8* smplBuffer, tsf_u32 smplLength, float** outSamples, unsigned int* outSampleCount, struct tsf_hydra *hydra)
 {
 	float *out; const short *in;
+	(void)hydra;
 
 	#ifdef STB_VORBIS_INCLUDE_STB_VORBIS_H
 	if (TSF_FourCCEquals(smplBuffer, "OggS"))

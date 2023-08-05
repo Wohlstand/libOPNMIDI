@@ -25,9 +25,11 @@
 #include "opnmidi_opn2.hpp"
 #include "opnmidi_private.hpp"
 #include "chips/opn_chip_base.h"
+#include "chips/tsf/tsf.h"
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
 #include "midi_sequencer.hpp"
 #endif
+
 
 /* Unify MIDI player casting and interface between ADLMIDI and OPNMIDI */
 #define GET_MIDI_PLAYER(device) reinterpret_cast<OPNMIDIplay *>((device)->opn2_midiPlayer)
@@ -304,6 +306,48 @@ OPNMIDI_EXPORT int opn2_openBankData(OPN2_MIDIPlayer *device, const void *mem, l
     OPN2MIDI_ErrorString = "Can't load file: OPN2 MIDI is not initialized";
     return -1;
 }
+
+
+OPNMIDI_EXPORT int opn2_openWaveBankFile(OPN2_MIDIPlayer *device, const char *filePath)
+{
+    if(device)
+    {
+        MidiPlayer *play = GET_MIDI_PLAYER(device);
+        assert(play);
+        if(!play->LoadWaveBank(filePath))
+        {
+            std::string err = play->getErrorString();
+            if(err.empty())
+                play->setErrorString("OPN2 MIDI: Can't load file");
+            return -1;
+        }
+        else
+            return 0;
+    }
+    OPN2MIDI_ErrorString = "Can't load file: OPN2 MIDI is not initialized";
+    return -1;
+}
+
+OPNMIDI_EXPORT int opn2_openWaveBankData(OPN2_MIDIPlayer *device, const void *mem, long size)
+{
+    if(device)
+    {
+        MidiPlayer *play = GET_MIDI_PLAYER(device);
+        assert(play);
+        if(!play->LoadWaveBank(mem, static_cast<size_t>(size)))
+        {
+            std::string err = play->getErrorString();
+            if(err.empty())
+                play->setErrorString("OPN2 MIDI: Can't load data from memory");
+            return -1;
+        }
+        else return 0;
+    }
+
+    OPN2MIDI_ErrorString = "Can't load file: OPN2 MIDI is not initialized";
+    return -1;
+}
+
 
 OPNMIDI_EXPORT void opn2_setLfoEnabled(struct OPN2_MIDIPlayer *device, int lfoEnable)
 {
@@ -1206,8 +1250,10 @@ OPNMIDI_EXPORT int opn2_playFormat(OPN2_MIDIPlayer *device, int sampleCount,
             //fill buffer with zeros
             int32_t *out_buf = player->m_outBuf;
             std::memset(out_buf, 0, static_cast<size_t>(in_generatedPhys) * sizeof(out_buf[0]));
+
             Synth &synth = *player->m_synth;
             unsigned int chips = synth.m_numChips;
+
             if(chips == 1)
                 synth.m_chips[0]->generate32(out_buf, (size_t)in_generatedStereo);
             else/* if(n_periodCountStereo > 0)*/
@@ -1216,6 +1262,10 @@ OPNMIDI_EXPORT int opn2_playFormat(OPN2_MIDIPlayer *device, int sampleCount,
                 for(size_t card = 0; card < chips; ++card)
                     synth.m_chips[card]->generateAndMix32(out_buf, (size_t)in_generatedStereo);
             }
+
+            if(player->m_tsfEnabled)
+                player->waveRender(out_buf, (size_t)in_generatedStereo, 1);
+
             /* Process it */
             if(SendStereoAudio(sampleCount, in_generatedStereo, out_buf, gotten_len, out_left, out_right, format) == -1)
                 return 0;
@@ -1284,8 +1334,10 @@ OPNMIDI_EXPORT int opn2_generateFormat(struct OPN2_MIDIPlayer *device, int sampl
             //fill buffer with zeros
             int32_t *out_buf = player->m_outBuf;
             std::memset(out_buf, 0, static_cast<size_t>(in_generatedPhys) * sizeof(out_buf[0]));
+
             Synth &synth = *player->m_synth;
             unsigned int chips = synth.m_numChips;
+
             if(chips == 1)
                 synth.m_chips[0]->generate32(out_buf, (size_t)in_generatedStereo);
             else/* if(n_periodCountStereo > 0)*/
@@ -1294,6 +1346,10 @@ OPNMIDI_EXPORT int opn2_generateFormat(struct OPN2_MIDIPlayer *device, int sampl
                 for(size_t card = 0; card < chips; ++card)
                     synth.m_chips[card]->generateAndMix32(out_buf, (size_t)in_generatedStereo);
             }
+
+            if(player->m_tsfEnabled)
+                player->waveRender(out_buf, (size_t)in_generatedStereo, 1);
+
             /* Process it */
             if(SendStereoAudio(sampleCount, in_generatedStereo, out_buf, gotten_len, out_left, out_right, format) == -1)
                 return 0;

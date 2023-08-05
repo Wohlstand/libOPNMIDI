@@ -540,6 +540,30 @@ extern OPNMIDI_DECLSPEC int opn2_openBankFile(struct OPN2_MIDIPlayer *device, co
  */
 extern OPNMIDI_DECLSPEC int opn2_openBankData(struct OPN2_MIDIPlayer *device, const void *mem, long size);
 
+/**
+ * @brief Load SF2 or SFZ bank file from File System
+ *
+ * Is recommended to call opn2_reset() to apply changes to already-loaded file player or real-time.
+ *
+ * @param device Instance of the library
+ * @param filePath Absolute or relative path to the WOPL bank file. UTF8 encoding is required, even on Windows.
+ * @return 0 on success, <0 when any error has occurred
+ */
+extern OPNMIDI_DECLSPEC int opn2_openWaveBankFile(struct OPN2_MIDIPlayer *device, const char *filePath);
+
+/**
+ * @brief Load SF2 or SFZ bank file from memory data
+ *
+ * Is recommended to call opn2_reset() to apply changes to already-loaded file player or real-time.
+ *
+ * @param device Instance of the library
+ * @param mem Pointer to memory block where is raw data of WOPL bank file is stored
+ * @param size Size of given memory block
+ * @return 0 on success, <0 when any error has occurred
+ */
+extern OPNMIDI_DECLSPEC int opn2_openWaveBankData(struct OPN2_MIDIPlayer *device, const void *mem, long size);
+
+
 
 /**
  * @brief [DEPRECATED] Dummy function

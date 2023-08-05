@@ -617,6 +617,16 @@ public:
     //! OPN2 Chip manager
     AdlMIDI_UPtr<Synth> m_synth;
 
+    struct TinyFluidSynthDeleter
+    {
+        void operator()(tsf *x);
+    };
+
+    AdlMIDI_UPtr<tsf, TinyFluidSynthDeleter> m_synthTSF;
+    bool m_tsfEnabled;
+    bool m_tsfPercMap[16][128];
+    bool m_tsfMelodicUse[16];
+
     //! Generator output buffer
     int32_t m_outBuf[1024];
 
@@ -644,6 +654,52 @@ public:
      * @return true on succes
      */
     bool LoadBank(FileAndMemReader &fr);
+
+    /**
+     * @brief Load the WaveTable bank from the file
+     * @param filename Path to the wavetable bank
+     * @return true on success
+     */
+    bool LoadWaveBank(const std::string &filename);
+
+    /**
+     * @brief Load the WaveTable bank from the memory
+     * @param data Pointer to the bank data block
+     * @param size Size of the bank data block
+     * @return true on success
+     */
+    bool LoadWaveBank(const void *data, size_t size);
+
+    /**
+     * @brief Reload melodic mapping for channel (do use wave or FM?)
+     * @param channel Channel to update
+     */
+    void waveMelMap(int channel);
+
+    /**
+     * @brief Reload perecussion mapping for channel and drumkit (do use wave or FM?)
+     * @param channel channel to update
+     * @param instrument drumkit number
+     */
+    void wavePercMap(int channel, int instrument);
+
+    /**
+     * @brief Reload mapping for channel (do use wave or FM?)
+     * @param channel channel to update
+     */
+    void waveMap(int channel);
+
+    /**
+     * @brief Check does channel use wave or FM
+     * @param channel channel to update
+     * @param note drumkit if channel is percussion, or gets ignored
+     * @return true of wave, false if FM
+     */
+    bool useWave(uint8_t channel, uint8_t note);
+
+    void waveReset();
+
+    void waveRender(int32_t *buffer, int samples, int flag_mixing);
 
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
     /**

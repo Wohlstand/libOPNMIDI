@@ -121,6 +121,7 @@ typedef struct BW_MidiRtInterface BW_MidiRtInterface;
 
 class OPN2;
 class OPNChipBase;
+typedef struct tsf tsf;
 
 typedef class OPN2 Synth;
 
