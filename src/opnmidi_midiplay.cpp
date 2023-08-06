@@ -115,7 +115,7 @@ OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
     applySetup();
     realTime_ResetState();
 
-    // For loca test purposes
+    // For local test purposes
     // LoadWaveBank("/home/somedata/BassMidi/SegaDrums/segadrums-minify.sf2");
 }
 
