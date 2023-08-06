@@ -187,6 +187,7 @@ void OPNMIDIplay::waveRender(int32_t *buffer, int samples, int flag_mixing)
     tsf* f = m_synthTSF.get();
     float outputSamples[TSF_RENDER_SHORTBUFFERBLOCK];
     int channels = (f->outputmode == TSF_MONO ? 1 : 2), maxChannelSamples = TSF_RENDER_SHORTBUFFERBLOCK / channels;
+    const float gain = 0.6f;
 
     while(samples > 0)
     {
@@ -201,7 +202,8 @@ void OPNMIDIplay::waveRender(int32_t *buffer, int samples, int flag_mixing)
             while (buffer != bufferEnd)
             {
                 float v = *floatSamples++;
-                int vi = *buffer + (int)(v * 32767.5f / 1.5f);
+                int8_t v8 = (int)(v * 127.5f * gain);
+                int vi = *buffer + ((int)v8 * 258);
                 *buffer++ = vi;
             }
         }
@@ -210,7 +212,8 @@ void OPNMIDIplay::waveRender(int32_t *buffer, int samples, int flag_mixing)
             while (buffer != bufferEnd)
             {
                 float v = *floatSamples++;
-                *buffer++ = (int)(v * 32767.5f / 1.5f);
+                int8_t v8 = (int)(v * 127.5f * gain);
+                *buffer++ = (int)v8 * 258;
             }
         }
     }
