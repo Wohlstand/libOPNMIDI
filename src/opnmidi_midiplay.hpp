@@ -701,6 +701,12 @@ public:
 
     void waveRender(int32_t *buffer, int samples, int flag_mixing);
 
+    /**
+     * @brief Checks if any Wave voice playing
+     * @return true if any Wave voice playing
+     */
+    bool waveIsPlaying();
+
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
     /**
      * @brief MIDI file loading pre-process
