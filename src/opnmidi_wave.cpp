@@ -218,3 +218,15 @@ void OPNMIDIplay::waveRender(int32_t *buffer, int samples, int flag_mixing)
         }
     }
 }
+
+bool OPNMIDIplay::waveIsPlaying()
+{
+    bool ret = false;
+    tsf* f = m_synthTSF.get();
+    struct tsf_voice *v = f->voices, *vEnd = v + f->voiceNum;
+
+    for(; v != vEnd; v++)
+        ret |= (v->playingPreset != -1);
+
+    return ret;
+}
