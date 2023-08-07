@@ -699,7 +699,11 @@ public:
 
     void waveReset();
 
+    void waveAttach();
+
     void waveRender(int32_t *buffer, int samples, int flag_mixing);
+
+    static void waveRenderS(void *self, int32_t *buffer, int samples);
 
     /**
      * @brief Checks if any Wave voice playing

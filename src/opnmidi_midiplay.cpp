@@ -116,7 +116,7 @@ OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
     realTime_ResetState();
 
     // For local test purposes
-    // LoadWaveBank("/home/somedata/BassMidi/SegaDrums/segadrums-minify.sf2");
+    LoadWaveBank("/home/somedata/BassMidi/SegaDrums/segadrums-minify.sf2");
 }
 
 OPNMIDIplay::~OPNMIDIplay()
@@ -162,6 +162,7 @@ void OPNMIDIplay::applySetup()
         chipType = m_setup.chipType;
 
     synth.reset(m_setup.emulator, m_setup.PCM_RATE, static_cast<OPNFamily>(chipType), this);
+    waveAttach();
     m_chipChannels.clear();
     m_chipChannels.resize(synth.m_numChannels, OpnChannel());
     resetMIDIDefaults();
@@ -1349,6 +1350,9 @@ int64_t OPNMIDIplay::calculateChipChannelGoodness(size_t c, const MIDIchannel::N
     int64_t koff_ms = chan.koff_time_until_neglible_us / 1000;
     int64_t s = -koff_ms;
     OPNMIDI_ChannelAlloc allocType = synth.m_channelAlloc;
+
+    if(c == 5 && synth.m_chips[0]->dacEnabled())
+        return -1000000000; // Don't take the DAC channel
 
     if(allocType == OPNMIDI_ChanAlloc_AUTO)
     {

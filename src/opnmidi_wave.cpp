@@ -22,6 +22,8 @@
  */
 
 #include "opnmidi_midiplay.hpp"
+#include "opnmidi_opn2.hpp"
+#include "chips/opn_chip_base.h"
 
 #define TSF_IMPLEMENTATION
 #include "chips/tsf/tsf.h"
@@ -43,7 +45,7 @@ bool OPNMIDIplay::LoadWaveBank(const std::string &filename)
         tsf_channel_set_bank(m_synthTSF.get(), ch, 0);
 
     tsf_channel_set_bank_preset(m_synthTSF.get(), 9, 128, 0);
-    tsf_set_output(m_synthTSF.get(), TSF_STEREO_INTERLEAVED, static_cast<int>(m_setup.PCM_RATE), -2.0f);
+    tsf_set_output(m_synthTSF.get(), TSF_MONO /*TSF_STEREO_INTERLEAVED*/, static_cast<int>(11025), -2.0f);
 
     m_tsfEnabled = true;
 
@@ -68,7 +70,7 @@ bool OPNMIDIplay::LoadWaveBank(const void *data, size_t size)
         tsf_channel_set_bank(m_synthTSF.get(), ch, 0);
 
     tsf_channel_set_bank_preset(m_synthTSF.get(), 9, 128, 0);
-    tsf_set_output(m_synthTSF.get(), TSF_STEREO_INTERLEAVED, static_cast<int>(m_setup.PCM_RATE), -2.0f);
+    tsf_set_output(m_synthTSF.get(), TSF_MONO/*TSF_STEREO_INTERLEAVED*/, static_cast<int>(11025), -2.0f);
 
     m_tsfEnabled = true;
 
@@ -180,6 +182,17 @@ void OPNMIDIplay::waveReset()
         tsf_channel_set_pitchwheel(m_synthTSF.get(), c, midiChan.bend + 8192);
         waveMap(c);
     }
+
+    waveAttach();
+}
+
+void OPNMIDIplay::waveAttach()
+{
+    if(!m_tsfEnabled)
+        return;
+
+    if(!m_synth->m_chips.empty() && m_synth->m_chips[0]->enableDAC(true))
+        m_synth->m_chips[0]->setFetchPcmCB(&OPNMIDIplay::waveRenderS, this, 11025);
 }
 
 void OPNMIDIplay::waveRender(int32_t *buffer, int samples, int flag_mixing)
@@ -187,7 +200,7 @@ void OPNMIDIplay::waveRender(int32_t *buffer, int samples, int flag_mixing)
     tsf* f = m_synthTSF.get();
     float outputSamples[TSF_RENDER_SHORTBUFFERBLOCK];
     int channels = (f->outputmode == TSF_MONO ? 1 : 2), maxChannelSamples = TSF_RENDER_SHORTBUFFERBLOCK / channels;
-    const float gain = 0.6f;
+    const float gain = 1.0f;
 
     while(samples > 0)
     {
@@ -217,6 +230,12 @@ void OPNMIDIplay::waveRender(int32_t *buffer, int samples, int flag_mixing)
             }
         }
     }
+}
+
+void OPNMIDIplay::waveRenderS(void *self, int32_t *buffer, int samples)
+{
+    OPNMIDIplay *s = reinterpret_cast<OPNMIDIplay*>(self);
+    s->waveRender(buffer, samples, 1);
 }
 
 bool OPNMIDIplay::waveIsPlaying()

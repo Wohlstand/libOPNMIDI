@@ -257,8 +257,34 @@ void VGMFileDumper::nativeGenerateN(int16_t *output, size_t frames)
         return;
     if(m_chip_index > 0 || m_end_caught) // When it's a second chip
         return;
+
     std::memset(output, 0, frames * sizeof(int16_t) * 2);
-    m_delay += size_t(frames * (44100.0 / double(m_actual_rate)));
+    double delay = 0.0f;
+
+    if(m_fetchPcmStream)
+    {
+        for(size_t i = 0; i < frames; ++i)
+        {
+            m_fetchCount += 1.0f;
+            delay += 44100.0 / double(m_actual_rate);
+            if(m_fetchCount >= m_fetchAt)
+            {
+                m_delay += size_t(delay);
+                delay = 0.0f;
+                flushWait();
+                int32_t sample = 0;
+                uint8_t usample;
+                m_fetchPcmStream(m_fetchPcmUserData, &sample, 1);
+                usample = ((sample + 32767) >> 8) & 0xFF;
+                writeReg(0, 0x2A, usample);
+                m_fetchCount -= m_fetchAt;
+            }
+        }
+
+        m_delay += size_t(delay);
+    }
+    else
+        m_delay += size_t(frames * (44100.0 / double(m_actual_rate)));
 }
 
 const char *VGMFileDumper::emulatorName()

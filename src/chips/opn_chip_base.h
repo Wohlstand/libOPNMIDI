@@ -38,6 +38,8 @@ class VResampler;
 extern void opn2_audioTickHandler(void *instance, uint32_t chipId, uint32_t rate);
 #endif
 
+typedef void (*OPNPCMSourceCallback)(void *userdata, int32_t *buffer, int samples);
+
 class OPNChipBase
 {
 protected:
@@ -45,6 +47,14 @@ protected:
     uint32_t m_rate;
     uint32_t m_clock;
     OPNFamily m_family;
+
+    OPNPCMSourceCallback m_fetchPcmStream;
+    void *m_fetchPcmUserData;
+    uint32_t m_fetchPcmRate;
+    bool m_dacEnabled;
+    float m_fetchCount;
+    float m_fetchAt;
+
 public:
     explicit OPNChipBase(OPNFamily f);
     virtual ~OPNChipBase();
@@ -55,6 +65,18 @@ public:
 
     uint32_t chipId() const { return m_id; }
     void setChipId(uint32_t id) { m_id = id; }
+
+    void setFetchPcmCB(OPNPCMSourceCallback cb, void* userdata, uint32_t rate)
+    {
+        m_fetchPcmStream = cb;
+        m_fetchPcmUserData = userdata;
+        m_fetchPcmRate = rate;
+        m_fetchCount = 0.f;
+        m_fetchAt = (float)nativeRate() / rate;
+    }
+
+    bool enableDAC(bool en);
+    bool dacEnabled() const { return m_dacEnabled; }
 
     virtual bool canRunAtPcmRate() const = 0;
     virtual bool isRunningAtPcmRate() const = 0;
@@ -72,6 +94,8 @@ public:
     // extended
     virtual void writePan(uint16_t addr, uint8_t data) { (void)addr; (void)data; }
 
+    virtual void processPcm();
+
     virtual void nativePreGenerate() = 0;
     virtual void nativePostGenerate() = 0;
     virtual void nativeGenerate(int16_t *frame) = 0;
@@ -86,6 +110,7 @@ private:
     OPNChipBase(const OPNChipBase &c);
     OPNChipBase &operator=(const OPNChipBase &c);
 };
+
 
 // A base class providing F-bounded generic and efficient implementations,
 // supporting resampling of chip outputs
