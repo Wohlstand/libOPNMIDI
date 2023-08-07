@@ -78,6 +78,7 @@ public:
     void reset() override;
     void writeReg(uint32_t port, uint16_t addr, uint8_t data) override;
     void writePan(uint16_t chan, uint8_t data) override;
+    void processPcm() override {}
     void nativePreGenerate() override {}
     void nativePostGenerate() override {}
     void nativeGenerateN(int16_t *output, size_t frames) override;

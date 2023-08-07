@@ -1263,7 +1263,7 @@ OPNMIDI_EXPORT int opn2_playFormat(OPN2_MIDIPlayer *device, int sampleCount,
                     synth.m_chips[card]->generateAndMix32(out_buf, (size_t)in_generatedStereo);
             }
 
-            if(player->m_tsfEnabled)
+            if(player->m_tsfEnabled && !synth.m_chips[0]->dacEnabled())
                 player->waveRender(out_buf, (size_t)in_generatedStereo, 1);
 
             /* Process it */

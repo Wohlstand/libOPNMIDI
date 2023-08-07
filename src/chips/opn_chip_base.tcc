@@ -23,18 +23,48 @@ inline OPNChipBase::OPNChipBase(OPNFamily f) :
     m_id(0),
     m_rate(44100),
     m_clock(7670454),
-    m_family(f)
-{
-}
+    m_family(f),
+    m_fetchPcmStream(NULL),
+    m_fetchPcmUserData(NULL),
+    m_fetchPcmRate(0),
+    m_dacEnabled(false)
+{}
 
 inline OPNChipBase::~OPNChipBase()
-{
-}
+{}
 
 inline uint32_t OPNChipBase::clockRate() const
 {
     return m_clock;
 }
+
+inline bool OPNChipBase::enableDAC(bool en)
+{
+    if(m_family != OPNChip_OPN2)
+        return false; // DAC is available at OPN2 only
+
+    m_dacEnabled = en;
+    writeReg(0, 0x2B, en ? 0x80 : 0x00);
+    return true;
+}
+
+inline void OPNChipBase::processPcm()
+{
+    if(m_fetchPcmStream)
+    {
+        m_fetchCount += 1.0f;
+        if(m_fetchCount >= m_fetchAt)
+        {
+            int32_t sample = 0;
+            uint8_t usample;
+            m_fetchPcmStream(m_fetchPcmUserData, &sample, 1);
+            usample = ((sample + 32767) >> 8) & 0xFF;
+            writeReg(0, 0x2A, usample);
+            m_fetchCount -= m_fetchAt;
+        }
+    }
+}
+
 
 /* OPNChipBaseT */
 
@@ -202,6 +232,7 @@ void OPNChipBaseT<T>::nativeTick(int16_t *frame)
 #if defined(OPNMIDI_AUDIO_TICK_HANDLER)
     opn2_audioTickHandler(m_audioTickHandlerInstance, m_id, effectiveRate());
 #endif
+    processPcm();
     static_cast<T *>(this)->nativeGenerate(frame);
 }
 
