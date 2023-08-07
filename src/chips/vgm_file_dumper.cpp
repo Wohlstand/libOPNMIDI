@@ -269,19 +269,19 @@ void VGMFileDumper::nativeGenerateN(int16_t *output, size_t frames)
             delay += 44100.0 / double(m_actual_rate);
             if(m_fetchCount >= m_fetchAt)
             {
-                m_delay += size_t(delay);
+                m_delay += size_t(delay + 0.5);
                 delay = 0.0f;
                 flushWait();
                 int32_t sample = 0;
                 uint8_t usample;
                 m_fetchPcmStream(m_fetchPcmUserData, &sample, 1);
-                usample = ((sample + 32767) >> 8) & 0xFF;
+                usample = sample & 0xFF;
                 writeReg(0, 0x2A, usample);
                 m_fetchCount -= m_fetchAt;
             }
         }
 
-        m_delay += size_t(delay);
+        m_delay += size_t(delay + 0.5);
     }
     else
         m_delay += size_t(frames * (44100.0 / double(m_actual_rate)));

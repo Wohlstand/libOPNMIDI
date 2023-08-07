@@ -216,7 +216,7 @@ void OPNMIDIplay::waveRender(int32_t *buffer, int samples, int flag_mixing)
             {
                 float v = *floatSamples++;
                 int8_t v8 = (int)(v * 127.5f * gain);
-                int vi = *buffer + ((int)v8 * 258);
+                int vi = *buffer + ((int)v8 + 128 /* * 258*/);
                 *buffer++ = vi;
             }
         }
@@ -226,7 +226,7 @@ void OPNMIDIplay::waveRender(int32_t *buffer, int samples, int flag_mixing)
             {
                 float v = *floatSamples++;
                 int8_t v8 = (int)(v * 127.5f * gain);
-                *buffer++ = (int)v8 * 258;
+                *buffer++ = (int)v8 + 128 /* * 258*/;
             }
         }
     }
