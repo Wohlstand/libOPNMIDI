@@ -259,7 +259,7 @@ void VGMFileDumper::nativeGenerateN(int16_t *output, size_t frames)
         return;
 
     std::memset(output, 0, frames * sizeof(int16_t) * 2);
-    double delay = 0.0f;
+    static double delay = 0.0f;
 
     if(m_fetchPcmStream)
     {
@@ -270,12 +270,12 @@ void VGMFileDumper::nativeGenerateN(int16_t *output, size_t frames)
             if(m_fetchCount >= m_fetchAt)
             {
                 m_delay += size_t(delay + 0.5);
-                delay = 0.0f;
+                delay -= m_delay;
                 flushWait();
                 int32_t sample = 0;
                 uint8_t usample;
                 m_fetchPcmStream(m_fetchPcmUserData, &sample, 1);
-                usample = sample & 0xFF;
+                usample = (sample & 0xFF);
                 writeReg(0, 0x2A, usample);
                 m_fetchCount -= m_fetchAt;
             }
