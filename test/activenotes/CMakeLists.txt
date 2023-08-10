@@ -9,6 +9,7 @@ add_executable (ActiveNotesList
                 active_notes.cpp
                 ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_midiplay.cpp
                 ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_opn2.cpp
+                ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_wave.cpp
                 ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_opn2.cpp
                 ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked/ym3438.c
                 $<TARGET_OBJECTS:Catch-objects>)
