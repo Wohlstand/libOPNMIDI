@@ -1,0 +1,29 @@
+version: v1.0
+name: Initial Pipeline
+agent:
+  machine:
+    type: e1-standard-2
+    os_image: ubuntu2004
+blocks:
+  - name: Build
+    task:
+      jobs:
+        - name: Build debug
+          commands:
+            - mkdir build-debug
+            - cd build-debug
+            - cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=libOPNMIDI -DWITH_MIDIPLAY=ON -DlibOPNMIDI_SHARED=ON -DlibOPNMIDI_STATIC=ON -DWITH_UNIT_TESTS=ON ..
+            - cmake --build . --config Debug --target install -- -j 3
+            - cd ..
+        - name: Build Release
+          commands:
+            - mkdir build-release
+            - cd build-release
+            - cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=libOPNMIDI -DWITH_MIDIPLAY=ON -DlibOPNMIDI_SHARED=ON -DlibOPNMIDI_STATIC=ON -DWITH_UNIT_TESTS=ON ..
+            - cmake --build . --config Release --target install -- -j 3
+            - cd ..
+      prologue:
+        commands:
+          - checkout
+          - sudo apt-get update
+          - sudo apt-get install -qq libsdl2-dev ninja-build cmake
