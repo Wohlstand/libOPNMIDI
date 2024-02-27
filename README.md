@@ -1,7 +1,7 @@
 # libOPNMIDI
 libOPNMIDI is a free Software MIDI synthesizer library with OPN2 (YM2612) and OPNA (YM2608) emulation.
 
-OPNMIDI Library: Copyright (c) 2017-2023 Vitaly Novichkov <admin@wohlnet.ru>
+OPNMIDI Library: Copyright (c) 2017-2024 Vitaly Novichkov <admin@wohlnet.ru>
 
 Library is based on core of the [libADLMIDI](https://github.com/Wohlstand/libADLMIDI), a MIDI playing library with OPL3 emulation.
 
