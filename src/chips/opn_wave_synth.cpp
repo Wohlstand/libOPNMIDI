@@ -47,15 +47,20 @@ OPNWaveSynth::OPNWaveSynth()
     m_rate = 11025;
     m_channelsUsed = 0;
 
-    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/drums1kick.raw", 0, 35, true);
-    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/drums3kick.raw", 0, 36, true);
-    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/drums3snare.raw", 0, 38, true);
-    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/drums1snare.raw", 0, 40, true);
+    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/kick.raw", 0, 35, true);
+    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/kick.raw", 0, 36, true);
+    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/snare.raw", 0, 38, true);
+    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/snare2.raw", 0, 40, true);
 
     loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/drums1kick.raw", 16, 35, true);
     loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/drums3kick.raw", 16, 36, true);
     loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/drums3snare.raw", 16, 38, true);
     loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/drums1snare.raw", 16, 40, true);
+
+    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/orchestraKik.raw", 48, 35, true);
+    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/orchestraBassDrum.raw", 48, 36, true);
+    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/orchestraSnare.raw", 48, 38, true);
+    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/orchestraSnare.raw", 48, 40, true);
 }
 
 OPNWaveSynth::~OPNWaveSynth()
