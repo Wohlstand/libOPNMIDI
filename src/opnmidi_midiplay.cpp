@@ -116,12 +116,11 @@ OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
     realTime_ResetState();
 
     // For local test purposes
-    LoadWaveBank("/home/somedata/BassMidi/SegaDrums/segadrums-minify.sf2");
+    // LoadWaveBank("/home/somedata/BassMidi/SegaDrums/segadrums-minify.sf2");
 }
 
 OPNMIDIplay::~OPNMIDIplay()
-{
-}
+{}
 
 void OPNMIDIplay::applySetup()
 {
@@ -309,6 +308,12 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
 
     if(note >= 127)
         note = 127;
+
+    if(m_waveSynth.hasWave(channel, note))
+    {
+        m_waveSynth.noteOn(channel, note, velocity);
+        return true;
+    }
 
     if(m_tsfEnabled && useWave(channel, note))
         return (bool)tsf_channel_note_on(m_synthTSF.get(), channel % 16, note, static_cast<float>(velocity) / 127.0f);
@@ -832,6 +837,8 @@ void OPNMIDIplay::realTime_PatchChange(uint8_t channel, uint8_t patch)
     MIDIchannel &midiChan = m_midiChannels[channel];
     midiChan.patch = patch;
 
+    m_waveSynth.changePatch(channel, patch, (channel == 9) || midiChan.is_xg_percussion);
+
     if(m_tsfEnabled)
     {
         tsf_channel_set_presetnumber(m_synthTSF.get(), channel, patch, (channel == 9) || midiChan.is_xg_percussion);
@@ -867,6 +874,10 @@ void OPNMIDIplay::realTime_BankChangeLSB(uint8_t channel, uint8_t lsb)
         channel = channel % 16;
     m_midiChannels[channel].bank_lsb = lsb;
 
+    m_waveSynth.changeBank(channel,
+                           (m_midiChannels[channel].bank_lsb) |
+                           (m_midiChannels[channel].bank_msb << 8));
+
     if(m_tsfEnabled)
     {
         tsf_channel_set_bank(m_synthTSF.get(), channel,
@@ -881,6 +892,10 @@ void OPNMIDIplay::realTime_BankChangeMSB(uint8_t channel, uint8_t msb)
     if(static_cast<size_t>(channel) > m_midiChannels.size())
         channel = channel % 16;
     m_midiChannels[channel].bank_msb = msb;
+
+    m_waveSynth.changeBank(channel,
+                           (m_midiChannels[channel].bank_lsb) |
+                           (m_midiChannels[channel].bank_msb << 8));
 
     if(m_tsfEnabled)
     {
@@ -897,6 +912,8 @@ void OPNMIDIplay::realTime_BankChange(uint8_t channel, uint16_t bank)
         channel = channel % 16;
     m_midiChannels[channel].bank_lsb = uint8_t(bank & 0xFF);
     m_midiChannels[channel].bank_msb = uint8_t((bank >> 8) & 0xFF);
+
+    m_waveSynth.changeBank(channel, bank);
 
     if(m_tsfEnabled)
     {

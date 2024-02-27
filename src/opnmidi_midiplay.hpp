@@ -28,6 +28,7 @@
 #include "opnmidi_private.hpp"
 #include "opnmidi_ptr.hpp"
 #include "structures/pl_list.hpp"
+#include "chips/opn_wave_synth.h"
 
 /**
  * @brief Hooks of the internal events
@@ -621,6 +622,8 @@ public:
     {
         void operator()(tsf *x);
     };
+
+    OPNWaveSynth m_waveSynth;
 
     AdlMIDI_UPtr<tsf, TinyFluidSynthDeleter> m_synthTSF;
     bool m_tsfEnabled;

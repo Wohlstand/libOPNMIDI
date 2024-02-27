@@ -214,6 +214,7 @@ list(APPEND libOPNMIDI_SOURCES
     ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_private.cpp
     ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_wave.cpp
     ${libOPNMIDI_SOURCE_DIR}/src/wopn/wopn_file.c
+    ${libOPNMIDI_SOURCE_DIR}/src/chips/opn_wave_synth.cpp
 )
 
 # Make headers being properly visible at IDEs

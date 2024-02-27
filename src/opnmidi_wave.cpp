@@ -188,6 +188,9 @@ void OPNMIDIplay::waveReset()
 
 void OPNMIDIplay::waveAttach()
 {
+    if(!m_synth->m_chips.empty() && m_synth->m_chips[0]->enableDAC(true))
+        m_synth->m_chips[0]->setFetchPcmCB(&OPNWaveSynth::fetchPcmS, &m_waveSynth, 11025);
+
     if(!m_tsfEnabled)
         return;
 
