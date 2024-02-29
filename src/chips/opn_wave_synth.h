@@ -62,6 +62,7 @@ class OPNWaveSynth
     };
 
     static const size_t m_channelsNum = 16;
+    size_t m_channelsMax;
     WaveChannel m_channels[m_channelsNum];
     int m_channelsUsed;
 
@@ -74,6 +75,8 @@ public:
     void resetChans();
     void resetAllMaps();
 
+    void setMaxChannels(size_t chans);
+
     void loadChunkFromFile(const std::string &file, int bank, int ins, bool isPerc);
     void loadChunkFromData(uint8_t *data, size_t size, int bank, int ins, bool isPerc);
 
@@ -84,9 +87,9 @@ public:
 
     void noteOn(int channel, int note, uint8_t velocity);
 
-    void fetchPcm(int32_t *buffer, int samples, int flag_mixing);
+    void fetchPcm(int32_t *buffer, int samples, int flag_mixing, size_t outNum);
 
-    static void fetchPcmS(void *self, int32_t *buffer, int samples);
+    static void fetchPcmS(void *self, int32_t *buffer, int samples, size_t outNum);
 };
 
 #endif // OPNWAVESYNTH_H

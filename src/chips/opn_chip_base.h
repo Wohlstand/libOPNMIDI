@@ -38,7 +38,7 @@ class VResampler;
 extern void opn2_audioTickHandler(void *instance, uint32_t chipId, uint32_t rate);
 #endif
 
-typedef void (*OPNPCMSourceCallback)(void *userdata, int32_t *buffer, int samples);
+typedef void (*OPNPCMSourceCallback)(void *userdata, int32_t *buffer, int samples, size_t outNum);
 
 class OPNChipBase
 {
@@ -54,6 +54,7 @@ protected:
     bool m_dacEnabled;
     float m_fetchCount;
     float m_fetchAt;
+    size_t m_fetchOutNum;
 
 public:
     explicit OPNChipBase(OPNFamily f);
@@ -66,13 +67,14 @@ public:
     uint32_t chipId() const { return m_id; }
     void setChipId(uint32_t id) { m_id = id; }
 
-    void setFetchPcmCB(OPNPCMSourceCallback cb, void* userdata, uint32_t rate)
+    void setFetchPcmCB(OPNPCMSourceCallback cb, void* userdata, uint32_t rate, size_t outNum)
     {
         m_fetchPcmStream = cb;
         m_fetchPcmUserData = userdata;
         m_fetchPcmRate = rate;
         m_fetchCount = 0.f;
         m_fetchAt = (float)nativeRate() / rate;
+        m_fetchOutNum = outNum;
     }
 
     bool enableDAC(bool en);
