@@ -213,10 +213,14 @@ void VGMFileDumper::setRate(uint32_t rate, uint32_t clock)
 
 void VGMFileDumper::reset()
 {
-    if(!m_output)
-        return;
-    OPNChipBaseBufferedT::reset();
-    std::fseek(m_output, VGM_SONG_DATA_START, SEEK_SET);
+    if(m_chip_index == 0)
+    {
+        if(!m_output)
+            return;
+        OPNChipBaseBufferedT::reset();
+        std::fseek(m_output, VGM_SONG_DATA_START, SEEK_SET);
+    }
+
     m_samples_written = 0;
     m_samples_loop = 0;
     m_bytes_written = 0;
@@ -253,9 +257,8 @@ void VGMFileDumper::writePan(uint16_t /*chan*/, uint8_t /*data*/)
 
 void VGMFileDumper::nativeGenerateN(int16_t *output, size_t frames)
 {
-    if(!m_output)
-        return;
-    if(m_chip_index > 0 || m_end_caught) // When it's a second chip
+    // FIXME: Fix the dual-chip mode
+    if(!m_output || m_end_caught || m_chip_index > 0)
         return;
 
     std::memset(output, 0, frames * sizeof(int16_t) * 2);
@@ -274,9 +277,9 @@ void VGMFileDumper::nativeGenerateN(int16_t *output, size_t frames)
                 flushWait();
                 int32_t sample = 128;
                 uint8_t usample;
-                m_fetchPcmStream(m_fetchPcmUserData, &sample, 1);
+                m_fetchPcmStream(m_fetchPcmUserData, &sample, 1, m_fetchOutNum);
                 usample = (sample & 0xFF);
-                writeReg(0, 0x2A, usample);
+                writeReg(m_chip_index * 2, 0x2A, usample);
                 m_fetchCount -= m_fetchAt;
             }
         }

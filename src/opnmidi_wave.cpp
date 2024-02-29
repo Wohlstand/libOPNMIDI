@@ -164,6 +164,8 @@ bool OPNMIDIplay::useWave(uint8_t channel, uint8_t note)
 
 void OPNMIDIplay::waveReset()
 {
+    waveSynthAttach();
+
     if(!m_tsfEnabled)
         return;
 
@@ -186,16 +188,25 @@ void OPNMIDIplay::waveReset()
     waveAttach();
 }
 
+void OPNMIDIplay::waveSynthAttach()
+{
+    m_waveSynth.setMaxChannels((int)m_synth->m_chips.size());
+
+    for(size_t i = 0; i < m_synth->m_chips.size(); ++i)
+    {
+        OPNChipBase *chip = m_synth->m_chips[i].get();
+        chip->enableDAC(true);
+        chip->setFetchPcmCB(&OPNWaveSynth::fetchPcmS, &m_waveSynth, 11025, i);
+    }
+}
+
 void OPNMIDIplay::waveAttach()
 {
-    if(!m_synth->m_chips.empty() && m_synth->m_chips[0]->enableDAC(true))
-        m_synth->m_chips[0]->setFetchPcmCB(&OPNWaveSynth::fetchPcmS, &m_waveSynth, 11025);
-
     if(!m_tsfEnabled)
         return;
 
     if(!m_synth->m_chips.empty() && m_synth->m_chips[0]->enableDAC(true))
-        m_synth->m_chips[0]->setFetchPcmCB(&OPNMIDIplay::waveRenderS, this, 11025);
+        m_synth->m_chips[0]->setFetchPcmCB(&OPNMIDIplay::waveRenderS, this, 11025, 0);
 }
 
 void OPNMIDIplay::waveRender(int32_t *buffer, int samples, int flag_mixing)
@@ -235,8 +246,9 @@ void OPNMIDIplay::waveRender(int32_t *buffer, int samples, int flag_mixing)
     }
 }
 
-void OPNMIDIplay::waveRenderS(void *self, int32_t *buffer, int samples)
+void OPNMIDIplay::waveRenderS(void *self, int32_t *buffer, int samples, size_t outNum)
 {
+    ADL_UNUSED(outNum);
     OPNMIDIplay *s = reinterpret_cast<OPNMIDIplay*>(self);
     s->waveRender(buffer, samples, 1);
 }

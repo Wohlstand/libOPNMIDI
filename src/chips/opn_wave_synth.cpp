@@ -75,6 +75,8 @@ void OPNWaveSynth::resetChans()
 
 void OPNWaveSynth::resetAllMaps()
 {
+    m_channelsMax = 1;
+
     memset(m_percMap, 0, sizeof(m_percMap));
     memset(m_melodicUse, 0, sizeof(m_melodicUse));
 
@@ -93,6 +95,13 @@ void OPNWaveSynth::resetAllMaps()
         for(size_t i = 0; i < 128; ++i)
             m_curDrumChunks[chan][i] = -1;
     }
+}
+
+void OPNWaveSynth::setMaxChannels(size_t chans)
+{
+    m_channelsMax = chans;
+    if(m_channelsMax > m_channelsNum)
+        m_channelsMax = m_channelsNum;
 }
 
 void OPNWaveSynth::loadChunkFromFile(const std::string &file, int bank, int ins, bool isPerc)
@@ -126,6 +135,7 @@ void OPNWaveSynth::loadChunkFromData(uint8_t *data, size_t size, int bank, int i
 
 void OPNWaveSynth::changePatch(int channel, int patch, bool isDrum)
 {
+    channel %= 16;
     m_curPatch[channel] = patch;
     m_curIsDrum[channel] = isDrum;
 
@@ -150,6 +160,7 @@ void OPNWaveSynth::changePatch(int channel, int patch, bool isDrum)
 
 void OPNWaveSynth::changeBank(int channel, int bank)
 {
+    channel %= 16;
     m_curBank[channel] = bank;
 }
 
@@ -169,10 +180,8 @@ void OPNWaveSynth::noteOn(int channel, int note, uint8_t velocity)
 {
     channel %= 16;
 
-    if(m_channelsUsed == m_channelsNum)
-        return; // No free channels
-
     bool isDrum = m_curIsDrum[channel];
+    int reUse = -1;
 
     if(velocity > 127)
         velocity = 127;
@@ -184,7 +193,20 @@ void OPNWaveSynth::noteOn(int channel, int note, uint8_t velocity)
         if(drum < 0 || drum >= (int)chunks.size())
             return; // No drum here
 
-        WaveChannel &c = m_channels[m_channelsUsed++];
+        // Find the channel with the same chunk and re-use it
+        for(int i = 0; i < m_channelsUsed; ++i)
+        {
+            if(m_channels[i].cur_chunk == drum)
+            {
+                reUse = i;
+                break;
+            }
+        }
+
+        if(reUse < 0 && m_channelsUsed == m_channelsNum)
+            return; // No free channels
+
+        WaveChannel &c = m_channels[reUse < 0 ? m_channelsUsed++ : reUse];
         c.cur_chunk = drum;
         c.pos = 0;
         c.len = chunks[c.cur_chunk].pcm.size();
@@ -196,7 +218,7 @@ void OPNWaveSynth::noteOn(int channel, int note, uint8_t velocity)
     }
 }
 
-void OPNWaveSynth::fetchPcm(int32_t *buffer, int samples, int flag_mixing)
+void OPNWaveSynth::fetchPcm(int32_t *buffer, int samples, int flag_mixing, size_t outNum)
 {
     if(m_channelsUsed == 0)
         return; // Nothing to play
@@ -204,7 +226,7 @@ void OPNWaveSynth::fetchPcm(int32_t *buffer, int samples, int flag_mixing)
     if(!flag_mixing)
         memset(buffer, 0, sizeof(int32_t) * samples * 2);
 
-    for(int i = 0; i < (int)m_channelsUsed; ++i)
+    for(int i = (outNum % m_channelsMax); i < (int)m_channelsUsed; i += m_channelsMax)
     {
         WaveChannel &c = m_channels[i];
         int len_left = c.len - c.pos;
@@ -226,8 +248,8 @@ void OPNWaveSynth::fetchPcm(int32_t *buffer, int samples, int flag_mixing)
     }
 }
 
-void OPNWaveSynth::fetchPcmS(void *self, int32_t *buffer, int samples)
+void OPNWaveSynth::fetchPcmS(void *self, int32_t *buffer, int samples, size_t outNum)
 {
     OPNWaveSynth *s = reinterpret_cast<OPNWaveSynth*>(self);
-    s->fetchPcm(buffer, samples, 1);
+    s->fetchPcm(buffer, samples, 1, outNum);
 }

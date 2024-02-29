@@ -104,6 +104,7 @@ OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
     m_synth.reset(new Synth);
 
     m_tsfEnabled = false;
+    m_waveSynthEnabled = false;
     std::memset(m_tsfPercMap, 0, sizeof(m_tsfPercMap));
     std::memset(m_tsfMelodicUse, 0, sizeof(m_tsfMelodicUse));
 
@@ -162,6 +163,7 @@ void OPNMIDIplay::applySetup()
 
     synth.reset(m_setup.emulator, m_setup.PCM_RATE, static_cast<OPNFamily>(chipType), this);
     waveAttach();
+    waveSynthAttach();
     m_chipChannels.clear();
     m_chipChannels.resize(synth.m_numChannels, OpnChannel());
     resetMIDIDefaults();
@@ -683,7 +685,7 @@ void OPNMIDIplay::realTime_Controller(uint8_t channel, uint8_t type, uint8_t val
         channel = channel % 16;
 
     if(m_tsfEnabled)
-        tsf_channel_midi_control(m_synthTSF.get(), channel, type, value);
+        tsf_channel_midi_control(m_synthTSF.get(), channel % 16, type, value);
 
     switch(type)
     {
@@ -841,6 +843,7 @@ void OPNMIDIplay::realTime_PatchChange(uint8_t channel, uint8_t patch)
 
     if(m_tsfEnabled)
     {
+        channel = channel % 16;
         tsf_channel_set_presetnumber(m_synthTSF.get(), channel, patch, (channel == 9) || midiChan.is_xg_percussion);
         waveMap(channel);
     }
@@ -854,7 +857,7 @@ void OPNMIDIplay::realTime_PitchBend(uint8_t channel, uint16_t pitch)
     noteUpdateAll(channel, Upd_Pitch);
 
     if(m_tsfEnabled)
-        tsf_channel_set_pitchwheel(m_synthTSF.get(), channel, pitch);
+        tsf_channel_set_pitchwheel(m_synthTSF.get(), channel % 16, pitch);
 }
 
 void OPNMIDIplay::realTime_PitchBend(uint8_t channel, uint8_t msb, uint8_t lsb)
@@ -865,7 +868,7 @@ void OPNMIDIplay::realTime_PitchBend(uint8_t channel, uint8_t msb, uint8_t lsb)
     noteUpdateAll(channel, Upd_Pitch);
 
     if(m_tsfEnabled)
-        tsf_channel_set_pitchwheel(m_synthTSF.get(), channel, (msb << 7) | lsb);
+        tsf_channel_set_pitchwheel(m_synthTSF.get(), channel % 16, (msb << 7) | lsb);
 }
 
 void OPNMIDIplay::realTime_BankChangeLSB(uint8_t channel, uint8_t lsb)
@@ -880,6 +883,7 @@ void OPNMIDIplay::realTime_BankChangeLSB(uint8_t channel, uint8_t lsb)
 
     if(m_tsfEnabled)
     {
+        channel = channel % 16;
         tsf_channel_set_bank(m_synthTSF.get(), channel,
                              (m_midiChannels[channel].bank_lsb) |
                              (m_midiChannels[channel].bank_msb << 8));
@@ -899,6 +903,7 @@ void OPNMIDIplay::realTime_BankChangeMSB(uint8_t channel, uint8_t msb)
 
     if(m_tsfEnabled)
     {
+        channel = channel % 16;
         tsf_channel_set_bank(m_synthTSF.get(), channel,
                              (m_midiChannels[channel].bank_lsb) |
                              (m_midiChannels[channel].bank_msb << 8));
@@ -917,6 +922,7 @@ void OPNMIDIplay::realTime_BankChange(uint8_t channel, uint16_t bank)
 
     if(m_tsfEnabled)
     {
+        channel = channel % 16;
         tsf_channel_set_bank(m_synthTSF.get(), channel, bank);
         waveMap(channel);
     }
@@ -1368,7 +1374,10 @@ int64_t OPNMIDIplay::calculateChipChannelGoodness(size_t c, const MIDIchannel::N
     int64_t s = -koff_ms;
     OPNMIDI_ChannelAlloc allocType = synth.m_channelAlloc;
 
-    if(c == 5 && synth.m_chips[0]->dacEnabled())
+    size_t chip = c / 6;
+    size_t loc_c = c % 6;
+
+    if(loc_c == 5 && synth.m_chips[chip]->dacEnabled())
         return -1000000000; // Don't take the DAC channel
 
     if(allocType == OPNMIDI_ChanAlloc_AUTO)

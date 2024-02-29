@@ -201,6 +201,7 @@ bool OPNMIDIplay::LoadMIDI_post()
     m_setup.tick_skip_samples_delay = 0;
     synth.reset(m_setup.emulator, m_setup.PCM_RATE, synth.chipFamily(), this); // Reset OPN2 chip
     waveAttach();
+    waveSynthAttach();
     m_chipChannels.clear();
     m_chipChannels.resize(synth.m_numChannels);
     resetMIDIDefaults();

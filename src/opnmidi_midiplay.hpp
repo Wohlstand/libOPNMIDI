@@ -624,6 +624,7 @@ public:
     };
 
     OPNWaveSynth m_waveSynth;
+    bool m_waveSynthEnabled;
 
     AdlMIDI_UPtr<tsf, TinyFluidSynthDeleter> m_synthTSF;
     bool m_tsfEnabled;
@@ -702,11 +703,12 @@ public:
 
     void waveReset();
 
+    void waveSynthAttach();
     void waveAttach();
 
     void waveRender(int32_t *buffer, int samples, int flag_mixing);
 
-    static void waveRenderS(void *self, int32_t *buffer, int samples);
+    static void waveRenderS(void *self, int32_t *buffer, int samples, size_t outNum);
 
     /**
      * @brief Checks if any Wave voice playing
