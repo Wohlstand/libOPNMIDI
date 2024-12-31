@@ -1,7 +1,7 @@
 /*****************************************************************************
  * libopnmidi.c: Software MIDI synthesizer using OPN2 Synth emulation
  *****************************************************************************
- * Copyright © 2017-2024 Vitaly Novichkov
+ * Copyright © 2017-2025 Vitaly Novichkov
  * $Id$
  *
  * This program is free software: you can redistribute it and/or modify
