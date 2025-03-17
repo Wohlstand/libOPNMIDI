@@ -157,6 +157,7 @@ void setupDefault(DriverSettings *setup)
     setup->flagFullBrightness = BST_UNCHECKED;
 
     setup->volumeModel = 0;
+    setup->chanAlloc = -1;
     setup->numChips = 6;
 
     setup->outputDevice = (UINT)-1;
