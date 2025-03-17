@@ -114,7 +114,7 @@ target_compile_definitions(opnmidiconfig PRIVATE
     -DADL_IS_CPL_APPLET
 )
 
-target_link_libraries(opnmidiconfig PRIVATE comctl32 gdi32 user32)
+target_link_libraries(opnmidiconfig PRIVATE winmm comctl32 gdi32 user32)
 
 
 add_executable(opnmidiconfigtool ${ADLMIDI_DRIVER_SRC} cpl/opnconfig-tool.c cpl/res-tool.rc)
@@ -128,7 +128,7 @@ target_compile_definitions(opnmidiconfigtool PRIVATE
     -DUNICODE
 )
 
-target_link_libraries(opnmidiconfigtool PRIVATE comctl32 gdi32 user32)
+target_link_libraries(opnmidiconfigtool PRIVATE winmm comctl32 gdi32 user32)
 
 if(WIN32 AND CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(opnmidiconfig PRIVATE "-Wno-cast-function-type")
