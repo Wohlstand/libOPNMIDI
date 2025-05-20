@@ -1390,10 +1390,15 @@ void OPNMIDIplay::prepareChipChannelForNewNote(size_t c, const MIDIchannel::Note
             MIDIchannel::notes_iterator i
             (m_midiChannels[jd.loc.MidCh].ensure_find_activenote(jd.loc.note));
 
+            if(!m_setup.enableAutoArpeggio)
+            {
+                // Kill the note
+                noteUpdate(j->value.loc.MidCh, i, Upd_Off, static_cast<int32_t>(c));
+                continue;
+            }
+
             // Check if we can do arpeggio.
-            if((jd.vibdelay_us < 70000
-                || jd.kon_time_until_neglible_us > 20000000)
-               && jd.ins == ins)
+            if((jd.vibdelay_us < 70000 || jd.kon_time_until_neglible_us > 20000000) && jd.ins == ins)
             {
                 // Do arpeggio together with this note.
                 //doing_arpeggio = true;
@@ -1433,9 +1438,6 @@ void OPNMIDIplay::killOrEvacuate(size_t from_channel,
     for(uint32_t c = 0; c < synth.m_numChannels; ++c)
     {
         uint16_t cs = static_cast<uint16_t>(c);
-
-        if(!m_setup.enableAutoArpeggio)
-            break; // Arpeggio disabled completely
 
         if(c >= maxChannels)
             break;
