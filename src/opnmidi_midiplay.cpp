@@ -1380,6 +1380,25 @@ void OPNMIDIplay::prepareChipChannelForNewNote(size_t c, const MIDIchannel::Note
 
     Synth &synth = *m_synth;
 
+    if(!m_setup.enableAutoArpeggio)
+    {
+        // Kill all notes on this channel with no mercy
+        for(OpnChannel::users_iterator jnext = m_chipChannels[c].users.begin(); !jnext.is_end();)
+        {
+            OpnChannel::users_iterator j = jnext;
+            OpnChannel::LocationData &jd = j->value;
+            ++jnext;
+
+            m_midiChannels[jd.loc.MidCh].clear_all_phys_users(c);
+            m_chipChannels[c].users.erase(j);
+        }
+
+        synth.noteOff(c);
+        assert(m_chipChannels[c].users.empty()); // No users should remain!
+
+        return;
+    }
+
     //bool doing_arpeggio = false;
     for(OpnChannel::users_iterator jnext = m_chipChannels[c].users.begin(); !jnext.is_end();)
     {
@@ -1393,13 +1412,6 @@ void OPNMIDIplay::prepareChipChannelForNewNote(size_t c, const MIDIchannel::Note
             // UNLESS we're going to do arpeggio
             MIDIchannel::notes_iterator i
             (m_midiChannels[jd.loc.MidCh].ensure_find_activenote(jd.loc.note));
-
-            if(!m_setup.enableAutoArpeggio)
-            {
-                // Kill the note
-                noteUpdate(j->value.loc.MidCh, i, Upd_Off, static_cast<int32_t>(c));
-                continue;
-            }
 
             // Check if we can do arpeggio.
             if((jd.vibdelay_us < 70000 || jd.kon_time_until_neglible_us > 20000000) && jd.ins == ins)
