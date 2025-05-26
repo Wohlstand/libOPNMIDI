@@ -26,6 +26,7 @@
 class NukedOPN2 final : public OPNChipBaseT<NukedOPN2>
 {
     void *chip;
+    bool m_isym3438;
 public:
     explicit NukedOPN2(OPNFamily f, bool ym3438);
     ~NukedOPN2() override;
