@@ -31,7 +31,7 @@ YmFmOPN2::YmFmOPN2(OPNFamily f) :
     ymfm::ymfm_interface* intf = new ymfm::ymfm_interface;
     m_intf = intf;
     m_chip = new ymfm::ym2612(*intf);
-    setRate(m_rate, m_clock);
+    YmFmOPN2::setRate(m_rate, m_clock);
 }
 
 YmFmOPN2::~YmFmOPN2()

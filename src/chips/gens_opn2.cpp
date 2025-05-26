@@ -35,7 +35,7 @@ GensOPN2::GensOPN2(OPNFamily f)
     : OPNChipBaseBufferedT(f),
       chip(new LibGens::Ym2612())
 {
-    setRate(m_rate, m_clock);
+    GensOPN2::setRate(m_rate, m_clock);
 }
 
 GensOPN2::~GensOPN2()

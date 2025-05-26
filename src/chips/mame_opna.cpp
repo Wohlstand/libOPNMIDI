@@ -64,7 +64,7 @@ MameOPNA::MameOPNA(OPNFamily f)
     impl->chip = NULL;
     impl->psgrsm = NULL;
     impl->psgbuffer = NULL;
-    setRate(m_rate, m_clock);
+    MameOPNA::setRate(m_rate, m_clock);
 }
 
 MameOPNA::~MameOPNA()

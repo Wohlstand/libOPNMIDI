@@ -46,7 +46,7 @@ YmFmOPNA::YmFmOPNA(OPNFamily f) :
     ymfm::ym2608::output_data* output = new ymfm::ym2608::output_data;
     output->clear();
     m_output = output;
-    setRate(m_rate, m_clock);
+    YmFmOPNA::setRate(m_rate, m_clock);
     writeReg(0, 0x29, 0x9f);  // enable channels 4-6
 }
 
