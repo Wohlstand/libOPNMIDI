@@ -557,7 +557,7 @@ bool sn76496_write(UINT8 Command/*, UINT8 NextCmd*/)
     else
     {
         Reg = chip->LastReg;
-        Channel = Reg >> 1;
+        Channel = (Reg >> 1) & 0x07;
         Data = Command & 0x7F;  // Command & 0x3F
 
         if(!(Reg & 0x10))
