@@ -29,8 +29,8 @@ extern "C" {
 #endif
 
 #define OPNMIDI_VERSION_MAJOR       1
-#define OPNMIDI_VERSION_MINOR       5
-#define OPNMIDI_VERSION_PATCHLEVEL  1
+#define OPNMIDI_VERSION_MINOR       6
+#define OPNMIDI_VERSION_PATCHLEVEL  0
 
 #define OPNMIDI_TOSTR_I(s) #s
 #define OPNMIDI_TOSTR(s) OPNMIDI_TOSTR_I(s)
