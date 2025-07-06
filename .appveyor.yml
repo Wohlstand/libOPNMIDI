@@ -23,35 +23,35 @@ environment:
       GENERATOR: "Ninja"
       PLATFORM: WinAll
 
-    - BUILD_TYPE: Release
-      COMPILER: MinGW-w32
-      COMPILER_FAMILY: MinGW
-      GENERATOR: "MinGW Makefiles"
-      APPVEYOR_BUILD_WORKER_IMAGE: "Visual Studio 2019"
-      PLATFORM: Win32
-      CMAKEPREFIXPATH: "C:/mingw-w64/i686-8.1.0-posix-dwarf-rt_v6-rev0/mingw32"
-      TOOLCHAIN_BIN: "C:\\mingw-w64\\i686-8.1.0-posix-dwarf-rt_v6-rev0\\mingw32\\bin"
-      TOOLCHAIN_ROOT: "C:\\mingw-w64\\i686-8.1.0-posix-dwarf-rt_v6-rev0\\mingw32"
-      VLC_PLUGIN: ON
-      PACKAGE_TYPE: VLCPLUGIN
-      BUILD_SHARED: OFF
-      BUILD_MIDIPLAY: OFF
-      VLC_TARBALL: ${VLC_TARBALL_x32}
-
-    - BUILD_TYPE: Release
-      COMPILER: MinGW-w64
-      COMPILER_FAMILY: MinGW
-      GENERATOR: "MinGW Makefiles"
-      APPVEYOR_BUILD_WORKER_IMAGE: "Visual Studio 2019"
-      PLATFORM: x64
-      CMAKEPREFIXPATH: "C:/mingw-w64/x86_64-8.1.0-posix-seh-rt_v6-rev0/mingw64"
-      TOOLCHAIN_BIN: "C:\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64\\bin"
-      TOOLCHAIN_ROOT: "C:\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64"
-      VLC_PLUGIN: ON
-      PACKAGE_TYPE: VLCPLUGIN
-      BUILD_SHARED: OFF
-      BUILD_MIDIPLAY: OFF
-      VLC_TARBALL: ${VLC_TARBALL_x64}
+#    - BUILD_TYPE: Release
+#      COMPILER: MinGW-w32
+#      COMPILER_FAMILY: MinGW
+#      GENERATOR: "MinGW Makefiles"
+#      APPVEYOR_BUILD_WORKER_IMAGE: "Visual Studio 2019"
+#      PLATFORM: Win32
+#      CMAKEPREFIXPATH: "C:/mingw-w64/i686-8.1.0-posix-dwarf-rt_v6-rev0/mingw32"
+#      TOOLCHAIN_BIN: "C:\\mingw-w64\\i686-8.1.0-posix-dwarf-rt_v6-rev0\\mingw32\\bin"
+#      TOOLCHAIN_ROOT: "C:\\mingw-w64\\i686-8.1.0-posix-dwarf-rt_v6-rev0\\mingw32"
+#      VLC_PLUGIN: ON
+#      PACKAGE_TYPE: VLCPLUGIN
+#      BUILD_SHARED: OFF
+#      BUILD_MIDIPLAY: OFF
+#      VLC_TARBALL: ${VLC_TARBALL_x32}
+#
+#    - BUILD_TYPE: Release
+#      COMPILER: MinGW-w64
+#      COMPILER_FAMILY: MinGW
+#      GENERATOR: "MinGW Makefiles"
+#      APPVEYOR_BUILD_WORKER_IMAGE: "Visual Studio 2019"
+#      PLATFORM: x64
+#      CMAKEPREFIXPATH: "C:/mingw-w64/x86_64-8.1.0-posix-seh-rt_v6-rev0/mingw64"
+#      TOOLCHAIN_BIN: "C:\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64\\bin"
+#      TOOLCHAIN_ROOT: "C:\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64"
+#      VLC_PLUGIN: ON
+#      PACKAGE_TYPE: VLCPLUGIN
+#      BUILD_SHARED: OFF
+#      BUILD_MIDIPLAY: OFF
+#      VLC_TARBALL: ${VLC_TARBALL_x64}
 
     - BUILD_TYPE: Debug
       COMPILER: MinGW
@@ -69,41 +69,41 @@ environment:
       CMAKEPREFIXPATH: "C:/MinGW"
       TOOLCHAIN_BIN: "C:\\MinGW\\bin"
 
-    - BUILD_TYPE: Debug
-      COMPILER: MinGW-w32
-      COMPILER_FAMILY: MinGW
-      GENERATOR: "MinGW Makefiles"
-      APPVEYOR_BUILD_WORKER_IMAGE: "Visual Studio 2019"
-      PLATFORM: Win32
-      CMAKEPREFIXPATH: "C:/mingw-w64/i686-8.1.0-posix-dwarf-rt_v6-rev0/mingw32"
-      TOOLCHAIN_BIN: "C:\\mingw-w64\\i686-8.1.0-posix-dwarf-rt_v6-rev0\\mingw32\\bin"
-
-    - BUILD_TYPE: Release
-      COMPILER: MinGW-w32
-      COMPILER_FAMILY: MinGW
-      GENERATOR: "MinGW Makefiles"
-      APPVEYOR_BUILD_WORKER_IMAGE: "Visual Studio 2019"
-      PLATFORM: Win32
-      CMAKEPREFIXPATH: "C:/mingw-w64/i686-8.1.0-posix-dwarf-rt_v6-rev0/mingw32"
-      TOOLCHAIN_BIN: "C:\\mingw-w64\\i686-8.1.0-posix-dwarf-rt_v6-rev0\\mingw32\\bin"
-
-    - BUILD_TYPE: Debug
-      COMPILER: MinGW-w64
-      COMPILER_FAMILY: MinGW
-      GENERATOR: "MinGW Makefiles"
-      APPVEYOR_BUILD_WORKER_IMAGE: "Visual Studio 2019"
-      PLATFORM: x64
-      CMAKEPREFIXPATH: "C:/mingw-w64/x86_64-8.1.0-posix-seh-rt_v6-rev0/mingw64"
-      TOOLCHAIN_BIN: "C:\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64\\bin"
-
-    - BUILD_TYPE: Release
-      COMPILER: MinGW-w64
-      COMPILER_FAMILY: MinGW
-      GENERATOR: "MinGW Makefiles"
-      APPVEYOR_BUILD_WORKER_IMAGE: "Visual Studio 2019"
-      PLATFORM: x64
-      CMAKEPREFIXPATH: "C:/mingw-w64/x86_64-8.1.0-posix-seh-rt_v6-rev0/mingw64"
-      TOOLCHAIN_BIN: "C:\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64\\bin"
+#    - BUILD_TYPE: Debug
+#      COMPILER: MinGW-w32
+#      COMPILER_FAMILY: MinGW
+#      GENERATOR: "MinGW Makefiles"
+#      APPVEYOR_BUILD_WORKER_IMAGE: "Visual Studio 2019"
+#      PLATFORM: Win32
+#      CMAKEPREFIXPATH: "C:/mingw-w64/i686-8.1.0-posix-dwarf-rt_v6-rev0/mingw32"
+#      TOOLCHAIN_BIN: "C:\\mingw-w64\\i686-8.1.0-posix-dwarf-rt_v6-rev0\\mingw32\\bin"
+#
+#    - BUILD_TYPE: Release
+#      COMPILER: MinGW-w32
+#      COMPILER_FAMILY: MinGW
+#      GENERATOR: "MinGW Makefiles"
+#      APPVEYOR_BUILD_WORKER_IMAGE: "Visual Studio 2019"
+#      PLATFORM: Win32
+#      CMAKEPREFIXPATH: "C:/mingw-w64/i686-8.1.0-posix-dwarf-rt_v6-rev0/mingw32"
+#      TOOLCHAIN_BIN: "C:\\mingw-w64\\i686-8.1.0-posix-dwarf-rt_v6-rev0\\mingw32\\bin"
+#
+#    - BUILD_TYPE: Debug
+#      COMPILER: MinGW-w64
+#      COMPILER_FAMILY: MinGW
+#      GENERATOR: "MinGW Makefiles"
+#      APPVEYOR_BUILD_WORKER_IMAGE: "Visual Studio 2019"
+#      PLATFORM: x64
+#      CMAKEPREFIXPATH: "C:/mingw-w64/x86_64-8.1.0-posix-seh-rt_v6-rev0/mingw64"
+#      TOOLCHAIN_BIN: "C:\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64\\bin"
+#
+#    - BUILD_TYPE: Release
+#      COMPILER: MinGW-w64
+#      COMPILER_FAMILY: MinGW
+#      GENERATOR: "MinGW Makefiles"
+#      APPVEYOR_BUILD_WORKER_IMAGE: "Visual Studio 2019"
+#      PLATFORM: x64
+#      CMAKEPREFIXPATH: "C:/mingw-w64/x86_64-8.1.0-posix-seh-rt_v6-rev0/mingw64"
+#      TOOLCHAIN_BIN: "C:\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64\\bin"
 
     - BUILD_TYPE: Debug
       COMPILER: MSVC15
