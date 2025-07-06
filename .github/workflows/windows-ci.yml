@@ -62,7 +62,7 @@ jobs:
             os: windows-latest,
             PLATFORM: Win32,
             WINXX_ARCH: win32,
-            extra_path: "/c/Qt/5.6.3-i686/bin:/c/MinGW-w64/mingw32/bin",
+            extra_path: "/c/MinGW-w64/mingw32/bin",
             extra_options: "-DCMAKE_TOOLCHAIN_FILE=`pwd`/cmake/ci_windows_mingw_toolchain_x32.cmake -DWITH_EXTRA_BANKS=ON -DlibOPNMIDI_STATIC=ON -DlibOPNMIDI_SHARED=ON -DWITH_MIDIPLAY=ON",
             build_type: "Debug",
             pack_dlls: "libgcc_s_dw2-1.dll libstdc++-6.dll libwinpthread-1.dll",
@@ -79,7 +79,7 @@ jobs:
             os: windows-latest,
             PLATFORM: Win32,
             WINXX_ARCH: win32,
-            extra_path: "/c/Qt/5.6.3-i686/bin:/c/MinGW-w64/mingw32/bin",
+            extra_path: "/c/MinGW-w64/mingw32/bin",
             extra_options: "-DCMAKE_TOOLCHAIN_FILE=`pwd`/cmake/ci_windows_mingw_toolchain_x32.cmake -DWITH_EXTRA_BANKS=ON -DlibOPNMIDI_STATIC=ON -DlibOPNMIDI_SHARED=ON -DWITH_MIDIPLAY=ON",
             build_type: "Release",
             pack_dlls: "libgcc_s_dw2-1.dll libstdc++-6.dll libwinpthread-1.dll",
@@ -114,7 +114,7 @@ jobs:
 #            os: windows-latest,
 #            PLATFORM: Win32,
 #            WINXX_ARCH: win32,
-#            extra_path: "/c/Qt/5.6.3-i686/bin:/c/MinGW-w64/mingw32/bin",
+#            extra_path: "/c/MinGW-w64/mingw32/bin",
 #            extra_options: "-DCMAKE_TOOLCHAIN_FILE=`pwd`/cmake/ci_windows_mingw_toolchain_x32.cmake -DWITH_EXTRA_BANKS=ON -DlibOPNMIDI_STATIC=ON -DlibOPNMIDI_SHARED=ON -DWITH_MIDIPLAY=ON -DUSE_NUKED_OPL2_LLE_EMULATOR=ON -DUSE_NUKED_OPL3_LLE_EMULATOR=ON",
 #            build_type: "Release",
 #            pack_dlls: "libgcc_s_dw2-1.dll libstdc++-6.dll libwinpthread-1.dll",
@@ -147,7 +147,7 @@ jobs:
             os: windows-latest,
             PLATFORM: Win32,
             WINXX_ARCH: win32,
-            extra_path: "/c/Qt/5.6.3-i686/bin:/c/MinGW-w64/mingw32/bin",
+            extra_path: "/c/MinGW-w64/mingw32/bin",
             extra_options: "-DCMAKE_TOOLCHAIN_FILE=`pwd`/cmake/ci_windows_mingw_toolchain_x32.cmake -DWITH_EXTRA_BANKS=ON -DlibOPNMIDI_STATIC=ON -DlibOPNMIDI_SHARED=OFF -DWITH_MIDIPLAY=OFF -DWITH_VLC_PLUGIN=ON -DVLC_PLUGIN_NOINSTALL=ON",
             build_type: "Release",
             package_type: "vlcplugin",
@@ -179,7 +179,7 @@ jobs:
 #            os: windows-latest,
 #            PLATFORM: Win32,
 #            WINXX_ARCH: win32,
-#            extra_path: "/c/Qt/5.6.3-i686/bin:/c/MinGW-w64/mingw32/bin",
+#            extra_path: "/c/MinGW-w64/mingw32/bin",
 #            extra_options: "-DCMAKE_TOOLCHAIN_FILE=`pwd`/cmake/ci_windows_mingw_toolchain_x32.cmake -DWITH_EXTRA_BANKS=ON -DlibOPNMIDI_STATIC=ON -DlibOPNMIDI_SHARED=OFF -DWITH_MIDIPLAY=OFF -DWITH_VLC_PLUGIN=ON -DVLC_PLUGIN_NOINSTALL=ON -DUSE_NUKED_OPL2_LLE_EMULATOR=ON -DUSE_NUKED_OPL3_LLE_EMULATOR=ON",
 #            build_type: "Release",
 #            package_type: "vlcplugin",
@@ -274,8 +274,8 @@ jobs:
       shell: bash
       run: |
         7z x vlc_sdk.7z "${{ matrix.config.vlc_dir }}/sdk/include" "${{ matrix.config.vlc_dir }}/sdk/lib" -o"${{ matrix.config.vlc_sdk_install_dir }}"
-        mv -v "${{ matrix.config.vlc_sdk_install_dir }}/${{ matrix.config.vlc_dir }}/sdk/include" "${{ matrix.config.vlc_sdk_install_dir }}/include"
-        mv -v "${{ matrix.config.vlc_sdk_install_dir }}/${{ matrix.config.vlc_dir }}/sdk/lib" "${{ matrix.config.vlc_sdk_install_dir }}/lib"
+        mv -v "${{ matrix.config.vlc_sdk_install_dir }}/${{ matrix.config.vlc_dir }}/sdk/include" "${{ matrix.config.vlc_sdk_install_dir }}"
+        mv -v "${{ matrix.config.vlc_sdk_install_dir }}/${{ matrix.config.vlc_dir }}/sdk/lib" "${{ matrix.config.vlc_sdk_install_dir }}"
 
     - name: Configure
       shell: bash

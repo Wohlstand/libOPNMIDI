@@ -87,7 +87,7 @@ jobs:
         echo "====================================="
         cmake --version
         echo "====================================="
-        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} -DCMAKE_INSTALL_PREFIX="`pwd`/libOPNMIDI" ${{ matrix.config.extra_options }} -DWITH_MIDIPLAY=ON -DWITH_VLC_PLUGIN=ON -DVLC_PLUGIN_NOINSTALL=ON -DlibADLMIDI_SHARED=ON -DlibADLMIDI_STATIC=ON -DWITH_EXTRA_BANKS=ON -DWITH_UNIT_TESTS=ON .
+        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} -DCMAKE_INSTALL_PREFIX="`pwd`/libOPNMIDI" ${{ matrix.config.extra_options }} -DWITH_MIDIPLAY=ON -DWITH_VLC_PLUGIN=ON -DVLC_PLUGIN_NOINSTALL=ON -DlibOPNMIDI_SHARED=ON -DlibOPNMIDI_STATIC=ON -DWITH_EXTRA_BANKS=ON -DWITH_UNIT_TESTS=ON .
 
     - name: Build
       shell: bash
