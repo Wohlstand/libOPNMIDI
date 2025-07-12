@@ -180,6 +180,8 @@ option(USE_NUKED_EMULATOR   "Use Nuked OPN2 emulator (most accurate, heavy)" ${D
 option(USE_NP2_EMULATOR     "Use Neko Project II emulator" ON)
 option(USE_MAME_2608_EMULATOR "Use MAME YM2608 emulator" ON)
 # option(USE_PMDWIN_EMULATOR  "Use PMDWin emulator (experimental)" OFF)
+option(USE_NUKED_OPN2_LLE_EMULATOR  "Use Nuked OPN2-LLE emulator [!EXTRA HEAVY!]" OFF)
+option(USE_NUKED_OPNA_LLE_EMULATOR  "Use Nuked OPNA-LLE emulator [!EXTRA HEAVY!]" OFF)
 option(USE_VGM_FILE_DUMPER  "Use VGM File Dumper (required to build the MIDI2VGM tool)" ON)
 if(COMPILER_SUPPORTS_CXX14)
     option(USE_YMFM_EMULATOR    "Use YMFM emulator (requires C++14 support)" ON)
@@ -326,6 +328,38 @@ endif()
 #else()
 #    add_definitions(-DOPNMIDI_DISABLE_PMDWIN_EMULATOR)
 #endif()
+
+if(USE_NUKED_OPN2_LLE_EMULATOR)
+    list(APPEND libOPNMIDI_SOURCES
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/ym2612_lle.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/ym2612_lle.h
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/nopn2.c
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/nopn2.h
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/fmopna_2612.c
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/fmopna_2612.h
+    )
+    set(HAS_EMULATOR TRUE)
+    add_definitions(-DOPNMIDI_ENABLE_OPN2_LLE_EMULATOR)
+endif()
+
+if(USE_NUKED_OPNA_LLE_EMULATOR)
+    list(APPEND libOPNMIDI_SOURCES
+        # ${libOPNMIDI_SOURCE_DIR}/src/chips/ym3812_lle.cpp
+        # ${libOPNMIDI_SOURCE_DIR}/src/chips/ym3812_lle.h
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/fmopna_2608.c
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/fmopna_2608.h
+    )
+    set(HAS_EMULATOR TRUE)
+    add_definitions(-DOPNMIDI_ENABLE_OPNA_LLE_EMULATOR)
+endif()
+
+if(USE_NUKED_OPN2_LLE_EMULATOR OR USE_NUKED_OPNA_LLE_EMULATOR)
+    list(APPEND libOPNMIDI_SOURCES
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/fmopna_impl.h
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/fmopna_impl_c.h
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/fmopna_rom.h
+    )
+endif()
 
 if(USE_VGM_FILE_DUMPER)
     list(APPEND libOPNMIDI_SOURCES
@@ -576,6 +610,15 @@ message("USE_MAME_2608_EMULATOR   = ${USE_MAME_2608_EMULATOR}")
 #message("USE_PMDWIN_EMULATOR      = ${USE_PMDWIN_EMULATOR}")
 message("USE_VGM_FILE_DUMPER      = ${USE_VGM_FILE_DUMPER}")
 message("USE_YMFM_EMULATOR        = ${USE_YMFM_EMULATOR}")
+if(USE_NUKED_OPN2_LLE_EMULATOR OR USE_NUKED_OPNA_LLE_EMULATOR)
+    message(WARNING "You enabled EXTRA-HEAVY LLE emulators, they do REALLY require \
+VERY POWERFUL processor to work (For example, on Intel Core i7-11700KF (8 cores, 3.60 GHz) \
+they can work in real-time only when they built with Release optimisations, Debug builds \
+are choppy even single chip run). You can't use them on weak devices, don't even think to \
+run them on mobile. I warned. If you want, feel free to optimize them and contribute your \
+updates to @NukeYkt who created them. The only way you can use them on weaker hardware \
+is record WAVs where real-time performance doesn't matter.")
+endif()
 
 message("===== Utils and extras =====")
 message("WITH_MIDIPLAY            = ${WITH_MIDIPLAY}")

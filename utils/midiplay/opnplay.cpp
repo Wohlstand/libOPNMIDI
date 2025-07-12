@@ -451,6 +451,8 @@ int main(int argc, char **argv)
             emulator = OPNMIDI_EMU_NUKED_YM3438;
         else if(!std::strcmp("--emu-nuked-2612", argv[arg]))
             emulator = OPNMIDI_EMU_NUKED_YM2612;
+        else if(!std::strcmp("--emu-lle-2612", argv[arg]))
+            emulator = OPNMIDI_EMU_NUKED_YM2612_LLE;
         else if(!std::strcmp("--emu-gens", argv[arg]))
             emulator = OPNMIDI_EMU_GENS;
         else if(!std::strcmp("--emu-mame", argv[arg]))

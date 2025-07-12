@@ -582,6 +582,8 @@ enum Opn2_Emulator
     OPNMIDI_VGM_DUMPER,
     /*! Nuked OPN2 (YM2612 mode) */
     OPNMIDI_EMU_NUKED_YM2612,
+    /*! Very low-level variant of Nuked OPN2 (YM2612) */
+    OPNMIDI_EMU_NUKED_YM2612_LLE,
     /*! Count instrument on the level */
     OPNMIDI_EMU_end,
 
