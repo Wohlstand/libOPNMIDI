@@ -113,3 +113,8 @@ const char *YmFmOPN2::emulatorName()
 {
     return "YMFM OPN2";
 }
+
+bool YmFmOPN2::hasFullPanning()
+{
+    return true;
+}
