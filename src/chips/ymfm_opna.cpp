@@ -160,3 +160,8 @@ const char *YmFmOPNA::emulatorName()
 {
     return "YMFM OPNA";
 }
+
+bool YmFmOPNA::hasFullPanning()
+{
+    return false;
+}
