@@ -358,17 +358,43 @@ int main(int argc, char **argv)
             " -fp               Enables full-panning stereo support\n"
             " -ea               Enable the auto-arpeggio\n"
             " --gain <value>    Set the gaining factor (default 2.0)\n"
+#ifndef OPNMIDI_DISABLE_MAME_EMULATOR
             " --emu-mame        Use MAME YM2612 Emulator\n"
+#endif
+#ifndef OPNMIDI_DISABLE_GENS_EMULATOR
             " --emu-gens        Use GENS 2.10 Emulator\n"
+#endif
+#ifndef OPNMIDI_DISABLE_NUKED_EMULATOR
             " --emu-nuked-3438  Use Nuked OPN2 YM3438 Emulator\n"
             " --emu-nuked-2612  Use Nuked OPN2 YM2612 Emulator\n"
             " --emu-nuked       Same as --emu-nuked-3438\n"
+#endif
+#ifndef OPNMIDI_DISABLE_YMFM_EMULATOR
             " --emu-ymfm-opn2   Use the YMFM OPN2\n"
+#endif
+// #ifndef OPNMIDI_DISABLE_GX_EMULATOR
             // " --emu-gx          Use Genesis Plus GX Emulator\n"
+// #endif
+#ifndef OPNMIDI_DISABLE_NP2_EMULATOR
             " --emu-np2         Use Neko Project II Emulator\n"
+#endif
+#ifndef OPNMIDI_DISABLE_MAME_2608_EMULATOR
             " --emu-mame-opna   Use MAME YM2608 Emulator\n"
+#endif
+#ifndef OPNMIDI_DISABLE_YMFM_EMULATOR
             " --emu-ymfm-opna   Use the YMFM OPNA\n"
+#endif
+// #ifndef OPNMIDI_DISABLE_PMDWIN_EMULATOR
             // " --emu-pmdwin      Use PMDWin Emulator\n"
+// #endif
+#ifdef OPNMIDI_ENABLE_OPNA_LLE_EMULATOR
+            " --emu-lle-opna    Use the very accurate Nuked LLE YM2608 [EXTRA HEAVY]\n"
+#endif
+#ifdef OPNMIDI_ENABLE_OPNA_LLE_EMULATOR
+            " --emu-lle-opn2    Use the very accurate Nuked LLE YM2612 [EXTRA HEAVY]\n"
+            " --emu-lle-3438    Use the very accurate Nuked LLE YM3438 [EXTRA HEAVY]\n"
+            " --emu-lle-f276    Use the very accurate Nuked LLE YMF276 [EXTRA HEAVY]\n"
+#endif
             " --chips <count>   Choose a count of emulated concurrent chips\n"
             "\n"
         );
@@ -451,6 +477,14 @@ int main(int argc, char **argv)
             emulator = OPNMIDI_EMU_NUKED_YM3438;
         else if(!std::strcmp("--emu-nuked-2612", argv[arg]))
             emulator = OPNMIDI_EMU_NUKED_YM2612;
+        else if(!std::strcmp("--emu-lle-2608", argv[arg]) || !std::strcmp("--emu-lle-opna", argv[arg]))
+            emulator = OPNMIDI_EMU_NUKED_YM2608_LLE;
+        else if(!std::strcmp("--emu-lle-2612", argv[arg]) || !std::strcmp("--emu-lle-opn2", argv[arg]))
+            emulator = OPNMIDI_EMU_NUKED_YM2612_LLE;
+        else if(!std::strcmp("--emu-lle-3438", argv[arg]))
+            emulator = OPNMIDI_EMU_NUKED_YM3438_LLE;
+        else if(!std::strcmp("--emu-lle-f276", argv[arg]))
+            emulator = OPNMIDI_EMU_NUKED_YMF276_LLE;
         else if(!std::strcmp("--emu-gens", argv[arg]))
             emulator = OPNMIDI_EMU_GENS;
         else if(!std::strcmp("--emu-mame", argv[arg]))
