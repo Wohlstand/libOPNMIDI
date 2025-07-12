@@ -26,7 +26,7 @@
 #include <stdint.h>
 
 enum {
-    fmopn2_flags_ym3438 = 1,
+    fmopn2_flags_ym3438 = 1
 };
 
 typedef struct {
@@ -43,22 +43,22 @@ typedef struct {
     int address;
     int data;
     int test;
-    int i_fsm_reset; // (chip->ic_check_latch[1] & 16) != 0;
+    int i_fsm_reset; /* (chip->ic_check_latch[1] & 16) != 0; */
 } fmopn2_input_t;
 
 typedef struct {
     int flags;
-    // input
+    /* input */
     fmopn2_input_t input_old, input;
     int i_phi1;
     int i_phi2;
 
     fmopn2_prescaler_input_t pinput, pinput_old;
 
-    // clock
-    int ic_latch[2]; // 12
-    int ic_check_latch[2]; // 4
-    int prescaler_latch[2]; // 6
+    /* clock */
+    int ic_latch[2]; /* 12 */
+    int ic_check_latch[2]; /* 4 */
+    int prescaler_latch[2]; /* 6 */
     int phi1_latch[2];
     int phi2_latch[2];
     int dphi1_latch[4];
@@ -67,12 +67,12 @@ typedef struct {
     int dclk2;
     int fsm_reset;
 
-    // output
+    /* output */
     int dac_val;
     int out_l;
     int out_r;
 
-    // io
+    /* io */
     int write_addr_trig;
     int write_addr_trig_sync;
     int write_addr_dlatch;
@@ -97,7 +97,7 @@ typedef struct {
     int status_timer_a_dlatch;
     int status_timer_b_dlatch;
 
-    // mode registers
+    /* mode registers */
     int write_mode_21[2];
     int write_mode_22[2];
     int write_mode_24[2];
@@ -129,7 +129,7 @@ typedef struct {
 
     int mode_kon[4][2];
 
-    // operator registers
+    /* operator registers */
     int slot_multi[2][4][2];
     int slot_dt[2][3][2];
     int slot_tl[2][7][2];
@@ -141,7 +141,7 @@ typedef struct {
     int slot_rr[2][4][2];
     int slot_sl[2][4][2];
     int slot_ssg_eg[2][4][2];
-    // channel registers
+    /* channel registers */
     int chan_fnum[11][2];
     int chan_fnum_ch3[11][2];
     int chan_block[3][2];
@@ -157,7 +157,7 @@ typedef struct {
     int reg_cnt1[2];
     int reg_cnt2[2];
 
-    // lfo
+    /* lfo */
 
     int lfo_cnt1[2];
     int lfo_cnt2[2];
@@ -166,7 +166,7 @@ typedef struct {
     int lfo_dlatch_load;
     int lfo_inc_latch[2];
 
-    // pg
+    /* pg */
     int pg_fnum[2][2];
     int pg_kcode[2][2];
     int pg_fnum_lfo1;
@@ -193,7 +193,7 @@ typedef struct {
     int pg_debug[2];
     int pg_reset[2];
 
-    // eg
+    /* eg */
     int eg_prescaler[2];
     int eg_prescaler_clock_l[2];
     int eg_prescaler_l;
@@ -248,7 +248,7 @@ typedef struct {
     int eg_out_total;
     int eg_debug[2];
 
-    // op
+    /* op */
     int op_mod[10][2];
     int op_phase[2];
     int op_logsin_base[2];
@@ -267,7 +267,7 @@ typedef struct {
     int op_mod_sum[2];
     int op_dofeedback[2];
 
-    // accumulator
+    /* accumulator */
 
     int ch_accm[14][2];
     int ch_out[9][2];
@@ -278,7 +278,7 @@ typedef struct {
     int ch_accm_l[2];
     int ch_accm_r[2];
 
-    // timers
+    /* timers */
     int timer_dlatch;
     int timer_a_cnt[2];
     int timer_a_load_latch[2];
@@ -296,7 +296,7 @@ typedef struct {
     int timer_b_status[2];
     int timer_csm_key_dlatch;
 
-    // fm algorithm
+    /* fm algorithm */
     int alg_mod_op1_0;
     int alg_mod_op1_1;
     int alg_mod_op2;
@@ -310,10 +310,10 @@ typedef struct {
     int alg_mod_prev_1_l;
     int alg_output_l;
 
-    // fsm
+    /* fsm */
     int fsm_cnt1[2];
     int fsm_cnt2[2];
-    // fsm table output
+    /* fsm table output */
     int fsm_clock_eg;
     int fsm_clock_timers1;
     int fsm_clock_timers;
@@ -328,7 +328,7 @@ typedef struct {
     int fsm_dac_out_sel;
     int fsm_dac_ch6;
 
-    // ymf276
+    /* ymf276 */
     int fsm_clock_eg_l;
     int fsm_op1_sel_l;
     int fsm_sel1_l;

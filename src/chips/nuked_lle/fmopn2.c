@@ -22,7 +22,7 @@
  *
  */
 
-// YMF276/YM3438 core
+/* YMF276/YM3438 core */
 
 #include <stdio.h>
 #include <string.h>
@@ -217,7 +217,7 @@ int FMOPN2_ReadTest(fmopn2_t *chip)
 {
     if (chip->mode_test_2c[1] & 128)
         return chip->fsm_sel23;
-    return 0; // FIXME: high impedance
+    return 0; /* FIXME: high impedance */
 }
 
 int FMOPN2_ReadStatus(fmopn2_t *chip)
@@ -231,7 +231,7 @@ int FMOPN2_ReadStatus(fmopn2_t *chip)
    
     if (!read_enable)
     {
-        return 0; // FIXME: floating bus
+        return 0; /* FIXME: floating bus */
     }
     if (chip->mode_test_21[1] & 64)
     {
@@ -428,70 +428,70 @@ void FMOPN2_DoShiftRegisters(fmopn2_t *chip, int sel)
     int rot = sel == 0 ? 1 : 0;
 #define SLOT_ROTATE(x) rot ? ((x << 1) | ((x >> 11) & 1)) : x
 #define CH_ROTATE(x) rot ? ((x << 1) | ((x >> 5) & 1)) : x
-    // slot registers
+    /* slot registers */
     for (i = 0; i < 2; i++)
     {
-        // multi
+        /* multi */
         for (j = 0; j < 4; j++)
             chip->slot_multi[i][j][to] = SLOT_ROTATE(chip->slot_multi[i][j][from]);
-        // dt
+        /* dt */
         for (j = 0; j < 3; j++)
             chip->slot_dt[i][j][to] = SLOT_ROTATE(chip->slot_dt[i][j][from]);
-        // tl
+        /* tl */
         for (j = 0; j < 7; j++)
             chip->slot_tl[i][j][to] = SLOT_ROTATE(chip->slot_tl[i][j][from]);
-        // ar
+        /* ar */
         for (j = 0; j < 5; j++)
             chip->slot_ar[i][j][to] = SLOT_ROTATE(chip->slot_ar[i][j][from]);
-        // ks
+        /* ks */
         for (j = 0; j < 2; j++)
             chip->slot_ks[i][j][to] = SLOT_ROTATE(chip->slot_ks[i][j][from]);
-        // dr
+        /* dr */
         for (j = 0; j < 5; j++)
             chip->slot_dr[i][j][to] = SLOT_ROTATE(chip->slot_dr[i][j][from]);
-        // am
+        /* am */
         for (j = 0; j < 1; j++)
             chip->slot_am[i][j][to] = SLOT_ROTATE(chip->slot_am[i][j][from]);
-        // sr
+        /* sr */
         for (j = 0; j < 5; j++)
             chip->slot_sr[i][j][to] = SLOT_ROTATE(chip->slot_sr[i][j][from]);
-        // rr
+        /* rr */
         for (j = 0; j < 4; j++)
             chip->slot_rr[i][j][to] = SLOT_ROTATE(chip->slot_rr[i][j][from]);
-        // sl
+        /* sl */
         for (j = 0; j < 4; j++)
             chip->slot_sl[i][j][to] = SLOT_ROTATE(chip->slot_sl[i][j][from]);
-        // ssg eg
+        /* ssg eg */
         for (j = 0; j < 4; j++)
             chip->slot_ssg_eg[i][j][to] = SLOT_ROTATE(chip->slot_ssg_eg[i][j][from]);
     }
-    // channel registers
+    /* channel registers */
 
-    // fnum
+    /* fnum */
     for (j = 0; j < 11; j++)
         chip->chan_fnum[j][to] = CH_ROTATE(chip->chan_fnum[j][from]);
-    // fnum ch3
+    /* fnum ch3 */
     for (j = 0; j < 11; j++)
         chip->chan_fnum_ch3[j][to] = CH_ROTATE(chip->chan_fnum_ch3[j][from]);
-    // block
+    /* block */
     for (j = 0; j < 3; j++)
         chip->chan_block[j][to] = CH_ROTATE(chip->chan_block[j][from]);
-    // block ch3
+    /* block ch3 */
     for (j = 0; j < 3; j++)
         chip->chan_block_ch3[j][to] = CH_ROTATE(chip->chan_block_ch3[j][from]);
-    // connect
+    /* connect */
     for (j = 0; j < 3; j++)
         chip->chan_connect[j][to] = CH_ROTATE(chip->chan_connect[j][from]);
-    // fb
+    /* fb */
     for (j = 0; j < 3; j++)
         chip->chan_fb[j][to] = CH_ROTATE(chip->chan_fb[j][from]);
-    // pms
+    /* pms */
     for (j = 0; j < 3; j++)
         chip->chan_pms[j][to] = CH_ROTATE(chip->chan_pms[j][from]);
-    // ams
+    /* ams */
     for (j = 0; j < 2; j++)
         chip->chan_ams[j][to] = CH_ROTATE(chip->chan_ams[j][from]);
-    // pan
+    /* pan */
     for (j = 0; j < 2; j++)
         chip->chan_pan[j][to] = CH_ROTATE(chip->chan_pan[j][from]);
 #undef SLOT_ROTATE
@@ -575,70 +575,70 @@ void FMOPN2_FMRegisters1(fmopn2_t *chip)
         chip->mode_dac_data[0] = 0;
         chip->mode_dac_en[0] = 0;
         chip->mode_test_2c[0] = 0;
-        // slot registers
+        /* slot registers */
         for (i = 0; i < 2; i++)
         {
-            // multi
+            /* multi */
             for (j = 0; j < 4; j++)
                 chip->slot_multi[i][j][0] &= ~1;
-            // dt
+            /* dt */
             for (j = 0; j < 3; j++)
                 chip->slot_dt[i][j][0] &= ~1;
-            // tl
+            /* tl */
             for (j = 0; j < 7; j++)
                 chip->slot_tl[i][j][0] &= ~1;
-            // ar
+            /* ar */
             for (j = 0; j < 5; j++)
                 chip->slot_ar[i][j][0] &= ~1;
-            // ks
+            /* ks */
             for (j = 0; j < 2; j++)
                 chip->slot_ks[i][j][0] &= ~1;
-            // dr
+            /* dr */
             for (j = 0; j < 5; j++)
                 chip->slot_dr[i][j][0] &= ~1;
-            // am
+            /* am */
             for (j = 0; j < 1; j++)
                 chip->slot_am[i][j][0] &= ~1;
-            // sr
+            /* sr */
             for (j = 0; j < 5; j++)
                 chip->slot_sr[i][j][0] &= ~1;
-            // rr
+            /* rr */
             for (j = 0; j < 4; j++)
                 chip->slot_rr[i][j][0] &= ~1;
-            // sl
+            /* sl */
             for (j = 0; j < 4; j++)
                 chip->slot_sl[i][j][0] &= ~1;
-            // ssg eg
+            /* ssg eg */
             for (j = 0; j < 4; j++)
                 chip->slot_ssg_eg[i][j][0] &= ~1;
         }
-        // channel registers
+        /* channel registers */
 
-        // fn low
+        /* fn low */
         for (j = 0; j < 11; j++)
             chip->chan_fnum[j][0] &= ~1;
-        // fn low ch3
+        /* fn low ch3 */
         for (j = 0; j < 11; j++)
             chip->chan_fnum_ch3[j][0] &= ~1;
-        // block fn high
+        /* block fn high */
         for (j = 0; j < 3; j++)
             chip->chan_block[j][0] &= ~1;
-        // block fn high ch3
+        /* block fn high ch3 */
         for (j = 0; j < 3; j++)
             chip->chan_block_ch3[j][0] &= ~1;
-        // connect
+        /* connect */
         for (j = 0; j < 3; j++)
             chip->chan_connect[j][0] &= ~1;
-        // fb
+        /* fb */
         for (j = 0; j < 3; j++)
             chip->chan_fb[j][0] &= ~1;
-        // pms
+        /* pms */
         for (j = 0; j < 3; j++)
             chip->chan_pms[j][0] &= ~1;
-        // ams
+        /* ams */
         for (j = 0; j < 2; j++)
             chip->chan_ams[j][0] &= ~1;
-        // pan
+        /* pan */
         for (j = 0; j < 2; j++)
             chip->chan_pan[j][0] &= ~1;
 
@@ -724,13 +724,13 @@ void FMOPN2_FMRegisters1(fmopn2_t *chip)
         switch (chip->fm_address[1] & 0xf0)
         {
             case 0x30:
-                // multi
+                /* multi */
                 for (j = 0; j < 4; j++)
                 {
                     chip->slot_multi[bank][j][0] &= ~1;
                     chip->slot_multi[bank][j][0] |= (chip->fm_data[1] >> (j + 0)) & 1;
                 }
-                // dt
+                /* dt */
                 for (j = 0; j < 3; j++)
                 {
                     chip->slot_dt[bank][j][0] &= ~1;
@@ -738,7 +738,7 @@ void FMOPN2_FMRegisters1(fmopn2_t *chip)
                 }
                 break;
             case 0x40:
-                // tl
+                /* tl */
                 for (j = 0; j < 7; j++)
                 {
                     chip->slot_tl[bank][j][0] &= ~1;
@@ -746,13 +746,13 @@ void FMOPN2_FMRegisters1(fmopn2_t *chip)
                 }
                 break;
             case 0x50:
-                // ar
+                /* ar */
                 for (j = 0; j < 5; j++)
                 {
                     chip->slot_ar[bank][j][0] &= ~1;
                     chip->slot_ar[bank][j][0] |= (chip->fm_data[1] >> (j + 0)) & 1;
                 }
-                // ks
+                /* ks */
                 for (j = 0; j < 2; j++)
                 {
                     chip->slot_ks[bank][j][0] &= ~1;
@@ -760,13 +760,13 @@ void FMOPN2_FMRegisters1(fmopn2_t *chip)
                 }
                 break;
             case 0x60:
-                // dr
+                /* dr */
                 for (j = 0; j < 5; j++)
                 {
                     chip->slot_dr[bank][j][0] &= ~1;
                     chip->slot_dr[bank][j][0] |= (chip->fm_data[1] >> (j + 0)) & 1;
                 }
-                // am
+                /* am */
                 for (j = 0; j < 1; j++)
                 {
                     chip->slot_am[bank][j][0] &= ~1;
@@ -774,7 +774,7 @@ void FMOPN2_FMRegisters1(fmopn2_t *chip)
                 }
                 break;
             case 0x70:
-                // sr
+                /* sr */
                 for (j = 0; j < 5; j++)
                 {
                     chip->slot_sr[bank][j][0] &= ~1;
@@ -782,13 +782,13 @@ void FMOPN2_FMRegisters1(fmopn2_t *chip)
                 }
                 break;
             case 0x80:
-                // rr
+                /* rr */
                 for (j = 0; j < 4; j++)
                 {
                     chip->slot_rr[bank][j][0] &= ~1;
                     chip->slot_rr[bank][j][0] |= (chip->fm_data[1] >> (j + 0)) & 1;
                 }
-                // sl
+                /* sl */
                 for (j = 0; j < 4; j++)
                 {
                     chip->slot_sl[bank][j][0] &= ~1;
@@ -796,7 +796,7 @@ void FMOPN2_FMRegisters1(fmopn2_t *chip)
                 }
                 break;
             case 0x90:
-                // ssg eg
+                /* ssg eg */
                 for (j = 0; j < 4; j++)
                 {
                     chip->slot_ssg_eg[bank][j][0] &= ~1;
@@ -810,7 +810,7 @@ void FMOPN2_FMRegisters1(fmopn2_t *chip)
         switch (chip->fm_address[1] & 0xfc)
         {
             case 0xa0:
-                // fnum
+                /* fnum */
                 for (j = 0; j < 8; j++)
                 {
                     chip->chan_fnum[j][0] &= ~1;
@@ -821,7 +821,7 @@ void FMOPN2_FMRegisters1(fmopn2_t *chip)
                     chip->chan_fnum[8+j][0] &= ~1;
                     chip->chan_fnum[8+j][0] |= (chip->chan_a4[1] >> (j + 0)) & 1;
                 }
-                // block
+                /* block */
                 for (j = 0; j < 3; j++)
                 {
                     chip->chan_block[j][0] &= ~1;
@@ -832,7 +832,7 @@ void FMOPN2_FMRegisters1(fmopn2_t *chip)
                 chip->chan_a4[0] = chip->fm_data[1] & 0x3f;
                 break;
             case 0xa8:
-                // fnum
+                /* fnum */
                 for (j = 0; j < 8; j++)
                 {
                     chip->chan_fnum_ch3[j][0] &= ~1;
@@ -843,7 +843,7 @@ void FMOPN2_FMRegisters1(fmopn2_t *chip)
                     chip->chan_fnum_ch3[8+j][0] &= ~1;
                     chip->chan_fnum_ch3[8+j][0] |= (chip->chan_ac[1] >> (j + 0)) & 1;
                 }
-                // block
+                /* block */
                 for (j = 0; j < 3; j++)
                 {
                     chip->chan_block_ch3[j][0] &= ~1;
@@ -854,13 +854,13 @@ void FMOPN2_FMRegisters1(fmopn2_t *chip)
                 chip->chan_ac[0] = chip->fm_data[1] & 0x3f;
                 break;
             case 0xb0:
-                // connect
+                /* connect */
                 for (j = 0; j < 3; j++)
                 {
                     chip->chan_connect[j][0] &= ~1;
                     chip->chan_connect[j][0] |= (chip->fm_data[1] >> (j + 0)) & 1;
                 }
-                // fb
+                /* fb */
                 for (j = 0; j < 3; j++)
                 {
                     chip->chan_fb[j][0] &= ~1;
@@ -868,19 +868,19 @@ void FMOPN2_FMRegisters1(fmopn2_t *chip)
                 }
                 break;
             case 0xb4:
-                // pms
+                /* pms */
                 for (j = 0; j < 3; j++)
                 {
                     chip->chan_pms[j][0] &= ~1;
                     chip->chan_pms[j][0] |= (chip->fm_data[1] >> (j + 0)) & 1;
                 }
-                // ams
+                /* ams */
                 for (j = 0; j < 2; j++)
                 {
                     chip->chan_ams[j][0] &= ~1;
                     chip->chan_ams[j][0] |= (chip->fm_data[1] >> (j + 4)) & 1;
                 }
-                // pan
+                /* pan */
                 for (j = 0; j < 2; j++)
                 {
                     chip->chan_pan[j][0] &= ~1;
@@ -889,7 +889,7 @@ void FMOPN2_FMRegisters1(fmopn2_t *chip)
                 break;
         }
     }
-    // keyon
+    /* keyon */
     chip->mode_kon[0][0] = chip->mode_kon[0][1] << 1;
     chip->mode_kon[1][0] = chip->mode_kon[1][1] << 1;
     chip->mode_kon[2][0] = chip->mode_kon[2][1] << 1;
@@ -1009,11 +1009,11 @@ void FMOPN2_LFO2(fmopn2_t *chip)
 
 void FMOPN2_PhaseGenerator1(fmopn2_t *chip)
 {
-    // Note table
+    /* Note table */
     static const int fn_note[16] = {
         0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 3, 3, 3
     };
-    // LFO shift
+    /* LFO shift */
     static const int pg_lfo_sh1[8][8] = {
         { 7, 7, 7, 7, 7, 7, 7, 7 },
         { 7, 7, 7, 7, 7, 7, 7, 7 },
@@ -1036,7 +1036,7 @@ void FMOPN2_PhaseGenerator1(fmopn2_t *chip)
         { 7, 7, 7, 2, 7, 7, 2, 1 }
     };
 #if 0
-    // YM2610 decap
+    /* YM2610 decap */
     static const int pg_lfo_sh2[8][8] = {
         { 7, 7, 7, 7, 7, 7, 7, 7 },
         { 7, 7, 7, 7, 2, 2, 2, 2 },
@@ -1288,7 +1288,7 @@ void FMOPN2_EnvelopeGenerator1(fmopn2_t *chip)
     timer_bit = sum;
     if (chip->mode_test_2c[1] & 64)
     {
-        if (chip->mode_test_2c[1] & 128) // Assuming TEST pin is NC
+        if (chip->mode_test_2c[1] & 128) /* Assuming TEST pin is NC */
             timer_bit |= FMOPN2_ReadTest(chip);
         else
             timer_bit |= chip->input.test & 1;
@@ -1600,7 +1600,7 @@ void FMOPN2_EnvelopeGenerator1(fmopn2_t *chip)
     chip->eg_ch3_latch[0] = chip->fsm_ch3_sel;
 
     chip->eg_out_tl = chip->eg_tl[0][1];
-    if (chip->eg_ch3_latch[1] && chip->mode_ch3[1] == 2) // CSM
+    if (chip->eg_ch3_latch[1] && chip->mode_ch3[1] == 2) /* CSM */
         chip->eg_out_tl = 0;
 
     chip->eg_out = eg_output + chip->eg_lfo[1];

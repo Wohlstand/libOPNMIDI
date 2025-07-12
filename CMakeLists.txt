@@ -331,12 +331,21 @@ endif()
 
 if(USE_NUKED_OPN2_LLE_EMULATOR)
     list(APPEND libOPNMIDI_SOURCES
+        # YM2612
         ${libOPNMIDI_SOURCE_DIR}/src/chips/ym2612_lle.cpp
         ${libOPNMIDI_SOURCE_DIR}/src/chips/ym2612_lle.h
         ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/nopn2.c
         ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/nopn2.h
         ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/fmopna_2612.c
         ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/fmopna_2612.h
+
+        # YMF276 + YM3438
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/ymf276_lle.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/ymf276_lle.h
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/nopn2f.c
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/nopn2f.h
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/fmopn2.c
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/fmopn2.h
     )
     set(HAS_EMULATOR TRUE)
     add_definitions(-DOPNMIDI_ENABLE_OPN2_LLE_EMULATOR)
@@ -344,8 +353,10 @@ endif()
 
 if(USE_NUKED_OPNA_LLE_EMULATOR)
     list(APPEND libOPNMIDI_SOURCES
-        # ${libOPNMIDI_SOURCE_DIR}/src/chips/ym3812_lle.cpp
-        # ${libOPNMIDI_SOURCE_DIR}/src/chips/ym3812_lle.h
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/ym2608_lle.cpp
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/ym2608_lle.h
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/nopna.c
+        ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/nopna.h
         ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/fmopna_2608.c
         ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/fmopna_2608.h
     )

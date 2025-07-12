@@ -75,8 +75,13 @@
 // LLE variant of Nuked OPN2 Emulator
 #ifdef OPNMIDI_ENABLE_OPN2_LLE_EMULATOR
 #include "chips/ym2612_lle.h"
+#include "chips/ymf276_lle.h"
 #endif
 
+// LLE variant of Nuked OPNA Emulator
+#ifdef OPNMIDI_ENABLE_OPNA_LLE_EMULATOR
+#include "chips/ym2608_lle.h"
+#endif
 
 // VGM File dumper
 #ifdef OPNMIDI_MIDI2VGM
@@ -109,6 +114,11 @@ static const unsigned opn2_emulatorSupport = 0
 #endif
 #ifdef OPNMIDI_ENABLE_OPN2_LLE_EMULATOR
     | (1u << OPNMIDI_EMU_NUKED_YM2612_LLE)
+    | (1u << OPNMIDI_EMU_NUKED_YM3438_LLE)
+    | (1u << OPNMIDI_EMU_NUKED_YMF276_LLE)
+#endif
+#ifdef OPNMIDI_ENABLE_OPNA_LLE_EMULATOR
+    | (1u << OPNMIDI_EMU_NUKED_YM2608_LLE)
 #endif
 //#ifndef OPNMIDI_DISABLE_PMDWIN_EMULATOR
 //    | (1u << OPNMIDI_EMU_PMDWIN)
@@ -730,6 +740,17 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
 #ifdef OPNMIDI_ENABLE_OPN2_LLE_EMULATOR
         case OPNMIDI_EMU_NUKED_YM2612_LLE:
             chip = new Ym2612LLEOPN2(family);
+            break;
+        case OPNMIDI_EMU_NUKED_YM3438_LLE:
+            chip = new Ymf276LLEOPN2(family, false);
+            break;
+        case OPNMIDI_EMU_NUKED_YMF276_LLE:
+            chip = new Ymf276LLEOPN2(family, true);
+            break;
+#endif
+#ifdef OPNMIDI_ENABLE_OPNA_LLE_EMULATOR
+        case OPNMIDI_EMU_NUKED_YM2608_LLE:
+            chip = new Ym2608LLEOPNA(family);
             break;
 #endif
 //#ifndef OPNMIDI_DISABLE_PMDWIN_EMULATOR
