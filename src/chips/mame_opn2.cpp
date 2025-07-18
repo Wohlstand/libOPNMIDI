@@ -27,7 +27,7 @@ MameOPN2::MameOPN2(OPNFamily f)
     : OPNChipBaseT(f)
 {
     chip = NULL;
-    setRate(m_rate, m_clock);
+    MameOPN2::setRate(m_rate, m_clock);
 }
 
 MameOPN2::~MameOPN2()
@@ -77,4 +77,9 @@ void MameOPN2::nativeGenerate(int16_t *frame)
 const char *MameOPN2::emulatorName()
 {
     return "MAME YM2612";
+}
+
+bool MameOPN2::hasFullPanning()
+{
+    return true;
 }

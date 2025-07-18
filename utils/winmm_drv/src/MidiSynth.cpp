@@ -25,6 +25,8 @@ namespace OPL3Emu
 
 static MidiSynth &midiSynth = MidiSynth::getInstance();
 
+static const unsigned int s_audioChannels = 2;
+
 static class MidiStream
 {
 private:
@@ -133,13 +135,38 @@ private:
     DWORD       prevPlayPos;
     DWORD       getPosWraps;
     bool        stopProcessing;
+    WORD        formatType;
+    DWORD       sizeSample;
 
 public:
-    int Init(Bit16s *buffer, unsigned int bufferSize, unsigned int chunkSize, bool useRingBuffer, unsigned int sampleRate)
+    WaveOutWin32() :
+        hWaveOut(NULL),
+        WaveHdr(NULL),
+        hEvent(NULL),
+        chunks(0),
+        prevPlayPos(0),
+        getPosWraps(0),
+        stopProcessing(false),
+        formatType(0),
+        sizeSample(0)
+    {}
+
+    int Init(OPN2_UInt8 *buffer, size_t bufferSize,
+             WORD formatTag,
+             unsigned int chunkSize, bool useRingBuffer,
+             unsigned int sampleRate, UINT outDevice)
     {
         DWORD callbackType = CALLBACK_NULL;
         DWORD_PTR callback = (DWORD_PTR)NULL;
-        hEvent = NULL;
+        size_t numFrames;
+
+        if(hWaveOut)
+            Close();
+
+        formatType = formatTag;
+        sizeSample = formatType == WAVE_FORMAT_IEEE_FLOAT ? sizeof(float) : sizeof(Bit16s);
+        numFrames = bufferSize / (sizeSample * s_audioChannels);
+
         if(!useRingBuffer)
         {
             hEvent = CreateEvent(NULL, false, true, NULL);
@@ -147,26 +174,40 @@ public:
             callbackType = CALLBACK_EVENT;
         }
 
-        PCMWAVEFORMAT wFormat = {WAVE_FORMAT_PCM, 2, sampleRate, sampleRate * 4, 4, 16};
+        PCMWAVEFORMAT wFormat =
+        {
+            formatType, s_audioChannels,
+            sampleRate,
+            (DWORD)(sampleRate * sizeSample * s_audioChannels),
+            (WORD)(s_audioChannels * sizeSample),
+            (WORD)(8 * sizeSample)
+        };
 
         // Open waveout device
-        int wResult = waveOutOpen(&hWaveOut, WAVE_MAPPER, (LPWAVEFORMATEX)&wFormat, callback, (DWORD_PTR)&midiSynth, callbackType);
+        int wResult = waveOutOpen(&hWaveOut, outDevice, (LPWAVEFORMATEX)&wFormat,
+                                  callback, (DWORD_PTR)&midiSynth, callbackType);
+
         if(wResult != MMSYSERR_NOERROR)
         {
-            MessageBoxW(NULL, L"Failed to open waveform output device", L"libOPNMIDI", MB_OK | MB_ICONEXCLAMATION);
+            if(formatType != WAVE_FORMAT_IEEE_FLOAT)
+                MessageBoxW(NULL, L"Failed to open waveform output device", L"libOPNMIDI", MB_OK | MB_ICONEXCLAMATION);
+
+            Close();
             return 2;
         }
 
         // Prepare headers
-        chunks = useRingBuffer ? 1 : bufferSize / chunkSize;
+        chunks = useRingBuffer ? 1 : numFrames / chunkSize;
         WaveHdr = new WAVEHDR[chunks];
+
         LPSTR chunkStart = (LPSTR)buffer;
-        DWORD chunkBytes = 4 * chunkSize;
+        DWORD chunkBytes = s_audioChannels * sizeSample * chunkSize;
+
         for(UINT i = 0; i < chunks; i++)
         {
             if(useRingBuffer)
             {
-                WaveHdr[i].dwBufferLength = 4 * bufferSize;
+                WaveHdr[i].dwBufferLength = bufferSize;
                 WaveHdr[i].lpData = chunkStart;
                 WaveHdr[i].dwFlags = WHDR_BEGINLOOP | WHDR_ENDLOOP;
                 WaveHdr[i].dwLoops = -1L;
@@ -179,6 +220,7 @@ public:
                 WaveHdr[i].dwLoops = 0L;
                 chunkStart += chunkBytes;
             }
+
             wResult = waveOutPrepareHeader(hWaveOut, &WaveHdr[i], sizeof(WAVEHDR));
             if(wResult != MMSYSERR_NOERROR)
             {
@@ -186,19 +228,27 @@ public:
                 return 3;
             }
         }
+
         stopProcessing = false;
         return 0;
     }
 
     int Close()
     {
+        int wResult;
+
         stopProcessing = true;
-        SetEvent(hEvent);
-        int wResult = waveOutReset(hWaveOut);
-        if(wResult != MMSYSERR_NOERROR)
+        if(hEvent != NULL)
+            SetEvent(hEvent);
+
+        if(hWaveOut != NULL)
         {
-            MessageBoxW(NULL, L"Failed to Reset WaveOut", L"libOPNMIDI", MB_OK | MB_ICONEXCLAMATION);
-            return 8;
+            wResult = waveOutReset(hWaveOut);
+            if(wResult != MMSYSERR_NOERROR)
+            {
+                MessageBoxW(NULL, L"Failed to Reset WaveOut", L"libOPNMIDI", MB_OK | MB_ICONEXCLAMATION);
+                return 8;
+            }
         }
 
         for(UINT i = 0; i < chunks; i++)
@@ -210,27 +260,38 @@ public:
                 return 8;
             }
         }
-        delete[] WaveHdr;
+
+        if(WaveHdr != NULL)
+            delete[] WaveHdr;
         WaveHdr = NULL;
 
-        wResult = waveOutClose(hWaveOut);
-        if(wResult != MMSYSERR_NOERROR)
+        if(hWaveOut != NULL)
         {
-            MessageBoxW(NULL, L"Failed to Close WaveOut", L"libOPNMIDI", MB_OK | MB_ICONEXCLAMATION);
-            return 8;
+            wResult = waveOutClose(hWaveOut);
+            if(wResult != MMSYSERR_NOERROR)
+            {
+                MessageBoxW(NULL, L"Failed to Close WaveOut", L"libOPNMIDI", MB_OK | MB_ICONEXCLAMATION);
+                return 8;
+            }
         }
+
+        hWaveOut = NULL;
+
         if(hEvent != NULL)
         {
             CloseHandle(hEvent);
             hEvent = NULL;
         }
+
         return 0;
     }
 
     int Start()
     {
+        HANDLE renderThread;
         getPosWraps = 0;
         prevPlayPos = 0;
+
         for(UINT i = 0; i < chunks; i++)
         {
             if(waveOutWrite(hWaveOut, &WaveHdr[i], sizeof(WAVEHDR)) != MMSYSERR_NOERROR)
@@ -239,7 +300,9 @@ public:
                 return 4;
             }
         }
-        _beginthread(RenderingThread, 16384, this);
+
+        renderThread = (HANDLE)_beginthread(RenderingThread, 8192 * sizeSample, this);
+        SetThreadPriority(renderThread, THREAD_PRIORITY_HIGHEST);
         return 0;
     }
 
@@ -287,9 +350,11 @@ public:
         int delta = mmTime.u.sample - prevPlayPos;
         if(delta < -(1 << 26))
         {
-            std::cout << "OPL3: GetPos() wrap: " << delta << "\n";
+            std::cout << "OPN2: GetPos() wrap: " << delta << "\n";
+            std::cout.flush();
             ++getPosWraps;
         }
+
         prevPlayPos = mmTime.u.sample;
         return mmTime.u.sample + getPosWraps * (1 << 27);
     }
@@ -310,17 +375,22 @@ void WaveOutWin32::RenderingThread(void *)
         while(!s_waveOut.stopProcessing)
         {
             bool allBuffersRendered = true;
+
             for(UINT i = 0; i < s_waveOut.chunks; i++)
             {
                 if(s_waveOut.WaveHdr[i].dwFlags & WHDR_DONE)
                 {
                     allBuffersRendered = false;
-                    midiSynth.Render((Bit16s *)s_waveOut.WaveHdr[i].lpData, s_waveOut.WaveHdr[i].dwBufferLength / 4);
+                    midiSynth.Render((Bit8u *)s_waveOut.WaveHdr[i].lpData,
+                                     s_waveOut.WaveHdr[i].dwBufferLength);
+
                     if(waveOutWrite(s_waveOut.hWaveOut, &s_waveOut.WaveHdr[i], sizeof(WAVEHDR)) != MMSYSERR_NOERROR)
                         MessageBoxW(NULL, L"Failed to write block to device", L"libOPNMIDI", MB_OK | MB_ICONEXCLAMATION);
+
                     midiSynth.CheckForSignals();
                 }
             }
+
             if(allBuffersRendered)
                 WaitForSingleObject(s_waveOut.hEvent, INFINITE);
         }
@@ -329,9 +399,16 @@ void WaveOutWin32::RenderingThread(void *)
 
 
 MidiSynth::MidiSynth() :
+    buffer(NULL),
+    bufferSizeB(0),
     synth(NULL)
 {
     m_setupInit = false;
+    useRingBuffer = false;
+    volumeFactorL = 1.0f;
+    volumeFactorR = 1.0f;
+    gain = 1.0f;
+
     setupDefault(&m_setup);
     loadSetup();
     ::openSignalListener();
@@ -341,6 +418,7 @@ MidiSynth::~MidiSynth()
 {
     if(synth)
         opn2_close(synth);
+
     synth = NULL;
     ::closeSignalListener();
 }
@@ -371,13 +449,16 @@ void MidiSynth::RenderAvailableSpace()
             return;
         }
     }
-    midiSynth.Render(buffer + 2 * framesRendered, framesToRender);
+
+    midiSynth.Render(buffer + (synthAudioFormat.containerSize * framesRendered), framesToRender);
 }
 
 // Renders totalFrames frames starting from bufpos
 // The number of frames rendered is added to the global counter framesRendered
-void MidiSynth::Render(Bit16s *bufpos, DWORD totalFrames)
+void MidiSynth::Render(Bit8u *bufpos_p, DWORD bufSize)
 {
+    DWORD totalFrames = bufSize / (synthAudioFormat.containerSize * s_audioChannels);
+
     while(totalFrames > 0)
     {
         DWORD timeStamp;
@@ -442,10 +523,37 @@ void MidiSynth::Render(Bit16s *bufpos, DWORD totalFrames)
         }
 
         synthEvent.Wait();
-        opn2_generate(synth, framesToRender * 2, bufpos);
+        opn2_generateFormat(synth, framesToRender * s_audioChannels,
+                            bufpos_p, bufpos_p + synthAudioFormat.containerSize,
+                            &synthAudioFormat);
+        // Apply the volume
+        float g_l = volumeFactorL * gain;
+        float g_r = volumeFactorR * gain;
+
+        if(synthAudioFormat.type == OPNMIDI_SampleType_F32)
+        {
+            float *bufpos = (float *)bufpos_p;
+            for(size_t i = 0; i < framesToRender * s_audioChannels; i += s_audioChannels)
+            {
+                bufpos[i + 0] *= g_l;
+                bufpos[i + 1] *= g_r;
+            }
+        }
+        else
+        {
+            Bit16s *bufpos = (Bit16s *)bufpos_p;
+            for(size_t i = 0; i < framesToRender * s_audioChannels; i += s_audioChannels)
+            {
+                bufpos[i + 0] *= g_l;
+                bufpos[i + 1] *= g_r;
+            }
+        }
+
         synthEvent.Release();
+
         framesRendered += framesToRender;
-        bufpos += 2 * framesToRender; // each frame consists of two samples for both the Left and Right channels
+        // each frame consists of two samples for both the Left and Right channels
+        bufpos_p += s_audioChannels * framesToRender * synthAudioFormat.containerSize;
         totalFrames -= framesToRender;
     }
 
@@ -463,13 +571,17 @@ void MidiSynth::CheckForSignals()
 
     switch(cmd)
     {
-    case 1: // Reload settings on the fly
+    case DRV_SIGNAL_RELOAD_SETUP: // Reload settings on the fly
         this->loadSetup();
         LoadSynthSetup();
         break;
 
-    case 2:
+    case DRV_SIGNAL_RESET_SYNTH:
         opn2_reset(synth);
+        break;
+
+    case DRV_SIGNAL_UPDATE_GAIN:
+        this->loadGain();
         break;
 
     default:
@@ -491,7 +603,7 @@ void MidiSynth::LoadSettings()
     bufferSize = MillisToFrames(100);
     chunkSize = MillisToFrames(10);
     midiLatency = MillisToFrames(0);
-    useRingBuffer = false;
+
     if(!useRingBuffer)
     {
         // Number of chunks should be ceil(bufferSize / chunkSize)
@@ -504,7 +616,12 @@ void MidiSynth::LoadSettings()
 int MidiSynth::Init()
 {
     LoadSettings();
-    buffer = new Bit16s[2 * bufferSize]; // each frame consists of two samples for both the Left and Right channels
+
+    if(!buffer)
+    {
+        bufferSizeB = s_audioChannels * bufferSize * sizeof(float);
+        buffer = (OPN2_UInt8 *)malloc(bufferSizeB); // each frame consists of two samples for both the Left and Right channels
+    }
 
     // Init synth
     if(synthEvent.Init())
@@ -517,14 +634,38 @@ int MidiSynth::Init()
         return 1;
     }
 
+    synthAudioFormat.type = OPNMIDI_SampleType_F32;
+    synthAudioFormat.sampleOffset = s_audioChannels * sizeof(float);
+    synthAudioFormat.containerSize = sizeof(float);
+
     m_setupInit = false;
     LoadSynthSetup();
 
-    UINT wResult = s_waveOut.Init(buffer, bufferSize, chunkSize, useRingBuffer, sampleRate);
-    if(wResult) return wResult;
+    UINT wResult = s_waveOut.Init(buffer, bufferSizeB,
+                                  WAVE_FORMAT_IEEE_FLOAT,
+                                  chunkSize, useRingBuffer, sampleRate, m_setup.outputDevice);
+
+    if(wResult)
+    {
+        synthAudioFormat.type = OPNMIDI_SampleType_S16;
+        synthAudioFormat.sampleOffset = s_audioChannels * sizeof(Bit16s);
+        synthAudioFormat.containerSize = sizeof(Bit16s);
+
+        bufferSizeB = s_audioChannels * bufferSize * sizeof(Bit16s);
+        buffer = (OPN2_UInt8 *)realloc(buffer, bufferSizeB); // Shrink the buffer
+        wResult = s_waveOut.Init(buffer, bufferSizeB,
+                                         WAVE_FORMAT_PCM,
+                                         chunkSize, useRingBuffer, sampleRate, m_setup.outputDevice);
+    }
+
+    if(wResult)
+        return wResult;
 
     // Start playing stream
-    opn2_generate(synth, bufferSize * 2, buffer);
+    opn2_generateFormat(synth, bufferSize * s_audioChannels,
+                        buffer,
+                        buffer + synthAudioFormat.containerSize,
+                        &synthAudioFormat);
     framesRendered = 0;
 
     wResult = s_waveOut.Start();
@@ -588,9 +729,27 @@ void MidiSynth::PlaySysex(Bit8u *bufpos, DWORD len)
     synthEvent.Release();
 }
 
+void MidiSynth::SetVolume(DWORD vol)
+{
+    volumeFactorR = (float)0xFFFF / HIWORD(vol);
+    volumeFactorL = (float)0xFFFF / LOWORD(vol);
+}
+
+DWORD MidiSynth::GetVolume()
+{
+    return MAKELONG((DWORD)(0xFFFF * volumeFactorL), (DWORD)(0xFFFF * volumeFactorR));
+}
+
 void MidiSynth::loadSetup()
 {
     ::loadSetup(&m_setup);
+    gain = (float)m_setup.gain100 / 100.f;
+}
+
+void MidiSynth::loadGain()
+{
+    ::getGain(&m_setup);
+    gain = (float)m_setup.gain100 / 100.f;
 }
 
 void MidiSynth::LoadSynthSetup()
@@ -637,6 +796,12 @@ void MidiSynth::LoadSynthSetup()
         m_setupCurrent.volumeModel = m_setup.volumeModel;
     }
 
+    if(!m_setupInit || m_setupCurrent.chanAlloc != m_setup.chanAlloc)
+    {
+        opn2_setChannelAllocMode(synth, m_setup.chanAlloc);
+        m_setupCurrent.chanAlloc = m_setup.chanAlloc;
+    }
+
     if(!m_setupInit || m_setupCurrent.numChips != m_setup.numChips)
     {
         opn2_setNumChips(synth, m_setup.numChips);
@@ -677,7 +842,10 @@ void MidiSynth::Close()
     if(synth)
         opn2_close(synth);
     synth = NULL;
-    delete buffer;
+
+    if(buffer)
+        free(buffer);
+    buffer = NULL;
 
     synthEvent.Close();
 }

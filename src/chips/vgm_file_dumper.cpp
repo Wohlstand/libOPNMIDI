@@ -329,3 +329,8 @@ void VGMFileDumper::loopEndHook(void *self)
     if(s)
         s->writeLoopEnd();
 }
+
+bool VGMFileDumper::hasFullPanning()
+{
+    return false;
+}

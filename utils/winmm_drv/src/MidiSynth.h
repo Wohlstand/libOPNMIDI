@@ -52,11 +52,16 @@ private:
     Bit8u reverbMode;
     Bit8u reverbTime;
     Bit8u reverbLevel;
+    float volumeFactorL;
+    float volumeFactorR;
+    float gain;
 
-    Bit16s *buffer;
+    unsigned char*buffer;
+    size_t bufferSizeB;
     DWORD framesRendered;
 
     OPN2_MIDIPlayer *synth;
+    OPNMIDI_AudioFormat synthAudioFormat;
 
     bool m_setupInit;
     DriverSettings m_setup;
@@ -76,12 +81,16 @@ public:
     void ResetSynth();
     void PanicSynth();
     void RenderAvailableSpace();
-    void Render(Bit16s *bufpos, DWORD totalFrames);
+    void Render(Bit8u *bufpos_p, DWORD bufSize);
     void CheckForSignals();
     void PushMIDI(DWORD msg);
     void PlaySysex(Bit8u *bufpos, DWORD len);
 
+    void SetVolume(DWORD vol);
+    DWORD GetVolume();
+
     void loadSetup();
+    void loadGain();
 
     void LoadSynthSetup();
 };

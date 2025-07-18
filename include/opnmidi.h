@@ -29,8 +29,8 @@ extern "C" {
 #endif
 
 #define OPNMIDI_VERSION_MAJOR       1
-#define OPNMIDI_VERSION_MINOR       5
-#define OPNMIDI_VERSION_PATCHLEVEL  1
+#define OPNMIDI_VERSION_MINOR       6
+#define OPNMIDI_VERSION_PATCHLEVEL  0
 
 #define OPNMIDI_TOSTR_I(s) #s
 #define OPNMIDI_TOSTR(s) OPNMIDI_TOSTR_I(s)
@@ -606,6 +606,14 @@ enum Opn2_Emulator
     OPNMIDI_VGM_DUMPER,
     /*! Nuked OPN2 (YM2612 mode) */
     OPNMIDI_EMU_NUKED_YM2612,
+    /*! Very low-level variant of Nuked OPN2 (YM2612) */
+    OPNMIDI_EMU_NUKED_YM2612_LLE,
+    /*! Very low-level variant of Nuked OPNA (YM2608) */
+    OPNMIDI_EMU_NUKED_YM2608_LLE,
+    /*! Very low-level variant of Nuked OPN2 (YM3438) */
+    OPNMIDI_EMU_NUKED_YM3438_LLE,
+    /*! Very low-level variant of Nuked OPN2 (YMF276) */
+    OPNMIDI_EMU_NUKED_YMF276_LLE,
     /*! Count instrument on the level */
     OPNMIDI_EMU_end,
 

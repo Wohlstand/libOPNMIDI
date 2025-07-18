@@ -87,6 +87,8 @@ public:
     void writeLoopEnd();
     static void loopStartHook(void *self);
     static void loopEndHook(void *self);
+
+    bool hasFullPanning() override;
 };
 
 #endif // VGM_FILE_DUMPER_H

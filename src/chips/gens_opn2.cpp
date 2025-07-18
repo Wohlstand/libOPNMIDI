@@ -35,7 +35,7 @@ GensOPN2::GensOPN2(OPNFamily f)
     : OPNChipBaseBufferedT(f),
       chip(new LibGens::Ym2612())
 {
-    setRate(m_rate, m_clock);
+    GensOPN2::setRate(m_rate, m_clock);
 }
 
 GensOPN2::~GensOPN2()
@@ -108,4 +108,9 @@ void GensOPN2::nativeGenerateN(int16_t *output, size_t frames)
 const char *GensOPN2::emulatorName()
 {
     return "GENS/GS II OPN2";
+}
+
+bool GensOPN2::hasFullPanning()
+{
+    return true;
 }

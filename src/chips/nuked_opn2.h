@@ -26,6 +26,7 @@
 class NukedOPN2 final : public OPNChipBaseT<NukedOPN2>
 {
     void *chip;
+    bool m_isym3438;
 public:
     explicit NukedOPN2(OPNFamily f, bool ym3438);
     ~NukedOPN2() override;
@@ -39,6 +40,7 @@ public:
     void nativePostGenerate() override {}
     void nativeGenerate(int16_t *frame) override;
     const char *emulatorName() override;
+    bool hasFullPanning() override;
     // amplitude scale factors to use in resampling
     enum { resamplerPreAmplify = 11, resamplerPostAttenuate = 2 };
 };

@@ -281,6 +281,24 @@ public:
         typedef pl_list<NoteInfo>::iterator notes_iterator;
         typedef pl_list<NoteInfo>::const_iterator const_notes_iterator;
 
+        void clear_all_phys_users(unsigned chip_chan)
+        {
+            for(pl_list<NoteInfo>::iterator it = activenotes.begin(); it != activenotes.end(); )
+            {
+                NoteInfo::Phys *p = it->value.phys_find(chip_chan);
+                if(p)
+                {
+                    it->value.phys_erase_at(p);
+                    if(it->value.chip_channels_count == 0)
+                        it = activenotes.erase(it);
+                    else
+                        ++it;
+                }
+                else
+                    ++it;
+            }
+        }
+
         notes_iterator find_activenote(unsigned note)
         {
             return activenotes.find_if(NoteInfo::FindPredicate(note));
@@ -307,9 +325,24 @@ public:
             return it;
         }
 
+        notes_iterator create_activenote(unsigned note)
+        {
+            NoteInfo ni;
+            ni.note = note;
+            notes_iterator it = activenotes.insert(activenotes.end(), ni);
+            return it;
+        }
+
         notes_iterator ensure_find_or_create_activenote(unsigned note)
         {
             notes_iterator it = find_or_create_activenote(note);
+            assert(!it.is_end());
+            return it;
+        }
+
+        notes_iterator ensure_create_activenote(unsigned note)
+        {
+            notes_iterator it = create_activenote(note);
             assert(!it.is_end());
             return it;
         }

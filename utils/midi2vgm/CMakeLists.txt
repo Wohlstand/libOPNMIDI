@@ -17,6 +17,10 @@ endif()
 target_link_libraries(midi2vgm OPNMIDI_IF ${ZLIB_LIBRARIES})
 target_compile_definitions(midi2vgm PRIVATE "-DDEFAULT_INSTALL_PREFIX=\"${CMAKE_INSTALL_PREFIX}\"")
 
+if(WIN32)
+    set_property(TARGET midi2vgm PROPERTY WIN32_EXECUTABLE OFF)
+endif()
+
 if(libOPNMIDI_SHARED)
     add_dependencies(midi2vgm OPNMIDI_shared)
     set_target_properties(midi2vgm PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
