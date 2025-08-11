@@ -96,13 +96,13 @@ void OPNWaveSynth::resetAllMaps()
     memset(m_curPatch, 0, sizeof(m_curPatch));
     memset(m_curIsDrum, 0, sizeof(m_curIsDrum));
 
-    for(size_t i = 0; i < 16; ++i)
+    for(size_t i = 0; i < c_midiChanNum; ++i)
     {
         m_volumes[i] = 1.0f;
         m_expressions[i] = 1.0f;
     }
 
-    for(size_t chan = 0; chan < 16; ++chan)
+    for(size_t chan = 0; chan < c_midiChanNum; ++chan)
     {
         for(size_t i = 0; i < 128; ++i)
             m_curDrumChunks[chan][i] = -1;
@@ -147,7 +147,7 @@ void OPNWaveSynth::loadChunkFromData(uint8_t *data, size_t size, int bank, int i
 
 void OPNWaveSynth::changePatch(int channel, int patch, bool isDrum)
 {
-    channel %= 16;
+    channel %= c_midiChanNum;
     m_curPatch[channel] = patch;
     m_curIsDrum[channel] = isDrum;
 
@@ -172,13 +172,13 @@ void OPNWaveSynth::changePatch(int channel, int patch, bool isDrum)
 
 void OPNWaveSynth::changeBank(int channel, int bank)
 {
-    channel %= 16;
+    channel %= c_midiChanNum;
     m_curBank[channel] = bank;
 }
 
 bool OPNWaveSynth::hasWave(uint8_t channel, uint8_t note)
 {
-    channel %= 16;
+    channel %= c_midiChanNum;
 
     bool isPercussion = (channel == 9) || m_curIsDrum[channel];
 
@@ -190,7 +190,7 @@ bool OPNWaveSynth::hasWave(uint8_t channel, uint8_t note)
 
 void OPNWaveSynth::noteOn(int channel, int note, uint8_t velocity)
 {
-    channel %= 16;
+    channel %= c_midiChanNum;
 
     bool isDrum = m_curIsDrum[channel];
     int reUse = -1;
@@ -245,7 +245,7 @@ void OPNWaveSynth::fetchPcm(int32_t *buffer, int samples, int flag_mixing, size_
         int32_t *dst = buffer;
         uint8_t *src = &chunks[c.cur_chunk].pcm[c.pos];
         int len_req = samples > len_left ? len_left : samples;
-        float vol = m_volumes[c.midi_chan] * m_expressions[c.midi_chan];
+        float vol = m_volumes[c.midi_chan] * m_expressions[c.midi_chan] / 1.5;
 
         c.pos += len_req;
 

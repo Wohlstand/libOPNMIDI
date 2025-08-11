@@ -29,16 +29,17 @@
 
 class OPNWaveSynth
 {
-    bool m_percMap[16][128];
-    bool m_melodicUse[16];
+    static const size_t c_midiChanNum = 16;
+    bool m_percMap[c_midiChanNum][128];
+    bool m_melodicUse[c_midiChanNum];
 
-    int m_curBank[16];
-    int m_curPatch[16];
-    bool m_curIsDrum[16];
-    int m_curDrumChunks[16][128];
+    int m_curBank[c_midiChanNum];
+    int m_curPatch[c_midiChanNum];
+    bool m_curIsDrum[c_midiChanNum];
+    int m_curDrumChunks[c_midiChanNum][128];
 
-    float m_volumes[16];
-    float m_expressions[16];
+    float m_volumes[c_midiChanNum];
+    float m_expressions[c_midiChanNum];
 
     struct WaveChunk
     {
@@ -61,7 +62,7 @@ class OPNWaveSynth
         float vel;
     };
 
-    static const size_t m_channelsNum = 16;
+    static const size_t m_channelsNum = 2;
     size_t m_channelsMax;
     WaveChannel m_channels[m_channelsNum];
     int m_channelsUsed;
