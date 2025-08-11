@@ -23,6 +23,18 @@
 #include <stdio.h>
 #include <cmath>
 
+// Temporary embedded raw PCM samples
+#include "wavesynth/pcm_drums1kick.h"
+#include "wavesynth/pcm_drums1snare.h"
+#include "wavesynth/pcm_drums3kick.h"
+#include "wavesynth/pcm_drums3snare.h"
+#include "wavesynth/pcm_kick.h"
+#include "wavesynth/pcm_orchestraBassDrum.h"
+#include "wavesynth/pcm_orchestraKik.h"
+#include "wavesynth/pcm_orchestraSnare.h"
+#include "wavesynth/pcm_snare.h"
+#include "wavesynth/pcm_snare2.h"
+
 
 void OPNWaveSynth::releaseChannel(int ch)
 {
@@ -47,20 +59,20 @@ OPNWaveSynth::OPNWaveSynth()
     m_rate = 11025;
     m_channelsUsed = 0;
 
-    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/kick.raw", 0, 35, true);
-    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/kick.raw", 0, 36, true);
-    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/snare.raw", 0, 38, true);
-    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/snare2.raw", 0, 40, true);
+    loadChunkFromData(g_kick_raw_bank, sizeof(g_kick_raw_bank) - 1, 0, 35, true);
+    loadChunkFromData(g_kick_raw_bank, sizeof(g_kick_raw_bank) - 1, 0, 36, true);
+    loadChunkFromData(g_snare_raw_bank, sizeof(g_snare_raw_bank) - 1, 0, 38, true);
+    loadChunkFromData(g_snare2_raw_bank, sizeof(g_snare2_raw_bank) - 1, 0, 40, true);
 
-    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/drums1kick.raw", 16, 35, true);
-    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/drums3kick.raw", 16, 36, true);
-    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/drums3snare.raw", 16, 38, true);
-    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/drums1snare.raw", 16, 40, true);
+    loadChunkFromData(g_drums1kick_raw_bank, sizeof(g_drums1kick_raw_bank) - 1, 16, 35, true);
+    loadChunkFromData(g_drums3kick_raw_bank, sizeof(g_drums3kick_raw_bank) - 1, 16, 36, true);
+    loadChunkFromData(g_drums3snare_raw_bank, sizeof(g_drums3snare_raw_bank) - 1, 16, 38, true);
+    loadChunkFromData(g_drums1snare_raw_bank, sizeof(g_drums1snare_raw_bank) - 1, 16, 40, true);
 
-    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/orchestraKik.raw", 48, 35, true);
-    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/orchestraBassDrum.raw", 48, 36, true);
-    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/orchestraSnare.raw", 48, 38, true);
-    loadChunkFromFile("/home/vitaly/_git_repos/libOPNMIDI/test/pcm-samples/orchestraSnare.raw", 48, 40, true);
+    loadChunkFromData(g_orchestraKik_raw_bank, sizeof(g_orchestraKik_raw_bank) - 1, 48, 35, true);
+    loadChunkFromData(g_orchestraBassDrum_raw_bank, sizeof(g_orchestraBassDrum_raw_bank) - 1, 48, 36, true);
+    loadChunkFromData(g_orchestraSnare_raw_bank, sizeof(g_orchestraSnare_raw_bank) - 1, 48, 38, true);
+    loadChunkFromData(g_orchestraSnare_raw_bank, sizeof(g_orchestraSnare_raw_bank) - 1, 48, 40, true);
 }
 
 OPNWaveSynth::~OPNWaveSynth()
