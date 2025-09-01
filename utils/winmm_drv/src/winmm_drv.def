@@ -2,3 +2,4 @@ LIBRARY      opnmidisynth
 EXPORTS
     DriverProc
     modMessage
+    opn2_linkedLibraryVersion

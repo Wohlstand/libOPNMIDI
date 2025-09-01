@@ -19,8 +19,7 @@
 #define CB_SETMINVISIBLE (CBM_FIRST+1)
 #endif
 
-typedef int (*BankNamesCount)(void);
-typedef const char *const *(*BankNamesList)(void);
+typedef const char*(*LinkedLibraryVersion)(void);
 
 static const char *const volume_models_descriptions[] =
 {
@@ -115,6 +114,26 @@ static void buildLists(HWND hwnd)
     int i;
     UINT ai, aMax;
     WAVEOUTCAPSW wavDev;
+    HMODULE lib;
+    char version_string[32];
+    LinkedLibraryVersion opn2_linkedLibraryVersion;
+
+    ZeroMemory(version_string, sizeof(version_string));
+
+    lib = LoadLibraryW(L"opnmididrv.dll");
+    if(lib)
+    {
+        opn2_linkedLibraryVersion = (LinkedLibraryVersion)GetProcAddress(lib, "opn2_linkedLibraryVersion");
+
+        if(opn2_linkedLibraryVersion)
+        {
+            snprintf(version_string, sizeof(version_string), "Ver. %s", opn2_linkedLibraryVersion());
+            SendDlgItemMessageA(hwnd, IDC_VERSION_LABEL, WM_SETTEXT, (LPARAM)0, (LPARAM)version_string);
+        }
+
+        FreeLibrary(lib);
+    }
+
     // Volume models
     for(i = 0; volume_models_descriptions[i] != NULL; ++i)
     {
