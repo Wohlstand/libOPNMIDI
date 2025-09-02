@@ -74,6 +74,7 @@ private:
         int         emulator;
         uint32_t    numChips;
         unsigned long pcm_rate;
+        OPNFamily   familyType;
 
         State()
         {
@@ -85,6 +86,7 @@ private:
             emulator = -2;
             numChips = 0;
             pcm_rate = 0;
+            familyType = OPNChip_OPN2;
         }
 
         bool cmp_rate(unsigned long rate)
@@ -97,14 +99,15 @@ private:
             return ret;
         }
 
-        bool cmp(int emu, uint32_t chips)
+        bool cmp(int emu, uint32_t chips, OPNFamily family)
         {
-            bool ret = emu != emulator || chips != numChips;
+            bool ret = emu != emulator || chips != numChips || family != familyType;
 
             if(ret)
             {
                 emulator = emu;
                 numChips = chips;
+                familyType = family;
             }
 
             return ret;

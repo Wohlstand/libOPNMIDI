@@ -629,7 +629,7 @@ void OPN2::clearChips()
 
 void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *audioTickHandler)
 {
-    bool rebuild_needed = m_curState.cmp(emulator, m_numChips);
+    bool rebuild_needed = m_curState.cmp(emulator, m_numChips, family);
 
     if(rebuild_needed)
         clearChips();
@@ -646,10 +646,10 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
     const struct OpnTimbre defaultInsCache =
     {
         {
-            {0, 0, 0, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, 0, 0}
+            {0, 0x7F, 0, 0, 0, 0xFF, 0},
+            {0, 0x7F, 0, 0, 0, 0xFF, 0},
+            {0, 0x7F, 0, 0, 0, 0xFF, 0},
+            {0, 0x7F, 0, 0, 0, 0xFF, 0}
         }, 0, 0, 0
     };
 
