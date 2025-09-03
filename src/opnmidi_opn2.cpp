@@ -557,10 +557,22 @@ void OPN2::setPan(size_t c, uint8_t value)
 
 void OPN2::silenceAll() // Silence all OPL channels.
 {
+    size_t      chip;
+    uint8_t     port;
+    uint32_t    cc;
+
     for(size_t c = 0; c < m_numChannels; ++c)
     {
+        getOpnChannel(c, chip, port, cc);
+
         noteOff(c);
         touchNote(c, 0);
+
+        for(uint8_t op = 0; op < 4; op++)
+        {
+            writeRegI(chip, port, 0x30 + (0x10 * 1) + (op * 4) + cc, 0x7F);
+            writeRegI(chip, port, 0x30 + (0x10 * 5) + (op * 4) + cc, 0xFF);
+        }
     }
 }
 
@@ -629,7 +641,7 @@ void OPN2::clearChips()
 
 void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *audioTickHandler)
 {
-    bool rebuild_needed = m_curState.cmp(emulator, m_numChips);
+    bool rebuild_needed = m_curState.cmp(emulator, m_numChips, family);
 
     if(rebuild_needed)
         clearChips();
@@ -646,10 +658,10 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
     const struct OpnTimbre defaultInsCache =
     {
         {
-            {0, 0, 0, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, 0, 0}
+            {0, 0x7F, 0, 0, 0, 0xFF, 0},
+            {0, 0x7F, 0, 0, 0, 0xFF, 0},
+            {0, 0x7F, 0, 0, 0, 0xFF, 0},
+            {0, 0x7F, 0, 0, 0, 0xFF, 0}
         }, 0, 0, 0
     };
 

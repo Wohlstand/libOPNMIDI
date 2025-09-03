@@ -169,6 +169,7 @@ To remove MIDI Sequencer, define `OPNMIDI_DISABLE_MIDI_SEQUENCER` macro and remo
  * WinMM: Fixed random crash on waveOutOpen initialisation because of incorrect initialisation structure usage.
  * Fixed crash when playing too many notes at the same channel.
  * WinMM: Fixed sound damange when switching between banks while playing some music streams.
+ * Fixed the playback distortion while switching between OPN2 and OPNA family banks.
 
 ## 1.6.0   2025-07-05
  * Fixed the work on big endian processors
