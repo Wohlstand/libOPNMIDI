@@ -24,7 +24,7 @@
 
 /* YMF276/YM3438 core */
 
-#include <stdio.h>
+/*#include <stdio.h>*/
 #include <string.h>
 
 #include "fmopn2.h"
@@ -182,6 +182,8 @@ void FMOPN2_HandleIO(fmopn2_t *chip)
     int io_dir = chip->input.cs && chip->input.rd && !chip->input.ic;
     int data_enable = !io_dir && !chip->input.ic;
 
+    (void)data_enable;
+
     if (chip->input.cs && chip->input.wr)
     {
         chip->data_latch = chip->input.data;
@@ -228,7 +230,7 @@ int FMOPN2_ReadStatus(fmopn2_t *chip)
     int testdata = 0;
     if (!io_dir)
         return 0;
-   
+
     if (!read_enable)
     {
         return 0; /* FIXME: floating bus */
@@ -258,8 +260,8 @@ int FMOPN2_ReadStatus(fmopn2_t *chip)
 
 void FMOPN2_FSM1(fmopn2_t *chip)
 {
-    int i;
-    int connect = 0;
+    /*int i;*/
+    /*int connect = 0;*/
     int reset = chip->input.i_fsm_reset;
     chip->fsm_cnt1[0] = chip->fsm_cnt1[1] + 1;
     if (reset || (chip->fsm_cnt1[1] & 2) != 0)
@@ -390,7 +392,7 @@ void FMOPN2_FSM2(fmopn2_t *chip)
 void FMOPN2_HandleIO1(fmopn2_t *chip)
 {
     int write_data_en = !chip->write_data_sr[1] && chip->write_data_dlatch;
-    int write_addr_en = !chip->write_addr_sr[1] && chip->write_addr_dlatch;
+    /* int write_addr_en = !chip->write_addr_sr[1] && chip->write_addr_dlatch; */
     int busy_cnt = chip->busy_cnt[1] + chip->busy_latch[1];
     int busy_of = (busy_cnt >> 5) & 1;
     chip->write_addr_trig_sync = chip->write_addr_trig;
@@ -1134,7 +1136,7 @@ void FMOPN2_PhaseGenerator1(fmopn2_t *chip)
     block = chip->pg_kcode[1][1] >> 2;
     chip->pg_block = block;
     chip->pg_dt[0] = dt;
-    
+
     dt_l = chip->pg_dt[1] & 3;
     kcode = chip->pg_kcode[1][1];
     if (kcode > 28)
@@ -1186,7 +1188,7 @@ void FMOPN2_PhaseGenerator1(fmopn2_t *chip)
 void FMOPN2_PhaseGenerator2(fmopn2_t *chip)
 {
     int i;
-    int block = chip->pg_kcode[1][0];
+    /* int block = chip->pg_kcode[1][0]; */
     chip->pg_fnum[0][1] = chip->pg_fnum[0][0];
     chip->pg_fnum[1][1] = chip->pg_fnum[1][0];
     chip->pg_kcode[0][1] = chip->pg_kcode[0][0];
@@ -1983,13 +1985,15 @@ void FMOPN2_YM3438Accumulator2(fmopn2_t* chip)
     int i;
     int test_dac = (chip->mode_test_2c[1] & 32) != 0;
     int do_out = 0;
-    int sign;
-    int out;
+    /* int sign; */
+    /* int out; */
+
     for (i = 0; i < 9; i++)
     {
         chip->ch_accm[i][1] = chip->ch_accm[i][0];
         chip->ch_out[i][1] = chip->ch_out[i][0];
     }
+
     if ((chip->fsm_dac_load && !chip->ch_dac_load) || test_dac)
     {
         chip->ch_out_dlatch = 0;
@@ -2004,6 +2008,7 @@ void FMOPN2_YM3438Accumulator2(fmopn2_t* chip)
                 chip->ch_out_dlatch |= ((chip->ch_out[i][1] >> 4) & 1) << i;
         }
     }
+
     if ((chip->fsm_dac_ch6 && chip->mode_dac_en[1]) || test_dac)
     {
         chip->dac_val = chip->mode_dac_data[1] << 1;
@@ -2165,7 +2170,7 @@ void FMOPN2_YMF276Accumulator2(fmopn2_t *chip)
 
     chip->fsm_op1_sel_l2[1] = chip->fsm_op1_sel_l2[0];
     chip->fsm_op1_sel_l3[1] = chip->fsm_op1_sel_l3[0];
-    
+
     chip->ch_accm_l[1] = chip->ch_accm_l[0];
     chip->ch_accm_r[1] = chip->ch_accm_r[0];
 
