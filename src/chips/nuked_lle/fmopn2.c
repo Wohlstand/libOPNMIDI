@@ -179,10 +179,8 @@ void FMOPN2_HandleIO(fmopn2_t *chip)
     int write_data = chip->input.cs && chip->input.wr && (chip->input.address & 1) == 1 && !chip->input.ic;
     int write_addr = (chip->input.cs && chip->input.wr && (chip->input.address & 1) == 0) || chip->input.ic;
     int read_enable = chip->input.cs && chip->input.rd && !chip->input.ic;
-    int io_dir = chip->input.cs && chip->input.rd && !chip->input.ic;
-    int data_enable = !io_dir && !chip->input.ic;
-
-    (void)data_enable;
+    /*int io_dir = chip->input.cs && chip->input.rd && !chip->input.ic;*/
+    /*int data_enable = !io_dir && !chip->input.ic;*/
 
     if (chip->input.cs && chip->input.wr)
     {
@@ -207,10 +205,13 @@ int FMOPN2_GetBus(fmopn2_t *chip)
     int data = 0;
     int io_dir = chip->input.cs && chip->input.rd && !chip->input.ic;
     int data_enable = !io_dir && !chip->input.ic;
+
     if (data_enable)
         data = chip->data_latch;
+
     if (chip->io_ic_latch[1])
         data = 0;
+
     return data;
 }
 
@@ -228,24 +229,27 @@ int FMOPN2_ReadStatus(fmopn2_t *chip)
     int read_enable = chip->input.cs && chip->input.rd && !chip->input.ic && (chip->input.address & 3) == 0;
     int status;
     int testdata = 0;
+
     if (!io_dir)
         return 0;
 
     if (!read_enable)
-    {
         return 0; /* FIXME: floating bus */
-    }
+
     if (chip->mode_test_21[1] & 64)
     {
         testdata |= (chip->pg_debug[1] & 1) << 15;
+
         if (chip->mode_test_21[1] & 1)
             testdata |= ((chip->eg_debug[1] >> 9) & 1) << 14;
         else
             testdata |= (chip->eg_incsh_nonzero[1] & 1) << 14;
+
         if (chip->mode_test_2c[1] & 16)
             testdata |= chip->ch_out_debug[1] & 0x1ff;
         else
             testdata |= chip->op_output[1] & 0x3fff;
+
         if (chip->mode_test_21[1] & 128)
             status = testdata & 255;
         else
@@ -255,6 +259,7 @@ int FMOPN2_ReadStatus(fmopn2_t *chip)
     {
         status = (chip->busy_latch[1] << 7) | (chip->status_timer_b_dlatch << 1) | chip->status_timer_a_dlatch;
     }
+
     return status;
 }
 
@@ -360,6 +365,7 @@ void FMOPN2_FSM2(fmopn2_t *chip)
         chip->alg_mod_prev_1 |= fm_algorithm[0][4][connect];
         chip->alg_output |= fm_algorithm[2][5][connect];
     }
+
     if (chip->fsm_op4_sel)
     {
         chip->alg_mod_op1_0 |= fm_algorithm[1][0][connect];
@@ -369,6 +375,7 @@ void FMOPN2_FSM2(fmopn2_t *chip)
         chip->alg_mod_prev_1 |= fm_algorithm[1][4][connect];
         chip->alg_output |= fm_algorithm[3][5][connect];
     }
+
     if (chip->fsm_op1_sel)
     {
         chip->alg_mod_op1_0 |= fm_algorithm[2][0][connect];
@@ -378,6 +385,7 @@ void FMOPN2_FSM2(fmopn2_t *chip)
         chip->alg_mod_prev_1 |= fm_algorithm[2][4][connect];
         chip->alg_output |= fm_algorithm[0][5][connect];
     }
+
     if (chip->fsm_op3_sel)
     {
         chip->alg_mod_op1_0 |= fm_algorithm[3][0][connect];
@@ -401,8 +409,10 @@ void FMOPN2_HandleIO1(fmopn2_t *chip)
     chip->write_data_sr[0] = chip->write_data_dlatch;
 
     chip->busy_latch[0] = write_data_en || (chip->busy_latch[1] && !(chip->input.ic || busy_of));
+
     if (chip->input.ic)
         busy_cnt = 0;
+
     chip->busy_cnt[0] = busy_cnt & 31;
     chip->io_ic_latch[0] = chip->input.ic;
 }
@@ -410,11 +420,15 @@ void FMOPN2_HandleIO1(fmopn2_t *chip)
 void FMOPN2_HandleIO2(fmopn2_t *chip)
 {
     chip->write_addr_dlatch = chip->write_addr_trig_sync;
+
     if (chip->write_addr_dlatch)
         chip->write_addr_trig = 0;
+
     chip->write_data_dlatch = chip->write_data_trig_sync;
+
     if (chip->write_data_dlatch)
         chip->write_data_trig = 0;
+
     chip->write_addr_sr[1] = chip->write_addr_sr[0] & 1;
     chip->write_data_sr[1] = chip->write_data_sr[0] & 1;
     chip->busy_cnt[1] = chip->busy_cnt[0] & 31;
@@ -958,11 +972,13 @@ void FMOPN2_Misc1(fmopn2_t *chip)
 {
     chip->reg_cnt1[0] = chip->reg_cnt1[1] + 1;
     chip->reg_cnt2[0] = chip->reg_cnt2[1];
+
     if (chip->reg_cnt1[1] & 2)
     {
         chip->reg_cnt1[0] = 0;
         chip->reg_cnt2[0]++;
     }
+
     if (chip->fsm_sel23 || chip->input.ic)
     {
         chip->reg_cnt1[0] = 0;
