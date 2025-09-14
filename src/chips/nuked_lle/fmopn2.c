@@ -179,8 +179,8 @@ void FMOPN2_HandleIO(fmopn2_t *chip)
     int write_data = chip->input.cs && chip->input.wr && (chip->input.address & 1) == 1 && !chip->input.ic;
     int write_addr = (chip->input.cs && chip->input.wr && (chip->input.address & 1) == 0) || chip->input.ic;
     int read_enable = chip->input.cs && chip->input.rd && !chip->input.ic;
-    /*int io_dir = chip->input.cs && chip->input.rd && !chip->input.ic;*/
-    /*int data_enable = !io_dir && !chip->input.ic;*/
+    /*int io_dir = chip->input.cs && chip->input.rd && !chip->input.ic; */
+    /*int data_enable = !io_dir && !chip->input.ic; */
 
     if (chip->input.cs && chip->input.wr)
     {
@@ -2053,6 +2053,7 @@ void FMOPN2_YM3438Accumulator2(fmopn2_t* chip)
         chip->out_l = chip->dac_val;
     else
         chip->out_l = 0;
+
     if (do_out && (chip->ch_out_pan_dlatch & 1) != 0)
         chip->out_r = chip->dac_val;
     else
@@ -2060,6 +2061,7 @@ void FMOPN2_YM3438Accumulator2(fmopn2_t* chip)
 
     if (chip->out_l & 256)
         chip->out_l |= ~0x1ff;
+
     if (chip->out_r & 256)
         chip->out_r |= ~0x1ff;
 
@@ -2163,10 +2165,12 @@ void FMOPN2_YMF276Accumulator2(fmopn2_t *chip)
     {
         chip->ch_accm[i][1] = chip->ch_accm[i][0];
     }
+
     for (i = 0; i < 9; i++)
     {
         chip->ch_out[i][1] = chip->ch_out[i][0];
     }
+
     if ((chip->fsm_dac_load && !chip->ch_dac_load) || test_dac)
     {
         chip->ch_out_dlatch = 0;
