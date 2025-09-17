@@ -28,7 +28,7 @@ class YmFmOPN2 final : public OPNChipBaseT<YmFmOPN2>
     void *m_chip;
     void *m_intf;
 
-    static const size_t c_queueSize = 500;
+    static const size_t c_queueSize = 2048;
 
     struct Reg
     {
