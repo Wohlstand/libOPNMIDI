@@ -99,7 +99,7 @@ void YmFmOPNA_Private::writeReg(uint32_t port, uint16_t addr, uint8_t data)
         m_headPos = 0;
 
     ++m_queueCount;
-    assert(m_queueCount < c_queueSize);
+    assert(m_queueCount < (long)YmFmOPNA::c_queueSize);
 }
 
 void YmFmOPNA::writePan(uint16_t /*addr*/, uint8_t /*data*/)
