@@ -29,6 +29,9 @@ target_compile_definitions(opnmidiplay PRIVATE "-DDEFAULT_INSTALL_PREFIX=\"${CMA
 
 if(WIN32)
     set_property(TARGET opnmidiplay PROPERTY WIN32_EXECUTABLE OFF)
+    if(MSVC)
+        target_compile_definitions(opnmidiplay PRIVATE -DWIN32_CONSOLE)
+    endif()
 endif()
 
 
