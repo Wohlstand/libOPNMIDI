@@ -25,6 +25,14 @@
 
 #include <opnmidi_private.hpp>
 
+#ifndef PRIu32
+#   define PRIu32 "u"
+#endif
+
+#ifndef PRIX32
+#   define PRIX32 "X"
+#endif
+
 //! FIXME: Replace this ugly crap with proper public call
 static const char *g_vgm_path = "kek.vgm";
 extern "C"

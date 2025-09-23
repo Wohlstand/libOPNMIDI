@@ -31,6 +31,14 @@
 #include "ymfm_opn.h"
 #include "ymfm_fm.hpp"
 
+#ifndef PRIu32
+#   define PRIu32 "u"
+#endif
+
+#ifndef PRIX32
+#   define PRIX32 "X"
+#endif
+
 namespace ymfm
 {
 
