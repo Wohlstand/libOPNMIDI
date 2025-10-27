@@ -70,8 +70,6 @@ OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
     , m_audioTickCounter(0)
 #endif
 {
-    m_midiDevices.clear();
-
     m_setup.emulator = opn2_getLowestEmulator();
     m_setup.runAtPcmRate = false;
 
@@ -188,6 +186,10 @@ void OPNMIDIplay::resetMIDI()
     m_sysExDeviceId = 0;
     m_synthMode = Mode_XG;
     m_arpeggioCounter = 0;
+
+    std::memset(m_midiDevices, 0, sizeof(m_midiDevices));
+    std::memset(m_currentMidiDevice, 0, sizeof(m_currentMidiDevice));
+    m_midiDevicesUsed = 0;
 
     m_midiChannels.clear();
     m_midiChannels.resize(16, MIDIchannel());
@@ -1070,14 +1072,17 @@ void OPNMIDIplay::realTime_panic()
 
 void OPNMIDIplay::realTime_deviceSwitch(size_t track, const char *data, size_t length)
 {
-    const std::string indata(data, length);
-    m_currentMidiDevice[track] = chooseDevice(indata);
+    if(track >= m_currentMidiDeviceMax)
+        return; // Do nothing
+
+    m_currentMidiDevice[track] = chooseDevice(data, length);
 }
 
 size_t OPNMIDIplay::realTime_currentDevice(size_t track)
 {
-    if(m_currentMidiDevice.empty())
+    if(track >= m_currentMidiDeviceMax)
         return 0;
+
     return m_currentMidiDevice[track];
 }
 
@@ -1669,19 +1674,35 @@ void OPNMIDIplay::updateVibrato(double amount)
     }
 }
 
-
-
-
-size_t OPNMIDIplay::chooseDevice(const std::string &name)
+size_t OPNMIDIplay::chooseDevice(const char *name, size_t len)
 {
-    std::map<std::string, size_t>::iterator i = m_midiDevices.find(name);
+    size_t i = 0;
+    size_t cmpSize = len < 100 ? len : 100;
+    bool found = false;
 
-    if(i != m_midiDevices.end())
-        return i->second;
+    for( ; i < m_midiDevicesSize && i < m_midiDevicesUsed; ++i)
+    {
+        if(std::memcmp(m_midiDevices[i].name, name, cmpSize) == 0)
+        {
+            found = true;
+            break; // found!
+        }
+    }
 
-    size_t n = m_midiDevices.size() * 16;
-    m_midiDevices.insert(std::make_pair(name, n));
+    if(found)
+        return m_midiDevices[i].track;
+
+    if(i >= m_midiDevicesSize)
+        return 0; // Overflow, just fall back to zero
+
+    size_t j = m_midiDevicesUsed++;
+    size_t n = j * 16;
+
+    std::memcpy(m_midiDevices[j].name, name, cmpSize);
+    m_midiDevices[j].track = n;
+
     m_midiChannels.resize(n + 16);
+
     resetMIDIDefaults(static_cast<int>(n));
     return n;
 }
