@@ -25,9 +25,9 @@
 #include "opnmidi_opn2.hpp"
 #include "opnmidi_private.hpp"
 #include "opnmidi_cvt.hpp"
-#include "file_reader.hpp"
+#include "midiseq/file_reader.hpp"
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
-#include "midi_sequencer.hpp"
+#include "midiseq/midi_sequencer.hpp"
 #endif
 #include "wopn/wopn_file.h"
 
@@ -217,14 +217,23 @@ bool OPNMIDIplay::LoadMIDI(const std::string &filename)
 {
     FileAndMemReader file;
     file.openFile(filename.c_str());
+
+    file.dumpFile();
+
     if(!LoadMIDI_pre())
         return false;
+
     MidiSequencer &seq = *m_sequencer;
+
+    // FIXME: Implement public libADLMIDI's API to choice this
+    seq.setDeviceMask(MidiSequencer::Device_OPL2|MidiSequencer::Device_OPL3);
+
     if(!seq.loadMIDI(file))
     {
         errorStringOut = seq.getErrorString();
         return false;
     }
+
     if(!LoadMIDI_post())
         return false;
     return true;
@@ -234,16 +243,24 @@ bool OPNMIDIplay::LoadMIDI(const void *data, size_t size)
 {
     FileAndMemReader file;
     file.openData(data, size);
+
     if(!LoadMIDI_pre())
         return false;
+
     MidiSequencer &seq = *m_sequencer;
+
+    // FIXME: Implement public libADLMIDI's API to choice this
+    seq.setDeviceMask(MidiSequencer::Device_OPL2|MidiSequencer::Device_OPL3);
+
     if(!seq.loadMIDI(file))
     {
         errorStringOut = seq.getErrorString();
         return false;
     }
+
     if(!LoadMIDI_post())
         return false;
+
     return true;
 }
 

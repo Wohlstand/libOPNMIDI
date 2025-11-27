@@ -245,6 +245,9 @@ file(GLOB libOPNMIDI_HEADERS
     ${libOPNMIDI_SOURCE_DIR}/include/*.h
     ${libOPNMIDI_SOURCE_DIR}/src/*.h
     ${libOPNMIDI_SOURCE_DIR}/src/*.hpp
+    ${libOPNMIDI_SOURCE_DIR}/src/midiseq/*.h
+    ${libOPNMIDI_SOURCE_DIR}/src/midiseq/*.hpp
+    ${libOPNMIDI_SOURCE_DIR}/src/midiseq/impl/*.hpp
     ${libOPNMIDI_SOURCE_DIR}/src/wopn/*.h
     ${libOPNMIDI_SOURCE_DIR}/src/structures/*.hpp
     ${libOPNMIDI_SOURCE_DIR}/src/chips/*.h

@@ -26,7 +26,7 @@
 #include "opnmidi_private.hpp"
 #include "chips/opn_chip_base.h"
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
-#include "midi_sequencer.hpp"
+#include "midiseq/midi_sequencer.hpp"
 #endif
 
 /* Unify MIDI player casting and interface between ADLMIDI and OPNMIDI */

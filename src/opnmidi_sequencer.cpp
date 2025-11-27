@@ -26,10 +26,9 @@
 // Rename class to avoid ABI collisions
 #define BW_MidiSequencer OpnMidiSequencer
 // Inlucde MIDI sequencer class implementation
-#include "midi_sequencer_impl.hpp"
+#include "midiseq/midi_sequencer_impl.hpp"
 
 #include "opnmidi_midiplay.hpp"
-#include "opnmidi_opn2.hpp"
 #include "opnmidi_private.hpp"
 
 /****************************************************

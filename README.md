@@ -164,6 +164,10 @@ To remove MIDI Sequencer, define `OPNMIDI_DISABLE_MIDI_SEQUENCER` macro and remo
 * [OPNMIDI Player for Android](https://github.com/Wohlstand/OPNMIDI-Player-Java/) - a little MIDI-player for Android which uses libOPNMIDI to play MIDI files and provides flexible GUI with ability to change bank, flags, number of emulated chips, etc.
 
 # Changelog
+## 1.6.2   dev
+ * Added support for HMI and HMP files!
+ * Added support for in-track (local) loops.
+
 ## 1.6.1   2025-09-22
  * Added four extra heavy but very accurate Nuked LLE emulators (on weak machines suitable for WAV writing only).
  * WinMM: Fixed random crash on waveOutOpen initialisation because of incorrect initialisation structure usage.
