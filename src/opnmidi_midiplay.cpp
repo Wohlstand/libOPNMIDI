@@ -1105,6 +1105,112 @@ void OPNMIDIplay::AudioTick(uint32_t chipId, uint32_t rate)
 }
 #endif
 
+void OPNMIDIplay::noteUpdPatch(const OpnChannel::Location &loc, const MIDIchannel::NoteInfo::Phys &ins, const OpnInstMeta *ains)
+{
+    m_synth->setPatch(ins.chip_chan, ins.ains);
+
+    OpnChannel::users_iterator ci = m_chipChannels[ins.chip_chan].find_or_create_user(loc);
+    if(!ci.is_end())    // inserts if necessary
+    {
+        OpnChannel::LocationData &d = ci->value;
+        d.sustained = OpnChannel::LocationData::Sustain_None;
+        d.vibdelay_us  = 0;
+        d.fixed_sustain = (ains->soundKeyOnMs == static_cast<uint16_t>(opnNoteOnMaxTime));
+        d.kon_time_until_neglible_us = 1000 * ains->soundKeyOnMs;
+        d.ins       = ins;
+    }
+}
+
+void OPNMIDIplay::noteUpdOff(size_t midCh, MIDIchannel::NoteInfo &info, const OpnChannel::Location &loc, const MIDIchannel::NoteInfo::Phys &ins, bool mute)
+{
+    uint16_t c = ins.chip_chan;
+
+    if(m_midiChannels[midCh].sustain == 0)
+    {
+        OpnChannel::users_iterator k = m_chipChannels[c].find_user(loc);
+        bool do_erase_user = (!k.is_end() && ((k->value.sustained & OpnChannel::LocationData::Sustain_Sostenuto) == 0));
+        if(do_erase_user)
+            m_chipChannels[c].users.erase(k);
+
+        if(hooks.onNote)
+            hooks.onNote(hooks.onNote_userData, c, info.noteTone, static_cast<int>(info.midiins), 0, 0.0);
+
+        if(do_erase_user && m_chipChannels[c].users.empty())
+        {
+            m_synth->noteOff(c);
+
+            if(mute) // Mute the note
+            {
+                m_synth->touchNote(c, 0);
+                m_chipChannels[c].koff_time_until_neglible_us = 0;
+            }
+            else
+            {
+                m_chipChannels[c].koff_time_until_neglible_us = 1000 * int64_t(info.ains->soundKeyOffMs);
+            }
+        }
+    }
+    else
+    {
+        // Sustain: Forget about the note, but don't key it off.
+        //          Also will avoid overwriting it very soon.
+        OpnChannel::users_iterator d = m_chipChannels[c].find_or_create_user(loc);
+        if(!d.is_end())
+            d->value.sustained |= OpnChannel::LocationData::Sustain_Pedal; // note: not erased!
+
+        if(hooks.onNote)
+            hooks.onNote(hooks.onNote_userData, c, info.noteTone, static_cast<int>(info.midiins), -1, 0.0);
+    }
+
+    info.phys_erase_at(&ins);  // decrements channel count
+}
+
+void OPNMIDIplay::noteUpdVolume(size_t midCh, MIDIchannel::NoteInfo &info, const MIDIchannel::NoteInfo::Phys &ins)
+{
+    const MIDIchannel &ch = m_midiChannels[midCh];
+    bool is_percussion = (midCh == 9) || ch.is_xg_percussion;
+    uint_fast32_t brightness = is_percussion ? 127 : ch.brightness;
+
+    if(!m_setup.fullRangeBrightnessCC74)
+    {
+        // Simulate post-High-Pass filter result which affects sounding by half level only
+        if(brightness >= 64)
+            brightness = 127;
+        else
+            brightness *= 2;
+    }
+
+    m_synth->touchNote(ins.chip_chan, info.vol, ch.volume, ch.expression, static_cast<uint8_t>(brightness));
+}
+
+void OPNMIDIplay::noteUpdFreq(size_t midCh, const OpnChannel::Location &loc, MIDIchannel::NoteInfo &info, const MIDIchannel::NoteInfo::Phys &ins)
+{
+    OpnChannel::users_iterator d = m_chipChannels[ins.chip_chan].find_user(loc);
+
+    // Don't bend a sustained note
+    if(d.is_end() || (d->value.sustained == OpnChannel::LocationData::Sustain_None))
+    {
+        MIDIchannel &chan = m_midiChannels[midCh];
+        double midibend = chan.bend * chan.bendsense;
+        double bend = midibend + ins.ains->noteOffset;
+        double phase = 0.0;
+        uint8_t vibrato = std::max(chan.vibrato, chan.aftertouch);
+
+        vibrato = std::max(vibrato, info.vibrato);
+
+        if((info.ains->flags & OpnInstMeta::Flag_Pseudo8op) && ins.dbl_voice)
+            phase = info.ains->voice2_fine_tune;
+
+        if(vibrato && (d.is_end() || d->value.vibdelay_us >= chan.vibdelay_us))
+            bend += static_cast<double>(vibrato) * chan.vibdepth * std::sin(chan.vibpos);
+
+        m_synth->noteOn(ins.chip_chan, info.currentTone + bend + phase);
+
+        if(hooks.onNote)
+            hooks.onNote(hooks.onNote_userData, ins.chip_chan, info.noteTone, static_cast<int>(info.midiins), info.vol, midibend);
+    }
+}
+
 void OPNMIDIplay::noteUpdate(size_t midCh,
                           OPNMIDIplay::MIDIchannel::notes_iterator i,
                           unsigned props_mask,
@@ -1112,11 +1218,6 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
 {
     Synth &synth = *m_synth;
     MIDIchannel::NoteInfo &info = i->value;
-    const int16_t noteTone    = info.noteTone;
-    const double currentTone    = info.currentTone;
-    const uint8_t vol     = info.vol;
-    const size_t midiins = info.midiins;
-    const OpnInstMeta &ains = *info.ains;
     OpnChannel::Location my_loc;
     my_loc.MidCh = static_cast<uint16_t>(midCh);
     my_loc.note  = info.note;
@@ -1136,19 +1237,7 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
         if(select_adlchn >= 0 && c != select_adlchn) continue;
 
         if(props_mask & Upd_Patch)
-        {
-            synth.setPatch(c, ins.ains);
-            OpnChannel::users_iterator ci = m_chipChannels[c].find_or_create_user(my_loc);
-            if(!ci.is_end())    // inserts if necessary
-            {
-                OpnChannel::LocationData &d = ci->value;
-                d.sustained = OpnChannel::LocationData::Sustain_None;
-                d.vibdelay_us  = 0;
-                d.fixed_sustain = (ains.soundKeyOnMs == static_cast<uint16_t>(opnNoteOnMaxTime));
-                d.kon_time_until_neglible_us = 1000 * ains.soundKeyOnMs;
-                d.ins       = ins;
-            }
-        }
+            noteUpdPatch(my_loc, ins, info.ains);
     }
 
     for(unsigned ccount = 0; ccount < info.chip_channels_count; ccount++)
@@ -1161,42 +1250,7 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
 
         if(props_mask & Upd_Off) // note off
         {
-            if(m_midiChannels[midCh].sustain == 0)
-            {
-                OpnChannel::users_iterator k = m_chipChannels[c].find_user(my_loc);
-                bool do_erase_user = (!k.is_end() && ((k->value.sustained & OpnChannel::LocationData::Sustain_Sostenuto) == 0));
-                if(do_erase_user)
-                    m_chipChannels[c].users.erase(k);
-
-                if(hooks.onNote)
-                    hooks.onNote(hooks.onNote_userData, c, noteTone, static_cast<int>(midiins), 0, 0.0);
-
-                if(do_erase_user && m_chipChannels[c].users.empty())
-                {
-                    synth.noteOff(c);
-                    if(props_mask & Upd_Mute) // Mute the note
-                    {
-                        synth.touchNote(c, 0);
-                        m_chipChannels[c].koff_time_until_neglible_us = 0;
-                    }
-                    else
-                    {
-                        m_chipChannels[c].koff_time_until_neglible_us = 1000 * int64_t(ains.soundKeyOffMs);
-                    }
-                }
-            }
-            else
-            {
-                // Sustain: Forget about the note, but don't key it off.
-                //          Also will avoid overwriting it very soon.
-                OpnChannel::users_iterator d = m_chipChannels[c].find_or_create_user(my_loc);
-                if(!d.is_end())
-                    d->value.sustained |= OpnChannel::LocationData::Sustain_Pedal; // note: not erased!
-                if(hooks.onNote)
-                    hooks.onNote(hooks.onNote_userData, c, noteTone, static_cast<int>(midiins), -1, 0.0);
-            }
-
-            info.phys_erase_at(&ins);  // decrements channel count
+            noteUpdOff(midCh, info, my_loc, ins, props_mask & Upd_Mute);
             --ccount;  // adjusts index accordingly
             continue;
         }
@@ -1205,54 +1259,10 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
             synth.setPan(c, m_midiChannels[midCh].panning);
 
         if(props_mask & Upd_Volume)
-        {
-            const MIDIchannel &ch = m_midiChannels[midCh];
-            bool is_percussion = (midCh == 9) || ch.is_xg_percussion;
-            uint_fast32_t brightness = is_percussion ? 127 : ch.brightness;
-
-            if(!m_setup.fullRangeBrightnessCC74)
-            {
-                // Simulate post-High-Pass filter result which affects sounding by half level only
-                if(brightness >= 64)
-                    brightness = 127;
-                else
-                    brightness *= 2;
-            }
-
-            synth.touchNote(c,
-                            vol,
-                            ch.volume,
-                            ch.expression,
-                            static_cast<uint8_t>(brightness));
-        }
+            noteUpdVolume(midCh, info, ins);
 
         if(props_mask & Upd_Pitch)
-        {
-            OpnChannel::users_iterator d = m_chipChannels[c].find_user(my_loc);
-
-            // Don't bend a sustained note
-            if(d.is_end() || (d->value.sustained == OpnChannel::LocationData::Sustain_None))
-            {
-                MIDIchannel &chan = m_midiChannels[midCh];
-                double midibend = chan.bend * chan.bendsense;
-                double bend = midibend + ins.ains->noteOffset;
-                double phase = 0.0;
-                uint8_t vibrato = std::max(chan.vibrato, chan.aftertouch);
-
-                vibrato = std::max(vibrato, info.vibrato);
-
-                if((ains.flags & OpnInstMeta::Flag_Pseudo8op) && ins.dbl_voice)
-                    phase = ains.voice2_fine_tune;
-
-                if(vibrato && (d.is_end() || d->value.vibdelay_us >= chan.vibdelay_us))
-                    bend += static_cast<double>(vibrato) * chan.vibdepth * std::sin(chan.vibpos);
-
-                synth.noteOn(c, currentTone + bend + phase);
-
-                if(hooks.onNote)
-                    hooks.onNote(hooks.onNote_userData, c, noteTone, static_cast<int>(midiins), vol, midibend);
-            }
-        }
+            noteUpdFreq(midCh, my_loc, info, ins);
     }
 
     if(info.chip_channels_count == 0)
