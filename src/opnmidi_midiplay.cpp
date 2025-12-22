@@ -447,12 +447,12 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
             tone = ains->drumTone;
     }
 
-    MIDIchannel::NoteInfo::Phys voices[MIDIchannel::NoteInfo::MaxNumPhysChans] = {
-        {0, ains->op[0], /*false*/},
-        {0, ains->op[1], /*pseudo_4op*/},
-    };
     //bool pseudo_4op = ains.flags & opnInstMeta::Flag_Pseudo8op;
-    //if((opn.AdlPercussionMode == 1) && PercussionMap[midiins & 0xFF]) i[1] = i[0];
+    MIDIchannel::NoteInfo::Phys voices[MIDIchannel::NoteInfo::MaxNumPhysChans] =
+    {
+        {0, &ains->op[0], false},
+        {0, &ains->op[0] /*&ains->op[0]*/, false /*FIXME: When double-voice will be implemented, put here an instrument's flag!*/},
+    };
 
     bool isBlankNote = (ains->flags & OpnInstMeta::Flag_NoSound) != 0;
 
@@ -488,6 +488,9 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
 
     for(uint32_t ccount = 0; ccount < MIDIchannel::NoteInfo::MaxNumPhysChans; ++ccount)
     {
+        int32_t c = -1;
+        int32_t bs = -0x7FFFFFFFl;
+
         if(ccount == 1)
         {
             if(voices[0] == voices[1])
@@ -495,9 +498,6 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
             if(adlchannel[0] == -1)
                 break; // No secondary if primary failed
         }
-
-        int32_t c = -1;
-        int32_t bs = -0x7FFFFFFFl;
 
         for(size_t a = 0; a < static_cast<size_t>(synth.m_numChannels); ++a)
         {
@@ -1235,16 +1235,14 @@ void OPNMIDIplay::noteUpdate(size_t midCh,
             {
                 MIDIchannel &chan = m_midiChannels[midCh];
                 double midibend = chan.bend * chan.bendsense;
-                double bend = midibend + ins.ains.noteOffset;
+                double bend = midibend + ins.ains->noteOffset;
                 double phase = 0.0;
                 uint8_t vibrato = std::max(chan.vibrato, chan.aftertouch);
 
                 vibrato = std::max(vibrato, info.vibrato);
 
-                if((ains.flags & OpnInstMeta::Flag_Pseudo8op) && ins.ains == ains.op[1])
-                {
+                if((ains.flags & OpnInstMeta::Flag_Pseudo8op) && ins.dbl_voice)
                     phase = ains.voice2_fine_tune;
-                }
 
                 if(vibrato && (d.is_end() || d->value.vibdelay_us >= chan.vibdelay_us))
                     bend += static_cast<double>(vibrato) * chan.vibdepth * std::sin(chan.vibpos);

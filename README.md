@@ -167,6 +167,9 @@ To remove MIDI Sequencer, define `OPNMIDI_DISABLE_MIDI_SEQUENCER` macro and remo
 ## 1.6.2   dev
  * Added support for HMI and HMP files!
  * Added support for in-track (local) loops.
+ * Added support for HMI and HMP files!
+ * Added support for in-track (local) loops.
+ * Optimized work with chip instruments.
 
 ## 1.6.1   2025-09-22
  * Added four extra heavy but very accurate Nuked LLE emulators (on weak machines suitable for WAV writing only).

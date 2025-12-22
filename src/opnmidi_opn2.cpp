@@ -326,7 +326,7 @@ void OPN2::noteOn(size_t c, double tone)
     getOpnChannel(c, chip, port, cc);
 
     uint32_t octave = 0, ftone = 0, mul_offset = 0;
-    const OpnTimbre &adli = m_insCache[c];
+    const OpnTimbre *adli = m_insCache[c];
 
     //Basic range until max of octaves reaching
     while((hertz >= 1023.75) && (octave < 0x3800))
@@ -344,8 +344,9 @@ void OPN2::noteOn(size_t c, double tone)
 
     for(size_t op = 0; op < 4; op++)
     {
-        uint32_t reg = adli.OPS[op].data[0];
+        uint32_t reg = adli->OPS[op].data[0];
         uint16_t address = static_cast<uint16_t>(0x30 + (op * 4) + cc);
+
         if(mul_offset > 0) // Increase frequency multiplication value
         {
             uint32_t dt  = reg & 0xF0;
@@ -356,10 +357,12 @@ void OPN2::noteOn(size_t c, double tone)
                 mul = 0x0F;
             }
             writeRegI(chip, port, address, uint8_t(dt | (mul + mul_offset)));
+            m_insCacheModified[c] = true;
         }
-        else
+        else if(m_insCacheModified[c])
         {
             writeRegI(chip, port, address, uint8_t(reg));
+            m_insCacheModified[c] = false;
         }
     }
 
@@ -379,16 +382,16 @@ void OPN2::touchNote(size_t c,
     uint32_t    cc;
     getOpnChannel(c, chip, port, cc);
 
-    const OpnTimbre &adli = m_insCache[c];
+    const OpnTimbre *adli = m_insCache[c];
 
     uint_fast32_t volume = 0;
 
     uint8_t op_vol[4] =
     {
-        adli.OPS[OPERATOR1].data[1],
-        adli.OPS[OPERATOR2].data[1],
-        adli.OPS[OPERATOR3].data[1],
-        adli.OPS[OPERATOR4].data[1],
+        adli->OPS[OPERATOR1].data[1],
+        adli->OPS[OPERATOR2].data[1],
+        adli->OPS[OPERATOR3].data[1],
+        adli->OPS[OPERATOR4].data[1],
     };
 
     bool alg_do[8][4] =
@@ -487,7 +490,7 @@ void OPN2::touchNote(size_t c,
     if(volume > 127)
         volume = 127;
 
-    uint8_t alg = adli.fbalg & 0x07;
+    uint8_t alg = adli->fbalg & 0x07;
     for(uint8_t op = 0; op < 4; op++)
     {
         bool do_op = alg_do[alg][op] || m_scaleModulators;
@@ -509,21 +512,27 @@ void OPN2::touchNote(size_t c,
     //   63 + chanvol * (instrvol / 63.0 - 1)
 }
 
-void OPN2::setPatch(size_t c, const OpnTimbre &instrument)
+void OPN2::setPatch(size_t c, const OpnTimbre *instrument)
 {
     size_t      chip;
     uint8_t     port;
     uint32_t    cc;
     getOpnChannel(c, chip, port, cc);
+
+    if(m_insCache[c] == instrument)
+        return; // Already up to date!
+
     m_insCache[c] = instrument;
+    m_insCacheModified[c] = false;
+
     for(uint8_t d = 0; d < 7; d++)
     {
         for(uint8_t op = 0; op < 4; op++)
-            writeRegI(chip, port, 0x30 + (0x10 * d) + (op * 4) + cc, instrument.OPS[op].data[d]);
+            writeRegI(chip, port, 0x30 + (0x10 * d) + (op * 4) + cc, instrument->OPS[op].data[d]);
     }
 
-    writeRegI(chip, port, 0xB0 + cc, instrument.fbalg);//Feedback/Algorithm
-    m_regLFOSens[c] = (m_regLFOSens[c] & 0xC0) | (instrument.lfosens & 0x3F);
+    writeRegI(chip, port, 0xB0 + cc, instrument->fbalg);//Feedback/Algorithm
+    m_regLFOSens[c] = (m_regLFOSens[c] & 0xC0) | (instrument->lfosens & 0x3F);
     writeRegI(chip, port, 0xB4 + cc, m_regLFOSens[c]);//Panorame and LFO bits
 }
 
@@ -533,12 +542,12 @@ void OPN2::setPan(size_t c, uint8_t value)
     uint8_t     port;
     uint32_t    cc;
     getOpnChannel(c, chip, port, cc);
-    const OpnTimbre &adli = m_insCache[c];
+    const OpnTimbre *adli = m_insCache[c];
     uint8_t val = 0;
 
     if(m_softPanningSup && m_softPanning)
     {
-        val = (OPN_PANNING_BOTH & 0xC0) | (adli.lfosens & 0x3F);
+        val = (OPN_PANNING_BOTH & 0xC0) | (adli->lfosens & 0x3F);
         writePan(chip, c % 6, value);
         writeRegI(chip, port, 0xB4 + cc, val);
     }
@@ -547,7 +556,7 @@ void OPN2::setPan(size_t c, uint8_t value)
         int panning = 0;
         if(value  < 64 + 16) panning |= OPN_PANNING_LEFT;
         if(value >= 64 - 16) panning |= OPN_PANNING_RIGHT;
-        val = (panning & 0xC0) | (adli.lfosens & 0x3F);
+        val = (panning & 0xC0) | (adli->lfosens & 0x3F);
         writePan(chip, c % 6, 64);
         writeRegI(chip, port, 0xB4 + cc, val);
     }
@@ -573,6 +582,8 @@ void OPN2::silenceAll() // Silence all OPL channels.
             writeRegI(chip, port, 0x30 + (0x10 * 1) + (op * 4) + cc, 0x7F);
             writeRegI(chip, port, 0x30 + (0x10 * 5) + (op * 4) + cc, 0xFF);
         }
+
+        m_insCacheModified[c] = true;
     }
 }
 
@@ -668,13 +679,15 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
     if(rebuild_needed)
     {
         m_insCache.clear();
+        m_insCacheModified.clear();
         m_regLFOSens.clear();
         m_chips.clear();
         m_chips.resize(m_numChips, AdlMIDI_SPtr<OPNChipBase>());
     }
     else
     {
-        opn2_fill_vector<OpnTimbre>(m_insCache, defaultInsCache);
+        opn2_fill_vector<const OpnTimbre*>(m_insCache, &defaultInsCache);
+        opn2_fill_vector<bool>(m_insCacheModified, false);
         opn2_fill_vector<uint8_t>(m_regLFOSens, 0);
     }
 
@@ -799,7 +812,8 @@ void OPN2::reset(int emulator, unsigned long PCM_RATE, OPNFamily family, void *a
 
     m_chipFamily = family;
     m_numChannels = m_numChips * 6;
-    m_insCache.resize(m_numChannels,   m_emptyInstrument.op[0]);
+    m_insCache.resize(m_numChannels, &m_emptyInstrument.op[0]);
+    m_insCacheModified.resize(m_numChannels, false);
     m_regLFOSens.resize(m_numChannels,    0);
 
     uint8_t regLFOSetup = (m_lfoEnable ? 8 : 0) | (m_lfoFrequency & 7);

@@ -57,7 +57,8 @@ public:
 #endif
 private:
     //! Cached patch data, needed by Touch()
-    std::vector<OpnTimbre>    m_insCache;
+    std::vector<const OpnTimbre*> m_insCache;
+    std::vector<bool> m_insCacheModified;
     //! Cached per-channel LFO sensitivity flags
     std::vector<uint8_t>        m_regLFOSens;
     //! LFO setup registry cache
@@ -268,7 +269,7 @@ public:
      * @param c Channel of chip (Emulated chip choosing by next formula: [c = ch + (chipId * 23)])
      * @param instrument Instrument data to set into the chip channel
      */
-    void setPatch(size_t c, const OpnTimbre &instrument);
+    void setPatch(size_t c, const OpnTimbre *instrument);
 
     /**
      * @brief Set panpot position

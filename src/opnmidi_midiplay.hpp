@@ -206,16 +206,20 @@ public:
                 //! Destination chip channel
                 uint16_t chip_chan;
                 //! ins, inde to adl[]
-                OpnTimbre ains;
+                const OpnTimbre *ains;
+                //! Should we play the second voice?
+                bool dbl_voice;
 
                 void assign(const Phys &oth)
                 {
                     ains = oth.ains;
                 }
+
                 bool operator==(const Phys &oth) const
                 {
                     return (ains == oth.ains);
                 }
+
                 bool operator!=(const Phys &oth) const
                 {
                     return !operator==(oth);
