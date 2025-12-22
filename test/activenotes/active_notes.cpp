@@ -26,8 +26,8 @@ TEST_CASE( "MIDI Channel manipulating", "[OPNMIDIplay::MIDIchannel]" )
             const OpnInstMeta &ains = Synth::m_emptyInstrument;
 
             OPNMIDIplay::MIDIchannel::NoteInfo::Phys voices[OPNMIDIplay::MIDIchannel::NoteInfo::MaxNumPhysChans] = {
-                {0, ains.op[0], /*false*/},
-                {0, ains.op[1], /*pseudo_4op*/},
+                {0, &ains.op[0], false},
+                {0, &ains.op[1], false/*pseudo_4op*/},
             };
 
             OPNMIDIplay::MIDIchannel::notes_iterator ir;

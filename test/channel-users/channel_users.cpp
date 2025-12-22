@@ -37,43 +37,43 @@ TEST_CASE("[OPNMIDIplay::OpnChannel] User list: appending")
     Channel channel;
 
     // insert
-    users_iterator user1 = channel.find_or_create_user(Location{0, 1, {0}});
+    users_iterator user1 = channel.find_or_create_user(Location{0, 1});
     REQUIRE(!user1.is_end());
     REQUIRE(&channel.users.back() == &*user1);
     REQUIRE(&channel.users.front() == &*user1);
     REQUIRE(channel.users.size() == 1);
     REQUIRE(consistent_size(channel));
-    REQUIRE(!channel.find_user(Location{0, 1, {0}}).is_end());
+    REQUIRE(!channel.find_user(Location{0, 1}).is_end());
 
     // try insert with same note number as previous
-    user1 = channel.find_or_create_user(Location{0, 1, {0}});
+    user1 = channel.find_or_create_user(Location{0, 1});
     REQUIRE(!user1.is_end());
     REQUIRE(channel.users.size() == 1);
     REQUIRE(consistent_size(channel));
-    REQUIRE(!channel.find_user(Location{0, 1, {0}}).is_end());
+    REQUIRE(!channel.find_user(Location{0, 1}).is_end());
 
     // insert
-    users_iterator user2 = channel.find_or_create_user(Location{1, 0, {0}});
+    users_iterator user2 = channel.find_or_create_user(Location{1, 0});
     REQUIRE(!user2.is_end());
     REQUIRE(channel.users.size() == 2);
     REQUIRE(consistent_size(channel));
-    REQUIRE(!channel.find_user(Location{1, 0, {0}}).is_end());
+    REQUIRE(!channel.find_user(Location{1, 0}).is_end());
 
     // try insert with same channel number as previous
-    user2 = channel.find_or_create_user(Location{1, 0, {0}});
+    user2 = channel.find_or_create_user(Location{1, 0});
     REQUIRE(!user2.is_end());
     REQUIRE(channel.users.size() == 2);
     REQUIRE(consistent_size(channel));
-    REQUIRE(!channel.find_user(Location{1, 0, {0}}).is_end());
+    REQUIRE(!channel.find_user(Location{1, 0}).is_end());
 }
 
 TEST_CASE("[OPNMIDIplay::OpnChannel] User list: erasing at the back")
 {
     Channel channel;
 
-    users_iterator user3 = channel.find_or_create_user(Location{3, 3, {0}});
-    users_iterator user2 = channel.find_or_create_user(Location{2, 2, {0}});
-    users_iterator user1 = channel.find_or_create_user(Location{1, 1, {0}});
+    users_iterator user3 = channel.find_or_create_user(Location{3, 3});
+    users_iterator user2 = channel.find_or_create_user(Location{2, 2});
+    users_iterator user1 = channel.find_or_create_user(Location{1, 1});
     REQUIRE(!user1.is_end());
     REQUIRE(!user2.is_end());
     REQUIRE(!user3.is_end());
@@ -94,9 +94,9 @@ TEST_CASE("[OPNMIDIplay::OpnChannel] User list: erasing at the front")
 {
     Channel channel;
 
-    users_iterator user3 = channel.find_or_create_user(Location{3, 3, {0}});
-    users_iterator user2 = channel.find_or_create_user(Location{2, 2, {0}});
-    users_iterator user1 = channel.find_or_create_user(Location{1, 1, {0}});
+    users_iterator user3 = channel.find_or_create_user(Location{3, 3});
+    users_iterator user2 = channel.find_or_create_user(Location{2, 2});
+    users_iterator user1 = channel.find_or_create_user(Location{1, 1});
     REQUIRE(!user1.is_end());
     REQUIRE(!user2.is_end());
     REQUIRE(!user3.is_end());
@@ -117,9 +117,9 @@ TEST_CASE("[OPNMIDIplay::OpnChannel] User list: erasing in the middle")
 {
     Channel channel;
 
-    users_iterator user3 = channel.find_or_create_user(Location{3, 3, {0}});
-    users_iterator user2 = channel.find_or_create_user(Location{2, 2, {0}});
-    users_iterator user1 = channel.find_or_create_user(Location{1, 1, {0}});
+    users_iterator user3 = channel.find_or_create_user(Location{3, 3});
+    users_iterator user2 = channel.find_or_create_user(Location{2, 2});
+    users_iterator user1 = channel.find_or_create_user(Location{1, 1});
     REQUIRE(!user1.is_end());
     REQUIRE(!user2.is_end());
     REQUIRE(!user3.is_end());
@@ -140,9 +140,9 @@ TEST_CASE("[OPNMIDIplay::OpnChannel] User list: copy constructor")
 {
     Channel channel1;
 
-    users_iterator user3 = channel1.find_or_create_user(Location{3, 3, {0}});
-    users_iterator user2 = channel1.find_or_create_user(Location{2, 2, {0}});
-    users_iterator user1 = channel1.find_or_create_user(Location{1, 1, {0}});
+    users_iterator user3 = channel1.find_or_create_user(Location{3, 3});
+    users_iterator user2 = channel1.find_or_create_user(Location{2, 2});
+    users_iterator user1 = channel1.find_or_create_user(Location{1, 1});
     REQUIRE(!user1.is_end());
     REQUIRE(!user2.is_end());
     REQUIRE(!user3.is_end());
@@ -170,9 +170,9 @@ TEST_CASE("[OPNMIDIplay::OpnChannel] User list: copy assignment")
 {
     Channel channel1;
 
-    users_iterator user3 = channel1.find_or_create_user(Location{3, 3, {0}});
-    users_iterator user2 = channel1.find_or_create_user(Location{2, 2, {0}});
-    users_iterator user1 = channel1.find_or_create_user(Location{1, 1, {0}});
+    users_iterator user3 = channel1.find_or_create_user(Location{3, 3});
+    users_iterator user2 = channel1.find_or_create_user(Location{2, 2});
+    users_iterator user1 = channel1.find_or_create_user(Location{1, 1});
     REQUIRE(!user1.is_end());
     REQUIRE(!user2.is_end());
     REQUIRE(!user3.is_end());
@@ -199,7 +199,7 @@ TEST_CASE("[OPNMIDIplay::OpnChannel] User list: copy assignment")
 TEST_CASE("[OPNMIDIplay::OpnChannel] User list: appending full")
 {
     Channel channel;
-    Location loc = Location{0, 0, {0}};
+    Location loc = Location{0, 0};
 
     // insert users up to capacity
     for(unsigned i = 0; i < channel.users.capacity(); ++i) {

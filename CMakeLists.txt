@@ -371,7 +371,6 @@ if(USE_NUKED_OPN2_LLE_EMULATOR)
         ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/fmopn2.h
     )
     set(HAS_EMULATOR TRUE)
-    add_definitions(-DOPNMIDI_ENABLE_OPN2_LLE_EMULATOR)
 endif()
 
 if(USE_NUKED_OPNA_LLE_EMULATOR)
@@ -384,7 +383,6 @@ if(USE_NUKED_OPNA_LLE_EMULATOR)
         ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_lle/fmopna_2608.h
     )
     set(HAS_EMULATOR TRUE)
-    add_definitions(-DOPNMIDI_ENABLE_OPNA_LLE_EMULATOR)
 endif()
 
 if(USE_NUKED_OPN2_LLE_EMULATOR OR USE_NUKED_OPNA_LLE_EMULATOR)
@@ -443,6 +441,16 @@ else()
     set(ENABLE_FPIC OFF)
 endif()
 
+function(handle_options targetLib)
+    if(USE_NUKED_OPN2_LLE_EMULATOR)
+        target_compile_definitions(${targetLib} PUBLIC -DOPNMIDI_ENABLE_OPN2_LLE_EMULATOR)
+    endif()
+
+    if(USE_NUKED_OPNA_LLE_EMULATOR)
+        target_compile_definitions(${targetLib} PUBLIC -DOPNMIDI_ENABLE_OPNA_LLE_EMULATOR)
+    endif()
+endfunction()
+
 # === Static library ====
 if(libOPNMIDI_STATIC OR WITH_VLC_PLUGIN)
     add_library(OPNMIDI_static STATIC ${libOPNMIDI_SOURCES})
@@ -454,6 +462,7 @@ if(libOPNMIDI_STATIC OR WITH_VLC_PLUGIN)
     target_include_directories(OPNMIDI_static PUBLIC $<BUILD_INTERFACE:${libOPNMIDI_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
     set_legacy_standard(OPNMIDI_static)
     set_visibility_hidden(OPNMIDI_static)
+    handle_options(OPNMIDI_static)
 
     # -fPIC thing
     if(ENABLE_FPIC)
@@ -476,6 +485,7 @@ if(libOPNMIDI_SHARED)
     target_include_directories(OPNMIDI_shared PUBLIC $<BUILD_INTERFACE:${libOPNMIDI_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
     set_legacy_standard(OPNMIDI_shared)
     set_visibility_hidden(OPNMIDI_shared)
+    handle_options(OPNMIDI_shared)
 
     if(WIN32)
         target_compile_definitions(OPNMIDI_shared PRIVATE "-DOPNMIDI_BUILD_DLL")
@@ -505,9 +515,9 @@ if(libOPNMIDI_STATIC OR WITH_VLC_PLUGIN)
 endif()
 
 if(libOPNMIDI_SHARED)
-  target_link_libraries(OPNMIDI_IF INTERFACE OPNMIDI_shared)
+    target_link_libraries(OPNMIDI_IF INTERFACE OPNMIDI_shared)
 else()
-  target_link_libraries(OPNMIDI_IF INTERFACE OPNMIDI_static)
+    target_link_libraries(OPNMIDI_IF INTERFACE OPNMIDI_static)
 endif()
 
 if(WITH_MIDIPLAY)
