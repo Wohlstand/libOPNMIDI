@@ -111,6 +111,9 @@ bool OPNMIDIplay::LoadBank(FileAndMemReader &fr)
     }
 
     Synth &synth = *m_synth;
+
+    synth.resetInstCache();
+
     synth.m_insBankSetup.volumeModel = wopn->volume_model;
     synth.m_insBankSetup.lfoEnable = (wopn->lfo_freq & 8) != 0;
     synth.m_insBankSetup.lfoFrequency = wopn->lfo_freq & 7;
@@ -183,9 +186,8 @@ bool OPNMIDIplay::LoadMIDI_post()
     }
     else if(format == MidiSequencer::Format_RSXX)
     {
-        synth.m_musicMode     = Synth::MODE_RSXX;
-        synth.m_volumeScale   = Synth::VOLUME_Generic;
-        synth.m_numChips = 2;
+        errorStringOut = "OPNMIDI doesn't supports RSXX, use ADLMIDI to play this file!";
+        return false;
     }
     else if(format == MidiSequencer::Format_IMF)
     {

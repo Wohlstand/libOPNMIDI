@@ -182,6 +182,11 @@ public:
         VOLUME_9X
     } m_volumeScale;
 
+    //! Frequency computation function
+    uint16_t (*m_getFreq)(double tone, uint32_t *mul_offset);
+    //! OPL Volume computation function
+    void (*m_getVolume)(struct OPNVolume_t *v);
+
     //! Channel allocation algorithm
     OPNMIDI_ChannelAlloc m_channelAlloc;
 
@@ -212,6 +217,14 @@ public:
      * @return true when setup on the fly is locked
      */
     bool setupLocked();
+
+    /**
+     * @brief Changes the volume model and assigns frequency formula
+     * @param model
+     */
+    void setFrequencyModel(VolumesScale model);
+
+    void resetInstCache();
 
     /**
      * @brief Write data to OPN2 chip register
@@ -262,7 +275,8 @@ public:
                    uint_fast32_t velocity,
                    uint_fast32_t channelVolume = 127,
                    uint_fast32_t channelExpression = 127,
-                   uint8_t brightness = 127);
+                   uint8_t brightness = 127,
+                   bool isDrum = false);
 
     /**
      * @brief Set the instrument into specified chip channel

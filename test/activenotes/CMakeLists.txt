@@ -5,12 +5,15 @@ include_directories (${CMAKE_CURRENT_SOURCE_DIR}/../common
                      ${CMAKE_SOURCE_DIR}/include
                      ${CMAKE_SOURCE_DIR}/src)
 
-add_executable (ActiveNotesList
+include(${libOPNMIDI_SOURCE_DIR}/src/models/opn_models.cmake)
+
+add_executable(ActiveNotesList
                 active_notes.cpp
                 ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_midiplay.cpp
                 ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_opn2.cpp
                 ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_opn2.cpp
                 ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked/ym3438.c
+                ${OPN_MODELS_SOURCES}
                 $<TARGET_OBJECTS:Catch-objects>)
 
 set_target_properties(ActiveNotesList PROPERTIES COMPILE_DEFINITIONS "GSL_THROW_ON_CONTRACT_VIOLATION")

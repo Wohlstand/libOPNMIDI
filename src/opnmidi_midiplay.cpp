@@ -125,7 +125,7 @@ void OPNMIDIplay::applySetup()
         synth.setVolumeScaleModel(static_cast<OPNMIDI_VolumeModels>(m_setup.VolumeModel));
 
     if(m_setup.VolumeModel == OPNMIDI_VolumeModel_AUTO)
-        synth.m_volumeScale = static_cast<Synth::VolumesScale>(synth.m_insBankSetup.volumeModel);
+        synth.setFrequencyModel(static_cast<Synth::VolumesScale>(synth.m_insBankSetup.volumeModel));
 
     synth.m_numChips    = m_setup.numChips;
 
@@ -371,6 +371,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
         Synth::BankMap::iterator b = synth.m_insBanks.find(bank);
         if(b != synth.m_insBanks.end())
             bnk = &b->second;
+
         if(bnk)
             ains = &bnk->ins[midiins];
         else
@@ -387,6 +388,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
             caughtMissingBank = false;
             if(b != synth.m_insBanks.end())
                 bnk = &b->second;
+
             if(bnk)
                 ains = &bnk->ins[midiins];
             else
@@ -1180,7 +1182,7 @@ void OPNMIDIplay::noteUpdVolume(size_t midCh, MIDIchannel::NoteInfo &info, const
             brightness *= 2;
     }
 
-    m_synth->touchNote(ins.chip_chan, info.vol, ch.volume, ch.expression, static_cast<uint8_t>(brightness));
+    m_synth->touchNote(ins.chip_chan, info.vol, ch.volume, ch.expression, static_cast<uint8_t>(brightness), is_percussion);
 }
 
 void OPNMIDIplay::noteUpdFreq(size_t midCh, const OpnChannel::Location &loc, MIDIchannel::NoteInfo &info, const MIDIchannel::NoteInfo::Phys &ins)

@@ -483,7 +483,7 @@ OPNMIDI_EXPORT void opn2_setVolumeRangeModel(struct OPN2_MIDIPlayer *device, int
     if(!synth.setupLocked())
     {
         if(play->m_setup.VolumeModel == OPNMIDI_VolumeModel_AUTO)//Use bank default volume model
-            synth.m_volumeScale = (Synth::VolumesScale)synth.m_insBankSetup.volumeModel;
+            synth.setFrequencyModel((Synth::VolumesScale)synth.m_insBankSetup.volumeModel);
         else
             synth.setVolumeScaleModel(static_cast<OPNMIDI_VolumeModels>(volumeModel));
     }

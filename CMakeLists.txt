@@ -232,6 +232,8 @@ link_directories(${libOPNMIDI_BINARY_DIR}/)
 
 set(libOPNMIDI_SOURCES)
 
+include(src/models/opn_models.cmake)
+
 list(APPEND libOPNMIDI_SOURCES
     ${libOPNMIDI_SOURCE_DIR}/src/opnmidi.cpp
     ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_load.cpp
@@ -239,6 +241,7 @@ list(APPEND libOPNMIDI_SOURCES
     ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_opn2.cpp
     ${libOPNMIDI_SOURCE_DIR}/src/opnmidi_private.cpp
     ${libOPNMIDI_SOURCE_DIR}/src/wopn/wopn_file.c
+    ${OPN_MODELS_SOURCES}
 )
 
 # Make headers being properly visible at IDEs
