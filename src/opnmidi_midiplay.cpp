@@ -27,7 +27,7 @@
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
 #include "midiseq/midi_sequencer.hpp"
 #endif
-// #include "chips/opn_chip_base.h"
+#include "chips/opn_chip_base.h"
 
 #include "chips/tsf/tsf.h"
 
