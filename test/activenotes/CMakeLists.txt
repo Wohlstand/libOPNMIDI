@@ -15,6 +15,7 @@ add_executable(ActiveNotesList
                 ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked_opn2.cpp
                 ${libOPNMIDI_SOURCE_DIR}/src/chips/nuked/ym3438.c
                 ${OPN_MODELS_SOURCES}
+                ${libOPNMIDI_SOURCE_DIR}/src/chips/opn_wave_synth.cpp
                 $<TARGET_OBJECTS:Catch-objects>)
 
 set_target_properties(ActiveNotesList PROPERTIES COMPILE_DEFINITIONS "GSL_THROW_ON_CONTRACT_VIOLATION")

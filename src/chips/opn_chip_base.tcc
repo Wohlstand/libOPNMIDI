@@ -55,7 +55,7 @@ inline void OPNChipBase::processPcm()
         m_fetchCount += 1.0f;
         if(m_fetchCount >= m_fetchAt)
         {
-            int32_t sample = 0;
+            int32_t sample = 127;
             uint8_t usample;
             m_fetchPcmStream(m_fetchPcmUserData, &sample, 1);
             usample = sample & 0xFF;
