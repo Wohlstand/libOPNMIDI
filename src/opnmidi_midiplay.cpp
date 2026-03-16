@@ -29,6 +29,13 @@
 #endif
 // #include "chips/opn_chip_base.h"
 
+#include "chips/tsf/tsf.h"
+
+void OPNMIDIplay::TinyFluidSynthDeleter::operator()(tsf *x)
+{
+    if(x) tsf_close(x);
+}
+
 // Minimum life time of percussion notes
 static const double drum_note_min_time = 0.03;
 
@@ -94,6 +101,10 @@ OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
 
     m_synth.reset(new Synth);
 
+    m_tsfEnabled = false;
+    std::memset(m_tsfPercMap, 0, sizeof(m_tsfPercMap));
+    std::memset(m_tsfMelodicUse, 0, sizeof(m_tsfMelodicUse));
+
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
     m_sequencer.reset(new MidiSequencer);
     initSequencerInterface();
@@ -101,6 +112,9 @@ OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
     resetMIDI();
     applySetup();
     realTime_ResetState();
+
+    // For loca test purposes
+    // LoadWaveBank("/home/somedata/BassMidi/SegaDrums/segadrums-minify.sf2");
 }
 
 OPNMIDIplay::~OPNMIDIplay()
@@ -158,6 +172,9 @@ void OPNMIDIplay::applySetup()
 #endif
     // Reset the arpeggio counter
     m_arpeggioCounter = 0;
+
+    for(int c = 0; c < 16; ++c)
+        waveMap(c);
 }
 
 void OPNMIDIplay::partialReset()
@@ -177,6 +194,7 @@ void OPNMIDIplay::partialReset()
     m_sequencerInterface->onloopEnd_userData = synth.m_loopEndHookData;
     m_sequencer->setLoopHooksOnly(m_sequencerInterface->onloopStart != NULL);
 #endif
+    waveReset();
 }
 
 void OPNMIDIplay::resetMIDI()
@@ -199,6 +217,8 @@ void OPNMIDIplay::resetMIDI()
     caugh_missing_instruments.clear();
     caugh_missing_banks_melodic.clear();
     caugh_missing_banks_percussion.clear();
+
+    waveReset();
 }
 
 void OPNMIDIplay::resetMIDIDefaults(int offset)
@@ -291,6 +311,9 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     if(note >= 127)
         note = 127;
 
+    if(m_tsfEnabled && useWave(channel, note))
+        return (bool)tsf_channel_note_on(m_synthTSF.get(), channel % 16, note, static_cast<float>(velocity) / 127.0f);
+
     if((synth.m_musicMode == Synth::MODE_RSXX) && (velocity != 0))
     {
         // Check if this is just a note after-touch
@@ -306,6 +329,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
             return false;
         }
     }
+
 
     if(static_cast<size_t>(channel) > m_midiChannels.size())
         channel = channel % 16;
@@ -620,6 +644,12 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
 
 void OPNMIDIplay::realTime_NoteOff(uint8_t channel, uint8_t note)
 {
+    if(m_tsfEnabled && useWave(channel, note))
+    {
+        tsf_channel_note_off(m_synthTSF.get(), channel % 16, note);
+        return;
+    }
+
     if(static_cast<size_t>(channel) > m_midiChannels.size())
         channel = channel % 16;
     noteOff(channel, note);
@@ -658,6 +688,10 @@ void OPNMIDIplay::realTime_Controller(uint8_t channel, uint8_t type, uint8_t val
 {
     if(static_cast<size_t>(channel) > m_midiChannels.size())
         channel = channel % 16;
+
+    if(m_tsfEnabled)
+        tsf_channel_midi_control(m_synthTSF.get(), channel, type, value);
+
     switch(type)
     {
     case 1: // Adjust vibrato
@@ -669,12 +703,14 @@ void OPNMIDIplay::realTime_Controller(uint8_t channel, uint8_t type, uint8_t val
         m_midiChannels[channel].bank_msb = value;
         if((m_synthMode & Mode_GS) == 0)// Don't use XG drums on GS synth mode
             m_midiChannels[channel].is_xg_percussion = isXgPercChannel(m_midiChannels[channel].bank_msb, m_midiChannels[channel].bank_lsb);
+        waveMap(channel);
         break;
 
     case 32: // Set bank lsb (XG bank)
         m_midiChannels[channel].bank_lsb = value;
         if((m_synthMode & Mode_GS) == 0)// Don't use XG drums on GS synth mode
             m_midiChannels[channel].is_xg_percussion = isXgPercChannel(m_midiChannels[channel].bank_msb, m_midiChannels[channel].bank_lsb);
+        waveMap(channel);
         break;
 
     case 5: // Set portamento msb
@@ -804,7 +840,15 @@ void OPNMIDIplay::realTime_PatchChange(uint8_t channel, uint8_t patch)
 {
     if(static_cast<size_t>(channel) > m_midiChannels.size())
         channel = channel % 16;
-    m_midiChannels[channel].patch = patch;
+
+    MIDIchannel &midiChan = m_midiChannels[channel];
+    midiChan.patch = patch;
+
+    if(m_tsfEnabled)
+    {
+        tsf_channel_set_presetnumber(m_synthTSF.get(), channel, patch, (channel == 9) || midiChan.is_xg_percussion);
+        waveMap(channel);
+    }
 }
 
 void OPNMIDIplay::realTime_PitchBend(uint8_t channel, uint16_t pitch)
@@ -813,6 +857,9 @@ void OPNMIDIplay::realTime_PitchBend(uint8_t channel, uint16_t pitch)
         channel = channel % 16;
     m_midiChannels[channel].bend = int(pitch) - 8192;
     noteUpdateAll(channel, Upd_Pitch);
+
+    if(m_tsfEnabled)
+        tsf_channel_set_pitchwheel(m_synthTSF.get(), channel, pitch);
 }
 
 void OPNMIDIplay::realTime_PitchBend(uint8_t channel, uint8_t msb, uint8_t lsb)
@@ -821,6 +868,9 @@ void OPNMIDIplay::realTime_PitchBend(uint8_t channel, uint8_t msb, uint8_t lsb)
         channel = channel % 16;
     m_midiChannels[channel].bend = int(lsb) + int(msb) * 128 - 8192;
     noteUpdateAll(channel, Upd_Pitch);
+
+    if(m_tsfEnabled)
+        tsf_channel_set_pitchwheel(m_synthTSF.get(), channel, (msb << 7) | lsb);
 }
 
 void OPNMIDIplay::realTime_BankChangeLSB(uint8_t channel, uint8_t lsb)
@@ -828,6 +878,14 @@ void OPNMIDIplay::realTime_BankChangeLSB(uint8_t channel, uint8_t lsb)
     if(static_cast<size_t>(channel) > m_midiChannels.size())
         channel = channel % 16;
     m_midiChannels[channel].bank_lsb = lsb;
+
+    if(m_tsfEnabled)
+    {
+        tsf_channel_set_bank(m_synthTSF.get(), channel,
+                             (m_midiChannels[channel].bank_lsb) |
+                             (m_midiChannels[channel].bank_msb << 8));
+        waveMap(channel);
+    }
 }
 
 void OPNMIDIplay::realTime_BankChangeMSB(uint8_t channel, uint8_t msb)
@@ -835,6 +893,14 @@ void OPNMIDIplay::realTime_BankChangeMSB(uint8_t channel, uint8_t msb)
     if(static_cast<size_t>(channel) > m_midiChannels.size())
         channel = channel % 16;
     m_midiChannels[channel].bank_msb = msb;
+
+    if(m_tsfEnabled)
+    {
+        tsf_channel_set_bank(m_synthTSF.get(), channel,
+                             (m_midiChannels[channel].bank_lsb) |
+                             (m_midiChannels[channel].bank_msb << 8));
+        waveMap(channel);
+    }
 }
 
 void OPNMIDIplay::realTime_BankChange(uint8_t channel, uint16_t bank)
@@ -843,6 +909,12 @@ void OPNMIDIplay::realTime_BankChange(uint8_t channel, uint16_t bank)
         channel = channel % 16;
     m_midiChannels[channel].bank_lsb = uint8_t(bank & 0xFF);
     m_midiChannels[channel].bank_msb = uint8_t((bank >> 8) & 0xFF);
+
+    if(m_tsfEnabled)
+    {
+        tsf_channel_set_bank(m_synthTSF.get(), channel, bank);
+        waveMap(channel);
+    }
 }
 
 void OPNMIDIplay::setDeviceId(uint8_t id)

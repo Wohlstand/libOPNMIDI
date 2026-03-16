@@ -31,6 +31,7 @@
 #endif
 #include "wopn/wopn_file.h"
 
+
 bool OPNMIDIplay::LoadBank(const std::string &filename)
 {
     FileAndMemReader file;
@@ -154,6 +155,7 @@ bool OPNMIDIplay::LoadBank(FileAndMemReader &fr)
 
     return true;
 }
+
 
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
 
