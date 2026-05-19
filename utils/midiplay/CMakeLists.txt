@@ -16,6 +16,9 @@ include(../common/utf8main.cmake)
 set(OPNMIDI_PLAY_SRC
     opnplay.cpp
     wave_writer.c
+    wave_writer.h
+    audio.h
+    ${UTF8MAIN_SRCS}
 )
 
 if(USE_SDL2_AUDIO OR USE_SDL3_AUDIO)
@@ -57,10 +60,18 @@ target_compile_definitions(opnmidiplay PRIVATE "-DDEFAULT_INSTALL_PREFIX=\"${CMA
 target_link_libraries(opnmidiplay PRIVATE OPNMIDI)
 
 if(WIN32)
+    if(NOT MSVC)
+        target_link_libraries(opnmidiplay PRIVATE pthread)
+    endif()
     set_property(TARGET opnmidiplay PROPERTY WIN32_EXECUTABLE OFF)
     if(MSVC)
         target_compile_definitions(opnmidiplay PRIVATE -DWIN32_CONSOLE)
     endif()
+else()
+    if(NOT OPENBSD_LOCALBASE AND NOT HAIKU)
+        target_link_libraries(opnmidiplay PRIVATE dl)
+    endif()
+    target_link_libraries(opnmidiplay PRIVATE pthread m)
 endif()
 
 
