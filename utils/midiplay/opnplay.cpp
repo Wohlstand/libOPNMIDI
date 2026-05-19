@@ -31,9 +31,13 @@
 #include <cstring>
 #include <cstdarg>
 #include <deque>
-#include <algorithm>  // IWYU pragma: keep
+// #include <algorithm>
 #include <signal.h>
 #include <stdint.h>
+#ifdef _WIN32
+#   include <windows.h> // for Windows-specific setCursorVisibility implementation
+#endif
+
 #include "utf8main.h" // IWYU pragma: keep
 
 #if defined(_MSC_VER) && _MSC_VER < 1900
