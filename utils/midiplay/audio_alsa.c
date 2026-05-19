@@ -1,6 +1,6 @@
 /*
  * OPNMIDI Player is a free MIDI player based on a libOPNMIDI,
- * a Software MIDI synthesizer library with OPL3 emulation
+ * a Software MIDI synthesizer library with OPN2 and OPNA emulation
  *
  * Original ADLMIDI code: Copyright (c) 2010-2014 Joel Yliluoma <bisqwit@iki.fi>
  * ADLMIDI Library API:   Copyright (c) 2015-2026 Vitaly Novichkov <admin@wohlnet.ru>

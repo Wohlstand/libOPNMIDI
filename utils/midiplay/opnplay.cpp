@@ -1,3 +1,27 @@
+/*
+ * OPNMIDI Player is a free MIDI player based on a libOPNMIDI,
+ * a Software MIDI synthesizer library with OPN2 and OPNA emulation
+ *
+ * Original ADLMIDI code: Copyright (c) 2010-2014 Joel Yliluoma <bisqwit@iki.fi>
+ * ADLMIDI Library API:   Copyright (c) 2015-2026 Vitaly Novichkov <admin@wohlnet.ru>
+ *
+ * Library is based on the ADLMIDI, a MIDI player for Linux and Windows with OPL3 emulation:
+ * http://iki.fi/bisqwit/source/adlmidi.html
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <vector>
 #include <string>
 #include <cstdio>
@@ -423,7 +447,7 @@ int main(int argc, char **argv)
     spec.format   = OPNMIDI_SampleType_S16;
     spec.channels = 2;
     spec.samples  = uint16_t(static_cast<double>(spec.freq) * AudioBufferLength);
-    spec.is_msb = audio_is_big_endian();
+    spec.is_msb   = audio_is_big_endian();
 
     OPN2_MIDIPlayer *myDevice;
 
