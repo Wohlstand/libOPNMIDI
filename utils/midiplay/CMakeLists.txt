@@ -1,31 +1,60 @@
 
-if(NOT WIN32)
-    include(${CMAKE_CURRENT_LIST_DIR}/../../cmake/libSDL2.cmake)
-    set(USE_SDL2_AUDIO 1)
-elseif(WIN32)
-    set(SDL2_NEEDED_LIBRARIES winmm)
+if(UNIX AND NOT APPLE)
+    set(USE_ALSA_AUDIO 1)
+elseif(NOT WIN32)
+    libOPNMIDI_find_SDL3()
+    if(TARGET ADLMIDI_SDL3)
+        set(USE_SDL3_AUDIO 1)
+    else()
+        libOPNMIDI_find_SDL2()
+        set(USE_SDL2_AUDIO 1)
+    endif()
 endif()
+
+include(../common/utf8main.cmake)
 
 set(OPNMIDI_PLAY_SRC
     opnplay.cpp
     wave_writer.c
 )
 
-if(USE_SDL2_AUDIO)
+if(USE_SDL2_AUDIO OR USE_SDL3_AUDIO)
     list(APPEND OPNMIDI_PLAY_SRC
         audio_sdl.c
     )
 endif()
 
-if(WIN32 AND NOT USE_SDL2_AUDIO)
+if(USE_ALSA_AUDIO AND NOT USE_SDL2_AUDIO AND NOT USE_SDL3_AUDIO)
+    list(APPEND OPNMIDI_PLAY_SRC
+        audio_alsa.c
+    )
+endif()
+
+if(WIN32 AND NOT USE_SDL2_AUDIO AND NOT USE_SDL3_AUDIO)
     list(APPEND OPNMIDI_PLAY_SRC
         audio_winmm.c
     )
 endif()
 
 add_executable(opnmidiplay ${OPNMIDI_PLAY_SRC})
-target_link_libraries(opnmidiplay OPNMIDI_IF ${SDL2_NEEDED_LIBRARIES})
+
+set_nopie(opnmidiplay)
+
+if(USE_SDL3_AUDIO)
+    target_link_libraries(opnmidiplay PRIVATE OPNMIDI_SDL3)
+    target_compile_definitions(opnmidiplay PRIVATE OPNMIDI_USE_SDL3)
+elseif(USE_SDL2_AUDIO)
+    target_link_libraries(opnmidiplay PRIVATE OPNMIDI_SDL2)
+    target_compile_definitions(opnmidiplay PRIVATE OPNMIDI_USE_SDL2)
+elseif(USE_ALSA_AUDIO)
+    target_link_libraries(opnmidiplay PRIVATE asound)
+elseif(WIN32)
+    target_link_libraries(opnmidiplay PRIVATE winmm)
+endif()
+
 target_compile_definitions(opnmidiplay PRIVATE "-DDEFAULT_INSTALL_PREFIX=\"${CMAKE_INSTALL_PREFIX}\"")
+
+target_link_libraries(opnmidiplay PRIVATE OPNMIDI)
 
 if(WIN32)
     set_property(TARGET opnmidiplay PROPERTY WIN32_EXECUTABLE OFF)

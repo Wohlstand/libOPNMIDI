@@ -7,9 +7,10 @@
 #include <cstring>
 #include <cstdarg>
 #include <deque>
-#include <algorithm>
+#include <algorithm>  // IWYU pragma: keep
 #include <signal.h>
 #include <stdint.h>
+#include "utf8main.h" // IWYU pragma: keep
 
 #if defined(_MSC_VER) && _MSC_VER < 1900
 
