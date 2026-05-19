@@ -66,6 +66,9 @@ __inline int c99_snprintf(char *outBuf, size_t size, const char *format, ...)
 }
 #endif
 
+#define s_fprintf        std::fprintf
+#define flushout(stream) std::fflush(stream)
+
 #include <opnmidi.h>
 
 #include "audio.h"
@@ -260,6 +263,21 @@ static void sighandler(int dum)
     }
 }
 
+static void setCursorVisibility(bool visible)
+{
+#ifdef _WIN32
+    HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO info;
+    info.dwSize = 100;
+    info.bVisible = visible ? TRUE : FALSE;
+    SetConsoleCursorInfo(consoleHandle, &info);
+#else
+    if(visible)
+        printf("\e[?25h");
+    else
+        printf("\e[?25l");
+#endif
+}
 
 static void debugPrint(void * /*userdata*/, const char *fmt, ...)
 {
@@ -297,6 +315,142 @@ static inline void secondsToHMSM(double seconds_full, char *hmsm_buffer, size_t 
     else
         snprintf(hmsm_buffer, hmsm_buffer_size, "%02u:%02u,%03u", minutes, seconds, milliseconds);
 }
+
+
+static struct TimeCounter
+{
+    char posHMS[25];
+    char totalHMS[25];
+    char loopStartHMS[25];
+    char loopEndHMS[25];
+    char linebuff[81];
+#ifdef HAS_S_GETTIME
+    char realHMS[25];
+#endif
+
+    bool hasLoop;
+    uint64_t milliseconds_prev;
+    int printsCounter;
+    int printsCounterPeriod;
+    int complete_prev;
+    double totalTime;
+
+#ifdef HAS_S_GETTIME
+    double realTimeStart;
+#endif
+
+    TimeCounter()
+    {
+        hasLoop = false;
+        totalTime = 0.0;
+        milliseconds_prev = ~0u;
+        printsCounter = 0;
+        complete_prev = -1;
+        printsCounterPeriod = 1;
+    }
+
+    void setTotal(double total)
+    {
+        totalTime = total;
+        secondsToHMSM(total, totalHMS, 25);
+#ifdef HAS_S_GETTIME
+        realTimeStart = s_getTime();
+        secondsToHMSM(s_getTime() - realTimeStart, realHMS, 25);
+#endif
+    }
+
+    void setLoop(double loopStart, double loopEnd)
+    {
+        hasLoop = false;
+
+        if(loopStart >= 0.0 && loopEnd >= 0.0)
+        {
+            secondsToHMSM(loopStart, loopStartHMS, 25);
+            secondsToHMSM(loopEnd, loopEndHMS, 25);
+            hasLoop = true;
+        }
+    }
+
+#ifdef ADLMIDI_ENABLE_HW_DOS
+    void waitDosTimerTick()
+    {
+        volatile unsigned long timer = DosTaskman::getCurTicks();
+        while(timer == DosTaskman::getCurTicks());
+    }
+
+    void delay(int ticks)
+    {
+        volatile unsigned long timer = DosTaskman::getCurTicks() + ticks;
+        while(timer >= DosTaskman::getCurTicks());
+    }
+#endif
+
+    void initLineBuff()
+    {
+        std::memset(linebuff, ' ', sizeof(linebuff));
+        linebuff[80] = '\0';
+        linebuff[79] = '\r';
+    }
+
+    void clearLineR()
+    {
+        s_fprintf(stdout,  "                                                                              \r");
+        flushout(stdout);
+    }
+
+    void printTime(double pos)
+    {
+        uint64_t milliseconds = static_cast<uint64_t>(pos * 1000.0);
+        initLineBuff();
+        int len;
+
+        if(milliseconds != milliseconds_prev)
+        {
+            if(printsCounter >= printsCounterPeriod)
+            {
+                printsCounter = -1;
+                secondsToHMSM(pos, posHMS, 25);
+#ifdef HAS_S_GETTIME
+                secondsToHMSM(s_getTime() - realTimeStart, realHMS, 25);
+#endif
+                // s_fprintf(stdout, "                                               \r");
+#ifdef HAS_S_GETTIME
+                len = snprintf(linebuff, 79, "Time position: %s / %s [Real time: %s]", posHMS, totalHMS, realHMS);
+#else
+                len = snprintf(linebuff, 79, "Time position: %s / %s", posHMS, totalHMS);
+#endif
+                if(len > 0)
+                    memset(linebuff + len, ' ',  79 - len);
+                linebuff[79] = '\r';
+                s_fprintf(stdout, "%s", linebuff);
+                flushout(stdout);
+                milliseconds_prev = milliseconds;
+            }
+
+            printsCounter++;
+        }
+    }
+
+    void printProgress(double pos)
+    {
+        int complete = static_cast<int>(std::floor(100.0 * pos / totalTime));
+
+        if(complete_prev != complete)
+        {
+            s_fprintf(stdout, "                                                                              \r");
+            s_fprintf(stdout, "Recording WAV... [%d%% completed]\r", complete);
+            flushout(stdout);
+            complete_prev = complete;
+        }
+    }
+
+    void clearLine()
+    {
+        s_fprintf(stdout, "                                                                              \n\n");
+        flushout(stdout);
+    }
+
+} s_timeCounter;
 
 
 #define DEFAULT_BANK_NAME "xg.wopn"
@@ -432,7 +586,7 @@ int main(int argc, char **argv)
     // How long is SDL buffer, in seconds?
     // The smaller the value, the more often SDL_AudioCallBack()
     // is called.
-    const double AudioBufferLength = 0.08;
+    // const double AudioBufferLength = 0.08;
     // How much do WE buffer, in seconds? The smaller the value,
     // the more prone to sound chopping we are.
     const double OurHeadRoomLength = 0.1;
@@ -446,7 +600,7 @@ int main(int argc, char **argv)
     spec.freq     = sampleRate;
     spec.format   = OPNMIDI_SampleType_S16;
     spec.channels = 2;
-    spec.samples  = uint16_t(static_cast<double>(spec.freq) * AudioBufferLength);
+    spec.samples  = 1024; // uint16_t(static_cast<double>(spec.freq) * AudioBufferLength);
     spec.is_msb   = audio_is_big_endian();
 
     OPN2_MIDIPlayer *myDevice;
@@ -804,24 +958,14 @@ int main(int argc, char **argv)
     signal(SIGHUP, sighandler);
 #endif
 
-    double total        = opn2_totalTimeLength(myDevice);
-    double loopStart    = opn2_loopStartTime(myDevice);
-    double loopEnd      = opn2_loopEndTime(myDevice);
-    char totalHMS[25];
-    char loopStartHMS[25];
-    char loopEndHMS[25];
-    secondsToHMSM(total, totalHMS, 25);
-    if(loopStart >= 0.0 && loopEnd >= 0.0)
-    {
-        secondsToHMSM(loopStart, loopStartHMS, 25);
-        secondsToHMSM(loopEnd, loopEndHMS, 25);
-    }
+    s_timeCounter.setTotal(opn2_totalTimeLength(myDevice));
+    s_timeCounter.setLoop(opn2_loopStartTime(myDevice), opn2_loopEndTime(myDevice));
 
     if(!recordWave)
     {
         std::fprintf(stdout, " - Loop is turned %s\n", loopEnabled ? "ON" : "OFF");
-        if(loopStart >= 0.0 && loopEnd >= 0.0)
-            std::fprintf(stdout, " - Has loop points: %s ... %s\n", loopStartHMS, loopEndHMS);
+        if(s_timeCounter.hasLoop)
+            std::fprintf(stdout, " - Has loop points: %s ... %s\n", s_timeCounter.loopStartHMS, s_timeCounter.loopEndHMS);
         std::fprintf(stdout, "\n==========================================\n");
         std::fflush(stdout);
 
@@ -833,17 +977,14 @@ int main(int argc, char **argv)
         std::fflush(stdout);
 #endif
 
-        uint8_t buff[16384];
-        char posHMS[25];
-        uint64_t milliseconds_prev = ~0u;
-        int printsCounter = 0;
-        int printsCounterPeriod = 1;
+        uint8_t buff[4096];
 
-        std::fprintf(stdout, "                                               \r");
+        setCursorVisibility(false);
+        s_timeCounter.clearLineR();
 
         while(!stop)
         {
-            size_t got = (size_t)opn2_playFormat(myDevice, 4096,
+            size_t got = (size_t)opn2_playFormat(myDevice, 1024,
                                                  buff,
                                                  buff + g_audioFormat.containerSize,
                                                  &g_audioFormat) * g_audioFormat.containerSize;
@@ -861,21 +1002,7 @@ int main(int argc, char **argv)
 #endif
 
 #ifndef DEBUG_TRACE_ALL_EVENTS
-            double time_pos = opn2_positionTell(myDevice);
-            uint64_t milliseconds = static_cast<uint64_t>(time_pos * 1000.0);
-            if(milliseconds != milliseconds_prev)
-            {
-                if(printsCounter >= printsCounterPeriod)
-                {
-                    printsCounter = -1;
-                    secondsToHMSM(time_pos, posHMS, 25);
-                    std::fprintf(stdout, "                                               \r");
-                    std::fprintf(stdout, "Time position: %s / %s\r", posHMS, totalHMS);
-                    std::fflush(stdout);
-                    milliseconds_prev = milliseconds;
-                }
-                printsCounter++;
-            }
+            s_timeCounter.printTime(opn2_positionTell(myDevice));
 #endif
 
             g_audioBuffer_lock.Lock();
@@ -907,7 +1034,11 @@ int main(int argc, char **argv)
             }
 #endif
         }
-        std::fprintf(stdout, "                                               \n\n");
+
+        setCursorVisibility(true);
+
+        s_timeCounter.clearLineR();
+
         audio_stop();
         audio_close();
     }
@@ -932,7 +1063,6 @@ int main(int argc, char **argv)
         if(wav_ctx)
         {
             uint8_t buff[16384];
-            int complete_prev = -1;
 
             while(!stop)
             {
@@ -947,18 +1077,11 @@ int main(int argc, char **argv)
 
                 ctx_wave_write(wav_ctx, buff, static_cast<long>(got));
 
-                int complete = static_cast<int>(std::floor(100.0 * opn2_positionTell(myDevice) / total));
-                if(complete_prev != complete)
-                {
-                    std::fprintf(stdout, "                                               \r");
-                    std::fprintf(stdout, "Recording WAV... [%d%% completed]\r", complete);
-                    std::fflush(stdout);
-                    complete_prev = complete;
-                }
+                s_timeCounter.printProgress(opn2_positionTell(myDevice));
             }
 
             ctx_wave_close(wav_ctx);
-            std::fprintf(stdout, "                                               \n\n");
+            s_timeCounter.clearLine();
 
             if(stop)
                 std::fprintf(stdout, "Interrupted! Recorded WAV is incomplete, but playable!\n");
