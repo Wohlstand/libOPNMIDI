@@ -27,11 +27,30 @@ include(../common/utf8main.cmake)
 
 set(OPNMIDI_PLAY_SRC
     opnplay.cpp
+    dev_setup.cpp
+    dev_setup.h
+    misc.c
+    misc.h
+    time_counter.cpp
+    time_counter.h
     audio/audio.h
-    wave_writer.c
-    wave_writer.h
+    playback/playback_common.cpp
+    playback/playback.h
     ${UTF8MAIN_SRCS}
 )
+
+list(APPEND OPNMIDI_PLAY_SRC
+    playback/playback_wave.cpp
+    playback/wave_writer.c
+    playback/wave_writer.h
+)
+
+if(NOT MIDIPLAY_WAVE_ONLY)
+    list(APPEND OPNMIDI_PLAY_SRC
+        playback/playback_audio.cpp
+    )
+endif()
+
 
 if(USE_SDL2_AUDIO OR USE_SDL3_AUDIO)
     list(APPEND OPNMIDI_PLAY_SRC
@@ -51,9 +70,12 @@ if(WIN32 AND NOT USE_SDL2_AUDIO AND NOT USE_SDL3_AUDIO)
     )
 endif()
 
+option(DEBUG_SONG_SWITCHING  "Enable song switching by left and right keys (Linux only)" OFF)
+option(ENABLE_TERMINAL_HOTKEYS  "Enable use of ncurses library to handle keyboard actions" OFF)
+option(TERMINAL_USE_NCURSES  "Enable use of ncurses library to handle keyboard actions" OFF)
+
 add_executable(opnmidiplay ${OPNMIDI_PLAY_SRC})
 
-set_nopie(opnmidiplay)
 
 if(USE_SDL3_AUDIO)
     target_link_libraries(opnmidiplay PRIVATE OPNMIDI_SDL3)
@@ -65,6 +87,26 @@ elseif(USE_ALSA_AUDIO)
     target_link_libraries(opnmidiplay PRIVATE asound)
 elseif(WIN32)
     target_link_libraries(opnmidiplay PRIVATE winmm)
+endif()
+
+set_nopie(opnmidiplay)
+
+if(DEBUG_SONG_SWITCHING)
+    target_compile_definitions(opnmidiplay PRIVATE DEBUG_SONG_SWITCHING)
+endif()
+
+if(MIDIPLAY_WAVE_ONLY)
+    target_compile_definitions(opnmidiplay PUBLIC OUTPUT_WAVE_ONLY)
+    message("Demo tool will only output WAVE file, no playing support.")
+endif()
+
+if(ENABLE_TERMINAL_HOTKEYS)
+    target_compile_definitions(opnmidiplay PUBLIC ENABLE_TERMINAL_HOTKEYS)
+endif()
+
+if(TERMINAL_USE_NCURSES)
+    target_compile_definitions(opnmidiplay PUBLIC TERMINAL_USE_NCURSES)
+    target_link_libraries(opnmidiplay PRIVATE ncurses)
 endif()
 
 target_compile_definitions(opnmidiplay PRIVATE "-DDEFAULT_INSTALL_PREFIX=\"${CMAKE_INSTALL_PREFIX}\"")
