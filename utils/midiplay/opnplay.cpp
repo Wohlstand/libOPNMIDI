@@ -75,7 +75,7 @@ __inline int c99_snprintf(char *outBuf, size_t size, const char *format, ...)
 
 #include <opnmidi.h>
 
-#include "audio.h"
+#include "audio/audio.h"
 
 #include "wave_writer.h"
 
