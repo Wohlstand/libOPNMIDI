@@ -267,8 +267,8 @@ void OPNMIDIplay::TickIterators(double s)
     updateVibrato(s);
     updateArpeggio(s);
 
-#if !defined(ADLMIDI_AUDIO_TICK_HANDLER)
-#   ifndef ADLMIDI_DISABLE_MIDI_SEQUENCER
+#if !defined(OPNMIDI_AUDIO_TICK_HANDLER)
+#   ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
     s *= m_sequencer->getTempoMultiplier(); // Glide will follow the tempo
 #   endif
     updateGlide(s);
