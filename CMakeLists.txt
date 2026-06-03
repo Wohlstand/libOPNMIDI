@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.2...3.10)
+cmake_minimum_required (VERSION 3.2...4.0)
 project(libOPNMIDI VERSION 1.6.1 LANGUAGES C CXX)
 
 include(GNUInstallDirs)
