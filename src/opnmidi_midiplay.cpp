@@ -480,7 +480,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     if(isBlankNote)
     {
         // Don't even try to play the blank instrument! But, insert the dummy note.
-        if(!midiChan.has_free_active_notes())
+        if(!midiChan.has_free_active_notes(this, channel))
             return false; // Overflow!
 
         MIDIchannel::notes_iterator i = midiChan.ensure_create_activenote(note);
@@ -564,7 +564,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
         velocity = static_cast<uint8_t>(std::floor(static_cast<float>(velocity) * 0.8f));
 
     // Allocate active note for MIDI channel
-    if(!midiChan.has_free_active_notes())
+    if(!midiChan.has_free_active_notes(this, channel))
         return false; // Overflow!
 
     MIDIchannel::notes_iterator ir = midiChan.ensure_create_activenote(note);
