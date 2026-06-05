@@ -857,7 +857,7 @@ OPNMIDI_EXPORT size_t opn2_metaTrackTitleCount(struct OPN2_MIDIPlayer *device)
         return 0;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
     assert(play);
-    return play->m_sequencer->getTrackTitles().size();
+    return play->m_sequencer->getTrackTitles().size;
 #else
     ADL_UNUSED(device);
     return 0;
@@ -871,8 +871,8 @@ OPNMIDI_EXPORT const char *opn2_metaTrackTitle(struct OPN2_MIDIPlayer *device, s
         return "";
     MidiPlayer *play = GET_MIDI_PLAYER(device);
     assert(play);
-    const std::vector<BW_MidiSequencer::DataBlock> &titles = play->m_sequencer->getTrackTitles();
-    if(index >= titles.size())
+    const MidiSequencer::MusTrackTitlesList &titles = play->m_sequencer->getTrackTitles();
+    if(index >= titles.size)
         return "INVALID";
     return reinterpret_cast<const char*>(play->m_sequencer->getData(titles[index]));
 #else
@@ -890,7 +890,7 @@ OPNMIDI_EXPORT size_t opn2_metaMarkerCount(struct OPN2_MIDIPlayer *device)
         return 0;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
     assert(play);
-    return play->m_sequencer->getMarkers().size();
+    return play->m_sequencer->getMarkers().size;
 #else
     ADL_UNUSED(device);
     return 0;
@@ -913,8 +913,8 @@ OPNMIDI_EXPORT Opn2_MarkerEntry opn2_metaMarker(struct OPN2_MIDIPlayer *device, 
     MidiPlayer *play = GET_MIDI_PLAYER(device);
     assert(play);
 
-    const std::vector<MidiSequencer::MIDI_MarkerEntry> &markers = play->m_sequencer->getMarkers();
-    if(index >= markers.size())
+    const MidiSequencer::MusMarkersList &markers = play->m_sequencer->getMarkers();
+    if(index >= markers.size)
     {
         marker.label = "INVALID";
         marker.pos_time = 0.0;
