@@ -154,7 +154,7 @@ enum OPNMIDI_ChannelAlloc
  */
 enum OPNMIDI_DeviceFilter
 {
-    OPNMIDI_Device_GeneralMidi      = 0x0001, // MPU-401 counted as here
+    OPNMIDI_Device_GeneralMidi      = 0x0001, /* MPU-401 counted as here */
     OPNMIDI_Device_OPL2             = 0x0002,
     OPNMIDI_Device_OPL3             = 0x0004,
     OPNMIDI_Device_MT32             = 0x0008,
@@ -162,7 +162,7 @@ enum OPNMIDI_DeviceFilter
     OPNMIDI_Device_WaveBlaster      = 0x0020,
     OPNMIDI_Device_ProAudioSpectrum = 0x0040,
     OPNMIDI_Device_SoundMan16       = 0x0080,
-    OPNMIDI_Device_DIGI             = 0x0100, // Digital samples controlled by MIDI
+    OPNMIDI_Device_DIGI             = 0x0100, /* Digital samples controlled by MIDI */
     OPNMIDI_Device_SoundScape       = 0x0200,
     OPNMIDI_Device_WaveTable        = 0x0400,
     OPNMIDI_Device_GravisUltrasound = 0x0800,
