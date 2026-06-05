@@ -63,6 +63,9 @@ void OPNMIDIplay::OpnChannel::addAge(int64_t us)
 }
 
 OPNMIDIplay::OPNMIDIplay(unsigned long sampleRate) :
+#ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
+    m_sequencerDeviceMask(OPNMIDI_Device_OPL2 | OPNMIDI_Device_OPL3),
+#endif
     m_sysExDeviceId(0),
     m_synthMode(Mode_XG),
     m_arpeggioCounter(0)
@@ -278,6 +281,7 @@ void OPNMIDIplay::TickIterators(double s)
 void OPNMIDIplay::realTime_ResetState()
 {
     Synth &synth = *m_synth;
+
     for(size_t ch = 0; ch < m_midiChannels.size(); ch++)
     {
         MIDIchannel &chan = m_midiChannels[ch];
@@ -291,6 +295,7 @@ void OPNMIDIplay::realTime_ResetState()
         noteUpdateAll(uint16_t(ch), Upd_All);
         noteUpdateAll(uint16_t(ch), Upd_Off);
     }
+
     synth.m_masterVolume = MasterVolumeDefault;
 }
 
@@ -298,7 +303,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
 {
     Synth &synth = *m_synth;
 
-    if(note >= 127)
+    if(note > 127)
         note = 127;
 
     if((synth.m_musicMode == Synth::MODE_RSXX) && (velocity != 0))
@@ -376,6 +381,7 @@ bool OPNMIDIplay::realTime_NoteOn(uint8_t channel, uint8_t note, uint8_t velocit
     //Set bank bank
     const Synth::Bank *bnk = NULL;
     bool caughtMissingBank = false;
+
     if((bank & ~static_cast<uint16_t>(Synth::PercussionTag)) > 0)
     {
         Synth::BankMap::iterator b = synth.m_insBanks.find(bank);
@@ -668,6 +674,7 @@ void OPNMIDIplay::realTime_Controller(uint8_t channel, uint8_t type, uint8_t val
 {
     if(static_cast<size_t>(channel) > m_midiChannels.size())
         channel = channel % 16;
+
     switch(type)
     {
     case 1: // Adjust vibrato
@@ -1637,7 +1644,7 @@ void OPNMIDIplay::setRPN(size_t midCh, unsigned value, bool MSB)
         m_midiChannels[midCh].bendsense_lsb = static_cast<int>(value);
         m_midiChannels[midCh].updateBendSensitivity();
         break;
-    case 0x0108 + 1*0x10000 + 1*0x20000: // Vibrato speed
+    case 0x0108 + 1*0x10000 + 1*0x20000:
         if((m_synthMode & Mode_XG) != 0) // Vibrato speed
         {
             if(value == 64)      m_midiChannels[midCh].vibspeed = 1.0;
@@ -1794,7 +1801,7 @@ retry_arpeggio:
                 rate_reduction = 1;
 
             for(size_t count = (m_arpeggioCounter / rate_reduction) % n_users,
-                     n = 0; n < count; ++n)
+                n = 0; n < count; ++n)
                 ++i;
 
             OpnChannel::LocationData &d = i->value;
@@ -1827,6 +1834,7 @@ void OPNMIDIplay::updateGlide(double amount)
     for(size_t channel = 0; channel < num_channels; ++channel)
     {
         MIDIchannel &midiChan = m_midiChannels[channel];
+
         if(midiChan.gliding_note_count == 0)
             continue;
 
@@ -1862,13 +1870,16 @@ void OPNMIDIplay::describeChannels(char *str, char *attr, size_t size)
     uint32_t numChannels = synth.m_numChannels;
 
     uint32_t index = 0;
+
     while(index < numChannels && index < size - 1)
     {
         const OpnChannel &adlChannel = m_chipChannels[index];
 
         OpnChannel::const_users_iterator loc = adlChannel.users.begin();
         OpnChannel::const_users_iterator locnext(loc);
-        if(!loc.is_end()) ++locnext;
+
+        if(!loc.is_end())
+            ++locnext;
 
         if(loc.is_end())  // off
         {
@@ -1884,8 +1895,8 @@ void OPNMIDIplay::describeChannels(char *str, char *attr, size_t size)
         }
 
         uint8_t attribute = 0;
-        if (!loc.is_end())  // 4-bit color index of MIDI channel
-            attribute |= uint8_t(loc->value.loc.MidCh & 0xF);
+        if(!loc.is_end())  // 4-bit color index of MIDI channel
+            attribute |= (uint8_t)(loc->value.loc.MidCh & 0xF);
 
         attr[index] = static_cast<char>(attribute);
         ++index;
@@ -1894,194 +1905,3 @@ void OPNMIDIplay::describeChannels(char *str, char *attr, size_t size)
     str[index] = 0;
     attr[index] = 0;
 }
-
-/* TODO */
-
-//#ifndef ADLMIDI_DISABLE_CPP_EXTRAS
-
-//ADLMIDI_EXPORT AdlInstrumentTester::AdlInstrumentTester(ADL_MIDIPlayer *device)
-//{
-//    cur_gm   = 0;
-//    ins_idx  = 0;
-//    play = reinterpret_cast<MIDIplay *>(device->adl_midiPlayer);
-//    if(!play)
-//        return;
-//    opl = &play->opl;
-//}
-
-//ADLMIDI_EXPORT AdlInstrumentTester::~AdlInstrumentTester()
-//{}
-
-//ADLMIDI_EXPORT void AdlInstrumentTester::FindAdlList()
-//{
-//    const unsigned NumBanks = (unsigned)adl_getBanksCount();
-//    std::set<unsigned> adl_ins_set;
-//    for(unsigned bankno = 0; bankno < NumBanks; ++bankno)
-//        adl_ins_set.insert(banks[bankno][cur_gm]);
-//    adl_ins_list.assign(adl_ins_set.begin(), adl_ins_set.end());
-//    ins_idx = 0;
-//    NextAdl(0);
-//    opl->Silence();
-//}
-
-
-
-//ADLMIDI_EXPORT void AdlInstrumentTester::Touch(unsigned c, unsigned volume) // Volume maxes at 127*127*127
-//{
-//    if(opl->LogarithmicVolumes)
-//        opl->Touch_Real(c, volume * 127 / (127 * 127 * 127) / 2);
-//    else
-//    {
-//        // The formula below: SOLVE(V=127^3 * 2^( (A-63.49999) / 8), A)
-//        opl->Touch_Real(c, volume > 8725 ? static_cast<unsigned int>(std::log((double)volume) * 11.541561 + (0.5 - 104.22845)) : 0);
-//        // The incorrect formula below: SOLVE(V=127^3 * (2^(A/63)-1), A)
-//        //Touch_Real(c, volume>11210 ? 91.61112 * std::log(4.8819E-7*volume + 1.0)+0.5 : 0);
-//    }
-//}
-
-//ADLMIDI_EXPORT void AdlInstrumentTester::DoNote(int note)
-//{
-//    if(adl_ins_list.empty()) FindAdlList();
-//    const unsigned meta = adl_ins_list[ins_idx];
-//    const adlinsdata &ains = opl->GetAdlMetaIns(meta);
-
-//    int tone = (cur_gm & 128) ? (cur_gm & 127) : (note + 50);
-//    if(ains.tone)
-//    {
-//        /*if(ains.tone < 20)
-//                tone += ains.tone;
-//            else */
-//        if(ains.tone < 128)
-//            tone = ains.tone;
-//        else
-//            tone -= ains.tone - 128;
-//    }
-//    double hertz = 172.00093 * std::exp(0.057762265 * (tone + 0.0));
-//    int i[2] = { ains.adlno1, ains.adlno2 };
-//    int32_t adlchannel[2] = { 0, 3 };
-//    if(i[0] == i[1])
-//    {
-//        adlchannel[1] = -1;
-//        adlchannel[0] = 6; // single-op
-//        if(play->hooks.onDebugMessage)
-//        {
-//            play->hooks.onDebugMessage(play->hooks.onDebugMessage_userData,
-//                                       "noteon at %d(%d) for %g Hz\n", adlchannel[0], i[0], hertz);
-//        }
-//    }
-//    else
-//    {
-//        if(play->hooks.onDebugMessage)
-//        {
-//            play->hooks.onDebugMessage(play->hooks.onDebugMessage_userData,
-//                                       "noteon at %d(%d) and %d(%d) for %g Hz\n", adlchannel[0], i[0], adlchannel[1], i[1], hertz);
-//        }
-//    }
-
-//    opl->NoteOff(0);
-//    opl->NoteOff(3);
-//    opl->NoteOff(6);
-//    for(unsigned c = 0; c < 2; ++c)
-//    {
-//        if(adlchannel[c] < 0) continue;
-//        opl->Patch((uint16_t)adlchannel[c], (uint16_t)i[c]);
-//        opl->Touch_Real((uint16_t)adlchannel[c], 127 * 127 * 100);
-//        opl->Pan((uint16_t)adlchannel[c], 0x30);
-//        opl->NoteOn((uint16_t)adlchannel[c], hertz);
-//    }
-//}
-
-//ADLMIDI_EXPORT void AdlInstrumentTester::NextGM(int offset)
-//{
-//    cur_gm = (cur_gm + 256 + (uint32_t)offset) & 0xFF;
-//    FindAdlList();
-//}
-
-//ADLMIDI_EXPORT void AdlInstrumentTester::NextAdl(int offset)
-//{
-//    if(adl_ins_list.empty()) FindAdlList();
-//    const unsigned NumBanks = (unsigned)adl_getBanksCount();
-//    ins_idx = (uint32_t)((int32_t)ins_idx + (int32_t)adl_ins_list.size() + offset) % adl_ins_list.size();
-
-//    #if 0
-//    UI.Color(15);
-//    std::fflush(stderr);
-//    std::printf("SELECTED G%c%d\t%s\n",
-//                cur_gm < 128 ? 'M' : 'P', cur_gm < 128 ? cur_gm + 1 : cur_gm - 128,
-//                "<-> select GM, ^v select ins, qwe play note");
-//    std::fflush(stdout);
-//    UI.Color(7);
-//    std::fflush(stderr);
-//    #endif
-
-//    for(unsigned a = 0; a < adl_ins_list.size(); ++a)
-//    {
-//        const unsigned i = adl_ins_list[a];
-//        const adlinsdata &ains = opl->GetAdlMetaIns(i);
-
-//        char ToneIndication[8] = "   ";
-//        if(ains.tone)
-//        {
-//            /*if(ains.tone < 20)
-//                    snprintf(ToneIndication, 8, "+%-2d", ains.tone);
-//                else*/
-//            if(ains.tone < 128)
-//                snprintf(ToneIndication, 8, "=%-2d", ains.tone);
-//            else
-//                snprintf(ToneIndication, 8, "-%-2d", ains.tone - 128);
-//        }
-//        std::printf("%s%s%s%u\t",
-//                    ToneIndication,
-//                    ains.adlno1 != ains.adlno2 ? "[2]" : "   ",
-//                    (ins_idx == a) ? "->" : "\t",
-//                    i
-//                   );
-
-//        for(unsigned bankno = 0; bankno < NumBanks; ++bankno)
-//            if(banks[bankno][cur_gm] == i)
-//                std::printf(" %u", bankno);
-
-//        std::printf("\n");
-//    }
-//}
-
-//ADLMIDI_EXPORT bool AdlInstrumentTester::HandleInputChar(char ch)
-//{
-//    static const char notes[] = "zsxdcvgbhnjmq2w3er5t6y7ui9o0p";
-//    //                           c'd'ef'g'a'bC'D'EF'G'A'Bc'd'e
-//    switch(ch)
-//    {
-//    case '/':
-//    case 'H':
-//    case 'A':
-//        NextAdl(-1);
-//        break;
-//    case '*':
-//    case 'P':
-//    case 'B':
-//        NextAdl(+1);
-//        break;
-//    case '-':
-//    case 'K':
-//    case 'D':
-//        NextGM(-1);
-//        break;
-//    case '+':
-//    case 'M':
-//    case 'C':
-//        NextGM(+1);
-//        break;
-//    case 3:
-//        #if !((!defined(__WIN32__) || defined(__CYGWIN__)) && !defined(__DJGPP__))
-//    case 27:
-//        #endif
-//        return false;
-//    default:
-//        const char *p = std::strchr(notes, ch);
-//        if(p && *p)
-//            DoNote((int)(p - notes) - 12);
-//    }
-//    return true;
-//}
-
-//#endif//ADLMIDI_DISABLE_CPP_EXTRAS

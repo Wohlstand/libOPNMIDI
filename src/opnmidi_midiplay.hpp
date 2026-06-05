@@ -205,7 +205,7 @@ public:
             {
                 //! Destination chip channel
                 uint16_t chip_chan;
-                //! ins, inde to adl[]
+                //! Instrument entry
                 const OpnTimbre *ains;
                 //! Should we play the second voice?
                 bool dbl_voice;
@@ -213,6 +213,7 @@ public:
                 void assign(const Phys &oth)
                 {
                     ains = oth.ains;
+                    dbl_voice = oth.dbl_voice;
                 }
 
                 bool operator==(const Phys &oth) const
@@ -267,7 +268,7 @@ public:
             void phys_erase_at(const Phys *ph)
             {
                 intptr_t pos = ph - chip_channels;
-                assert(pos < static_cast<intptr_t>(chip_channels_count));
+                assert(pos >= 0 && pos < static_cast<intptr_t>(chip_channels_count));
 
                 for(intptr_t i = pos + 1; i < static_cast<intptr_t>(chip_channels_count) && i < MaxNumPhysItemCount; ++i)
                     chip_channels[i - 1] = chip_channels[i];
@@ -424,7 +425,9 @@ public:
             is_xg_percussion = false;
         }
 
-
+        /**
+         * @brief Reset all MIDI controllers into initial state
+         */
         void resetAllControllers()
         {
             volume  = def_volume;
@@ -435,7 +438,7 @@ public:
         }
 
         /**
-         * @brief Reset all MIDI controllers into initial state
+         * @brief Reset all MIDI controllers into initial state (CC121)
          */
         void resetAllControllers121()
         {
@@ -602,6 +605,11 @@ public:
      * @brief Interface between MIDI sequencer and this library
      */
     AdlMIDI_UPtr<BW_MidiRtInterface> m_sequencerInterface;
+
+    /**
+     * @brief Devices filter mask state (#OPNMIDI_DeviceFilter)
+     */
+    uint32_t m_sequencerDeviceMask;
 
     /**
      * @brief Initialize MIDI sequencer interface
@@ -869,7 +877,7 @@ public:
     /**
      * @brief MSB Bank Change CC
      * @param channel MIDI channel
-     * @param lsb MSB value of bank number
+     * @param msb MSB value of bank number
      */
     void realTime_BankChangeMSB(uint8_t channel, uint8_t msb);
 
@@ -1018,6 +1026,11 @@ private:
                     unsigned props_mask,
                     int32_t select_adlchn = -1);
 
+    /**
+     * @brief Update all notes in specified MIDI channel
+     * @param midCh MIDI channel to update all notes in it
+     * @param props_mask Properties to update
+     */
     void noteUpdateAll(size_t midCh, unsigned props_mask);
 
     /**

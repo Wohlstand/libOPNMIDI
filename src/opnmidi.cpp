@@ -510,6 +510,21 @@ OPNMIDI_EXPORT int opn2_getChannelAllocMode(struct OPN2_MIDIPlayer *device)
     return static_cast<int>(play->m_synth->m_channelAlloc);
 }
 
+OPNMIDI_EXPORT void opn2_setDeviceFilterMask(struct OPN2_MIDIPlayer *device, OPN2_UInt32 mask)
+{
+#ifndef ADLMIDI_DISABLE_MIDI_SEQUENCER
+    if(!device)
+        return;
+
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
+    play->m_sequencerDeviceMask = mask;
+#else
+    (void)device;
+    (void)mask;
+#endif
+}
+
 OPNMIDI_EXPORT int opn2_getVolumeRangeModel(struct OPN2_MIDIPlayer *device)
 {
     if(!device)

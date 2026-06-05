@@ -227,8 +227,7 @@ bool OPNMIDIplay::LoadMIDI(const std::string &filename)
 
     MidiSequencer &seq = *m_sequencer;
 
-    // FIXME: Implement public libADLMIDI's API to choice this
-    seq.setDeviceMask(MidiSequencer::Device_OPL2|MidiSequencer::Device_OPL3);
+    seq.setDeviceMask(m_sequencerDeviceMask);
 
     if(!seq.loadMIDI(file))
     {
@@ -251,8 +250,7 @@ bool OPNMIDIplay::LoadMIDI(const void *data, size_t size)
 
     MidiSequencer &seq = *m_sequencer;
 
-    // FIXME: Implement public libADLMIDI's API to choice this
-    seq.setDeviceMask(MidiSequencer::Device_OPL2|MidiSequencer::Device_OPL3);
+    seq.setDeviceMask(m_sequencerDeviceMask);
 
     if(!seq.loadMIDI(file))
     {
