@@ -28,6 +28,36 @@
 #define PATH_BUFFER_SIZE        256
 #define CHARACTERS_PER_LINE     12
 
+#if defined(_MSC_VER) && _MSC_VER < 1900
+#   define snprintf c99_snprintf
+#   define vsnprintf c99_vsnprintf
+
+int c99_vsnprintf(char *outBuf, size_t size, const char *format, va_list ap)
+{
+    int count = -1;
+
+    if (size != 0)
+        count = _vsnprintf_s(outBuf, size, _TRUNCATE, format, ap);
+    if (count == -1)
+        count = _vscprintf(format, ap);
+
+    return count;
+}
+
+int c99_snprintf(char *outBuf, size_t size, const char *format, ...)
+{
+    int count;
+    va_list ap;
+
+    va_start(ap, format);
+    count = c99_vsnprintf(outBuf, size, format, ap);
+    va_end(ap);
+
+    return count;
+}
+#endif
+
+
 void printUsage(char *arg0)
 {
     fprintf(stderr,
@@ -99,7 +129,7 @@ int main(int argc, char *argv[])
         outName = argv[2];
     else
     {
-        sprintf(outNameBuff, "%s.h", argv[1]);
+        snprintf(outNameBuff, PATH_BUFFER_SIZE, "%s.h", argv[1]);
         outName = outNameBuff;
     }
 
@@ -113,6 +143,7 @@ int main(int argc, char *argv[])
     outFile = fopen(outName, "w");
     if(!outFile)
     {
+        fclose(inFile);
         fprintf(stderr, "ERROR: Can't output input file %s\n", outName);
         return 1;
     }
@@ -132,6 +163,8 @@ int main(int argc, char *argv[])
 
     printFooter(outFile);
 
+    fclose(inFile);
+    fclose(outFile);
+
     return 0;
 }
-
