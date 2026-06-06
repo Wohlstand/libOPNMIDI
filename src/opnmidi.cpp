@@ -512,7 +512,7 @@ OPNMIDI_EXPORT int opn2_getChannelAllocMode(struct OPN2_MIDIPlayer *device)
 
 OPNMIDI_EXPORT void opn2_setDeviceFilterMask(struct OPN2_MIDIPlayer *device, OPN2_UInt32 mask)
 {
-#ifndef ADLMIDI_DISABLE_MIDI_SEQUENCER
+#ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER
     if(!device)
         return;
 
