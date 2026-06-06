@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
         outName = argv[2];
     else
     {
-        sprintf(outNameBuff, "%s.h", argv[1]);
+        snprintf(outNameBuff, sizeof(outNameBuff), "%s.h", argv[1]);
         outName = outNameBuff;
     }
 
