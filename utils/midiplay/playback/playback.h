@@ -38,8 +38,10 @@ extern int stop;
 #if !defined(ADLMIDI_ENABLE_HW_DOS)
 const char* audio_format_to_str(int format, int is_msb);
 void fillAudioFormat(const AudioOutputSpec &spec);
+void getWavFormat(const AudioOutputSpec &wanted, AudioOutputSpec &obtained);
 
 void applyGain(uint8_t *buffer, size_t bufferSize);
+size_t stereoToMono(uint8_t *buffer, size_t bufferSize);
 #endif
 
 
@@ -47,7 +49,7 @@ void applyGain(uint8_t *buffer, size_t bufferSize);
 int runAudioLoop(OPN2_MIDIPlayer *myDevice, AudioOutputSpec &spec);
 #endif
 
-int runWaveOutLoopLoop(OPN2_MIDIPlayer *myDevice, const std::string &musPath, const AudioOutputSpec &obtained, unsigned sampleRate);
+int runWaveOutLoopLoop(OPN2_MIDIPlayer *myDevice, const std::string &musPath, const AudioOutputSpec &spec, unsigned sampleRate);
 
 
 #endif /* MIDIPLAY_PLAYBACK_H */

@@ -177,6 +177,8 @@ int runAudioLoop(OPN2_MIDIPlayer *myDevice, AudioOutputSpec &spec)
 
     size_t got;
     uint8_t buff[4096];
+    bool isMono = obtained.channels == 1;
+    size_t out_buffer_size = static_cast<size_t>(obtained.samples + (obtained.freq * (isMono ? g_audioFormat.sampleOffset >> 1 : g_audioFormat.sampleOffset)) * OurHeadRoomLength);
 
     audio_start();
 
@@ -192,6 +194,9 @@ int runAudioLoop(OPN2_MIDIPlayer *myDevice, AudioOutputSpec &spec)
                                       &g_audioFormat) * g_audioFormat.containerSize;
         if(got <= 0)
             break;
+
+        if(isMono)
+            got = stereoToMono(buff, got);
 
 #   ifdef DEBUG_TRACE_ALL_CHANNELS
         enum { TerminalColumns = 80 };
@@ -220,11 +225,8 @@ int runAudioLoop(OPN2_MIDIPlayer *myDevice, AudioOutputSpec &spec)
 #endif
         g_audioBuffer_lock.Unlock();
 
-        const AudioOutputSpec &spec = obtained;
-        while(!stop && (g_audioBuffer.size() > static_cast<size_t>(spec.samples + (spec.freq * g_audioFormat.sampleOffset) * OurHeadRoomLength)))
-        {
+        while(!stop && (g_audioBuffer.size() > out_buffer_size))
             audio_delay(1);
-        }
 
 #       if defined(DEBUG_SONG_SWITCHING) || defined(ENABLE_TERMINAL_HOTKEYS)
         if(kbhit())

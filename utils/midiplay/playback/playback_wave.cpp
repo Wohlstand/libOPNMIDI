@@ -31,14 +31,18 @@
 #include "wave_writer.h"
 
 
-int runWaveOutLoopLoop(OPN2_MIDIPlayer *myDevice, const std::string &musPath, const AudioOutputSpec &obtained, unsigned sampleRate)
+int runWaveOutLoopLoop(OPN2_MIDIPlayer *myDevice, const std::string &musPath, const AudioOutputSpec &spec, unsigned sampleRate)
 {
+    AudioOutputSpec obtained;
     std::string wave_out = musPath + ".wav";
 
+    getWavFormat(spec, obtained);
     fillAudioFormat(obtained);
 
     s_fprintf(stdout, " - Output WAV spec (format=%s,samples=%d,rate=%u,channels=%u);\n",
               audio_format_to_str(obtained.format, obtained.is_msb), obtained.samples, obtained.freq, obtained.channels);
+
+    bool isMono = obtained.channels == 1;
 
     int wav_format = obtained.format == OPNMIDI_SampleType_F32 ? WAVE_FORMAT_IEEE_FLOAT : WAVE_FORMAT_PCM;
     int wav_has_sign = obtained.format != OPNMIDI_SampleType_U8 && obtained.format != OPNMIDI_SampleType_U16;
@@ -70,6 +74,9 @@ int runWaveOutLoopLoop(OPN2_MIDIPlayer *myDevice, const std::string &musPath, co
                                                  &g_audioFormat) * g_audioFormat.containerSize;
             if(got <= 0)
                 break;
+
+            if(isMono)
+                got = stereoToMono(buff, got);
 
             applyGain(buff, got);
 
