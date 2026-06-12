@@ -172,6 +172,8 @@ To remove MIDI Sequencer, define `OPNMIDI_DISABLE_MIDI_SEQUENCER` macro and remo
  * Optimized work with chip instruments.
  * Fixed the silence problem at the MIDI channel after playing too many notes without Note OFF event.
  * Added `opn2_setDeviceFilterMask()` public API to assign the device filter mask for the HMI/HMP/EMIDI tracks disabling/enabling.
+ * Added handling of music files designed for the EMIDI standard from the Apogee Sound System. This feature must be enabled manually to avoid heuristics and possible conflicts.
+ * Added `opn2_setModeEMIDI()` public API to enable handling EMIDI specification events without conflicts to other formats.
 
 ## 1.6.1   2025-09-22
  * Added four extra heavy but very accurate Nuked LLE emulators (on weak machines suitable for WAV writing only).

@@ -493,6 +493,15 @@ extern OPNMIDI_DECLSPEC void opn2_setAutoArpeggio(struct OPN2_MIDIPlayer *device
 extern OPNMIDI_DECLSPEC int opn2_getAutoArpeggio(struct OPN2_MIDIPlayer *device);
 
 /**
+ * @brief Enable or disable the handling of events according Apogee Sound System's EMIDI standard for MIDI files
+ * @param device Instance of the library
+ * @param emidiEn 0 - disabled, 1 - enabled
+ *
+ * Note: The mode must be set before loading the MIDI file, otherwise this option will take no effect
+ */
+extern OPNMIDI_DECLSPEC void opn2_setModeEMIDI(struct OPN2_MIDIPlayer *device, int emidiEn);
+
+/**
  * @brief Enable or disable built-in loop (built-in loop supports 'loopStart' and 'loopEnd' tags to loop specific part)
  * @param device Instance of the library
  * @param loopEn 0 - disabled, 1 - enabled

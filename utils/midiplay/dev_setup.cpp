@@ -95,7 +95,10 @@ Args::Args() :
 #endif
     scaleModulators(false),
     fullRangedBrightness(false),
+#if !defined(OUTPUT_WAVE_ONLY)
     loopEnabled(1),
+#endif
+    modeEMIDI(0),
     autoArpeggioEnabled(0),
     chanAlloc(OPNMIDI_ChanAlloc_AUTO),
     fullPanEnabled(false),
@@ -145,6 +148,7 @@ int Args::parseArgs(int argc, char **argv_arr, bool *quit)
             "                     where <num> - space separated numbers list (0-based!):"
             "                     Example: \"-mc 2 5 6 will\" mute channels 2, 5 and 6.\n"
             " --song <song ID 0...N-1> Selects a song to play (if XMI)\n"
+            " --emidi Enables handling of MIDI files as Apogee Sound System EMIDI\n"
             " -nl               Quit without looping\n"
             " -ea               Enable the auto-arpeggio\n"
             " -fp               Enables full-panning stereo support\n"
@@ -227,8 +231,12 @@ int Args::parseArgs(int argc, char **argv_arr, bool *quit)
             spec.format = OPNMIDI_SampleType_S32;
         else if(!std::strcmp("-f32", argv[arg]))
             spec.format = OPNMIDI_SampleType_F32;
+#if !defined(OUTPUT_WAVE_ONLY)
         else if(!std::strcmp("-nl", argv[arg]))
             loopEnabled = 0; //Enable loop
+#endif
+        else if(!std::strcmp("--emidi", argv[arg]))
+            modeEMIDI = 1; //Enable EMIDI mode
         else if(!std::strcmp("-na", argv[arg]))
             autoArpeggioEnabled = 0;
         else if(!std::strcmp("-ea", argv[arg]))

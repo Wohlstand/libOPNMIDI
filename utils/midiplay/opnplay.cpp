@@ -159,6 +159,8 @@ int main(int argc, char **argv)
     opn2_setLoopEnabled(myDevice, s_devSetup.recordWave ? 0 : s_devSetup.loopEnabled);
 #endif
 
+    opn2_setModeEMIDI(myDevice, s_devSetup.modeEMIDI);
+
     opn2_setVolumeRangeModel(myDevice, OPNMIDI_VolumeModel_Generic);
     opn2_setAutoArpeggio(myDevice, s_devSetup.autoArpeggioEnabled);
     opn2_setChannelAllocMode(myDevice, s_devSetup.chanAlloc);

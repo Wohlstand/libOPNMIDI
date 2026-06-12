@@ -403,6 +403,22 @@ OPNMIDI_EXPORT int opn2_getAutoArpeggio(OPN2_MIDIPlayer *device)
     return play->m_setup.enableAutoArpeggio ? 1 : 0;
 }
 
+OPNMIDI_EXPORT void opn2_setModeEMIDI(OPN2_MIDIPlayer *device, int emidiEn)
+{
+#ifndef ADLMIDI_DISABLE_MIDI_SEQUENCER
+    if(!device)
+        return;
+
+    MidiPlayer *play = GET_MIDI_PLAYER(device);
+    assert(play);
+    play->m_sequencer->setModeEMIDI(emidiEn != 0);
+#else
+    ADL_UNUSED(device);
+    ADL_UNUSED(emidiEn);
+#endif
+}
+
+
 OPNMIDI_EXPORT void opn2_setLoopEnabled(OPN2_MIDIPlayer *device, int loopEn)
 {
 #ifndef OPNMIDI_DISABLE_MIDI_SEQUENCER

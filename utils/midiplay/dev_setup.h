@@ -47,7 +47,10 @@ struct Args
 #endif
     bool scaleModulators;
     bool fullRangedBrightness;
+#if !defined(OUTPUT_WAVE_ONLY)
     int loopEnabled;
+#endif
+    int  modeEMIDI;
     int autoArpeggioEnabled;
     int chanAlloc;
     bool fullPanEnabled;
