@@ -1,13 +1,10 @@
-This bank is based off the instruments captured from Doom32x released for the
-Sega 32X, and also was been combined with instruments from the fmsynth.wopn bank.
+This is the default instruments bank that implements General MIDI standard some
+instruments of the XG set and shipped with the libOPNMIDI as the default bank.
 
-Original music for the Sega 32X was a hot garbage because of wrong setup of
-chip instruments (possibly made in a serious hurrying, and was not properly
-finished).
-
-This bank implements the RIGHT and complete set of General MIDI and shows how
-MUST the Doom for Sega 32X to sound if the bank would be correct and more
-complete.
+It was built from the scratch, using hundreds of different instruments as
+examples and various other banks as sources that were been modified and adjusted
+to sound cleaner. Some instruments are attempts to replicate similar instruments
+at banks for the OPL3.
 
 This bank can be freely used, modified, shared with any purposes.
 
@@ -17,13 +14,12 @@ To edit this bank and other banks in WOPN format, you can use this editor
 which I created for that: https://github.com/Wohlstand/OPN2BankEditor
 
 ==============================================================================
-Vitaliy Novichkov "Wohlstand", 2025-2026
-
+Vitaliy Novichkov "Wohlstand", 2018-2026
 
 ==============================================================================
 MIT License
 
-Copyright (c) 2025-2026 Vitaliy Novichkov
+Copyright (c) 2018-2026 Vitaliy Novichkov
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

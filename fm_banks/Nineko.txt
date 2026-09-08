@@ -1,0 +1,23 @@
+This is the default bank from the Nineko's MIDI2VGM VB6-written utility.
+It contained no drums, and therefore, the drumkit was imported from the
+"gems-fmlib-gmize.wopn" bank.
+
+Original goes from the here: https://vgmrips.net/forum/viewtopic.php?t=1929
+(The midi2vgm 2612 entry)
+
+================================================================================
+This bank is a Public Domain.
+================================================================================
+State of ValleyBell on 8'th of September, 2026:
+(https://github.com/UZDoom/UZDoom/pull/1787#issuecomment-5574251563)
+--------------------------------------------------------------------------------
+IIRC the original "nineko" sound bank was posted by Sonic Retro forum user
+nineko here: https://forums.sonicretro.org/threads/midi-to-vgm-converter-ym2612-edition.23851/
+- though in a slightly different format. (GYB v1)
+
+I'm pretty sure that all instruments were ripped from existing MegaDrive games,
+because back in 2010 that was how you got FM instruments. So maybe that's the
+true "gray zone"?
+
+I myself consider the bank (in the form published alongside mid2vgm 2612)
+"public domain", i.e. do whatever you want with it.
