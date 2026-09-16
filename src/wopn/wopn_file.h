@@ -95,7 +95,9 @@ typedef enum WOPN_ErrorCodes
     /* Out of memory */
     WOPN_ERR_OUT_OF_MEMORY,
     /* Given null pointer memory data */
-    WOPN_ERR_NULL_POINTER
+    WOPN_ERR_NULL_POINTER,
+    /* Version of file is not a version of the format */
+    WOPN_ERR_INVALID_VERSION
 } WOPN_ErrorCodes;
 
 /* OPN2 Oerators data  */
