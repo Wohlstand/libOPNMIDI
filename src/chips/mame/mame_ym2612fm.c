@@ -1711,7 +1711,7 @@ INLINE void chan_calc(YM2612 *F2612, FM_OPN *OPN, FM_CH *CH)
       if (!CH->FB)
         out=0;
 
-      CH->op1_out[1] = op_calc1(CH->SLOT[SLOT1].phase, eg_out, (out<<CH->FB) );
+      CH->op1_out[1] = op_calc1(CH->SLOT[SLOT1].phase, eg_out, (out * (1 << CH->FB)) );
     }
   }
 
@@ -2581,7 +2581,7 @@ void ym2612_postload(void *chip)
 		int r;
 
 		/* DAC data & port */
-		F2612->dacout = ((int)F2612->REGS[0x2a] - 0x80) << 6;	/* level unknown */
+		F2612->dacout = ((int)F2612->REGS[0x2a] - 0x80) * 64;	/* level unknown */
 		F2612->dacen  = F2612->REGS[0x2d] & 0x80;
 		/* OPN registers */
 		/* DT / MULTI , TL , KS / AR , AMON / DR , SR , SL / RR , SSG-EG */
@@ -2789,7 +2789,7 @@ int ym2612_write(void *chip, int a, UINT8 v)
 			{
 			case 0x2a:	/* DAC data (YM2612) */
 				ym2612_update_one(chip, DUMMYBUF, 0);
-				F2612->dacout = ((int)v - 0x80) << 6;	/* level unknown */
+				F2612->dacout = ((int)v - 0x80) * 64;	/* level unknown */
 				break;
 			case 0x2b:	/* DAC Sel  (YM2612) */
 				/* b7 = dac enable */

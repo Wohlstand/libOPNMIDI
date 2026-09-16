@@ -1423,7 +1423,7 @@ static inline void chan_calc(FM_OPN *OPN, FM_CH *CH, int chnum)
 			if (!CH->FB)
 				out=0;
 
-			CH->op1_out[1] = op_calc1(CH->SLOT[SLOT1].phase, eg_out, (out<<CH->FB) );
+			CH->op1_out[1] = op_calc1(CH->SLOT[SLOT1].phase, eg_out, (out * (1 << CH->FB)) );
 		}
 	}
 
