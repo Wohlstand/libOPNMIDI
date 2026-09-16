@@ -270,6 +270,11 @@ WOPNFile *WOPN_LoadBankFromMem(void *mem, size_t length, int *error)
             return NULL;
         }
         version = toUint16LE(cursor);
+        if(version == 0)
+        {
+            SET_ERROR(WOPN_ERR_INVALID_VERSION);
+            return NULL;
+        }
         if(version > wopn_latest_version)
         {
             SET_ERROR(WOPN_ERR_NEWER_VERSION);
@@ -386,6 +391,8 @@ int WOPN_LoadInstFromMem(OPNIFile *file, void *mem, size_t length)
         if(length < 2)
             return WOPN_ERR_UNEXPECTED_ENDING;
         version = toUint16LE(cursor);
+        if(version == 0)
+            return WOPN_ERR_INVALID_VERSION;
         if(version > wopn_latest_version)
             return WOPN_ERR_NEWER_VERSION;
         GO_FORWARD(2);

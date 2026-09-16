@@ -101,6 +101,9 @@ bool OPNMIDIplay::LoadBank(FileAndMemReader &fr)
         case WOPN_ERR_NEWER_VERSION:
             errorStringOut = "Custom bank: Version is newer than supported by this library!";
             return false;
+        case WOPN_ERR_INVALID_VERSION:
+            errorStringOut = "Custom bank: Invalid version!";
+            return false;
         case WOPN_ERR_OUT_OF_MEMORY:
             errorStringOut = "Custom bank: Out of memory!";
             return false;
