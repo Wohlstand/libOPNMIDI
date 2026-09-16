@@ -819,7 +819,7 @@ int Ym2612Private::YM_SET(int address, uint8_t data)
 
 		case 0x2A:
 			// Set the DAC value.
-			state.DACdata = ((int)data - 0x80) << 7;	// donnée du DAC
+			state.DACdata = ((int)data - 0x80) * 128;	// donnée du DAC
 			break;
 
 		case 0x2B:
@@ -1784,7 +1784,7 @@ int Ym2612::write(unsigned int address, uint8_t data)
 		case 1:
 			// Trivial optimization for DAC.
 			if (d->state.OPNAadr == 0x2A) {
-				d->state.DACdata = ((int)data - 0x80) << 7;
+				d->state.DACdata = ((int)data - 0x80) * 128;
 				return 0;
 			}
 
