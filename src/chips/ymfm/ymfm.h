@@ -256,7 +256,7 @@ inline int16_t roundtrip_fp(int32_t value)
 
 	// apply the shift back and forth to zero out bits that are lost
 	exponent -= 1;
-	return (value >> exponent) << exponent;
+	return (value >> exponent) * (1 << exponent);
 }
 
 
