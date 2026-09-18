@@ -67,7 +67,7 @@ class Ym2612Private
 			unsigned int *DR; // Decay Rate (table pointeur) = Taux pour la régression (DR[KSR])
 			unsigned int *SR; // Sustin Rate (table pointeur) = Taux pour le maintien (SR[KSR])
 			unsigned int *RR; // Release Rate (table pointeur) = Taux pour le relâchement (RR[KSR])
-			int Fcnt;	// Frequency Count = compteur-fréquence pour déterminer l'amplitude actuelle (SIN[Finc >> 16])
+			unsigned int Fcnt;	// Frequency Count = compteur-fréquence pour déterminer l'amplitude actuelle (SIN[Finc >> 16])
 			int Finc;	// frequency step = pas d'incrémentation du compteur-fréquence
 						// plus le pas est grand, plus la fréquence est aïgu (ou haute)
 			int Ecurp;	// Envelope current phase = cette variable permet de savoir dans quelle phase
