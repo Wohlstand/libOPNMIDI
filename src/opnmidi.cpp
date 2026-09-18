@@ -492,6 +492,8 @@ OPNMIDI_EXPORT void opn2_setVolumeRangeModel(struct OPN2_MIDIPlayer *device, int
 {
     if(!device)
         return;
+    if(volumeModel < 0 || volumeModel >= OPNMIDI_VolumeModel_Count)
+        volumeModel = OPNMIDI_VolumeModel_AUTO;
     MidiPlayer *play = GET_MIDI_PLAYER(device);
     assert(play);
     Synth &synth = *play->m_synth;

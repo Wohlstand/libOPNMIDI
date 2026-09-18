@@ -133,6 +133,8 @@ static const unsigned opn2_emulatorSupport = 0
 //! Check emulator availability
 bool opn2_isEmulatorAvailable(int emulator)
 {
+    if(emulator < 0 || (unsigned)emulator >= sizeof(opn2_emulatorSupport) * 8)
+        return false;
     return (opn2_emulatorSupport & (1u << (unsigned)emulator)) != 0;
 }
 
