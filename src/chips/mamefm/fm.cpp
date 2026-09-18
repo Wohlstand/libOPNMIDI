@@ -1095,7 +1095,7 @@ static inline signed int op_calc(uint32_t phase, unsigned int env, signed int pm
 {
 	uint32_t p;
 
-	p = (env<<3) + sin_tab[ ( ((signed int)((phase & ~FREQ_MASK) + (pm<<15))) >> FREQ_SH ) & SIN_MASK ];
+	p = (env<<3) + sin_tab[ ( ((signed int)((phase & ~FREQ_MASK) + (pm * 32768))) >> FREQ_SH ) & SIN_MASK ];
 
 	if (p >= TL_TAB_LEN)
 		return 0;
@@ -1423,7 +1423,7 @@ static inline void chan_calc(FM_OPN *OPN, FM_CH *CH, int chnum)
 			if (!CH->FB)
 				out=0;
 
-			CH->op1_out[1] = op_calc1(CH->SLOT[SLOT1].phase, eg_out, (out<<CH->FB) );
+			CH->op1_out[1] = op_calc1(CH->SLOT[SLOT1].phase, eg_out, (out * (1 << CH->FB)) );
 		}
 	}
 
