@@ -667,7 +667,7 @@ void OPN2_EnvelopeADSR(ym3438_t *chip)
         }
         else if (chip->eg_state[slot] == eg_num_attack && level != 0 && chip->eg_inc && nkon)
         {
-            inc = (~level << chip->eg_inc) >> 5;
+            inc = ((~level) * (1 << chip->eg_inc)) >> 5;
         }
     }
     else
@@ -681,7 +681,7 @@ void OPN2_EnvelopeADSR(ym3438_t *chip)
             }
             else if(chip->eg_inc && !chip->eg_ratemax && nkon)
             {
-                inc = (~level << chip->eg_inc) >> 5;
+                inc = ((~level) * (1 << chip->eg_inc)) >> 5;
             }
             break;
         case eg_num_decay:
@@ -1084,7 +1084,7 @@ void OPN2_FMGenerate(ym3438_t *chip)
     {
         output = output ^ (chip->mode_test_21[4] << 13);
     }
-    output <<= 2;
+    output *= 4;
     output >>= 2;
     chip->fm_out[slot] = output;
 }
