@@ -1195,7 +1195,7 @@ inline void Ym2612Private::T_Update_Chan(channel_t *CH, int32_t *bufL, int32_t *
 //		"Algo %d len = %d", algo, length);
 
 	for (int i = 0; i < length; i++) {
-		int in0, in1, in2, in3;		// current phase calculation
+		unsigned int in0, in1, in2, in3;	// current phase calculation
 		int en0, en1, en2, en3;		// current envelope calculation
 
 		GET_CURRENT_PHASE();
@@ -1263,7 +1263,7 @@ inline void Ym2612Private::T_Update_Chan_LFO(channel_t *CH, int32_t *bufL, int32
 //		"Algo %d LFO len = %d", algo, length);
 
 	for (int i = 0; i < length; i++) {
-		int in0, in1, in2, in3;		// current phase calculation
+		unsigned int in0, in1, in2, in3;	// current phase calculation
 		int en0, en1, en2, en3;		// current envelope calculation
 
 		GET_CURRENT_PHASE();
@@ -1335,7 +1335,7 @@ inline void Ym2612Private::T_Update_Chan_Int(channel_t *CH, int32_t *bufL, int32
 	int_cnt = state.Inter_Cnt;
 
 	for (int i = 0; i < length; i++) {
-		int in0, in1, in2, in3;		// current phase calculation
+		unsigned int in0, in1, in2, in3;	// current phase calculation
 		int en0, en1, en2, en3;		// current envelope calculation
 
 		GET_CURRENT_PHASE();
@@ -1404,7 +1404,7 @@ inline void Ym2612Private::T_Update_Chan_LFO_Int(channel_t *CH, int32_t *bufL, i
 //		"Algo %d LFO Int len = %d", algo, length);
 
 	for (int i = 0; i < length; i++) {
-		int in0, in1, in2, in3;		// current phase calculation
+		unsigned int in0, in1, in2, in3;	// current phase calculation
 		int en0, en1, en2, en3;		// current envelope calculation
 
 		GET_CURRENT_PHASE();
