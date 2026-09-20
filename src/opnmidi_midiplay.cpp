@@ -148,6 +148,13 @@ void OPNMIDIplay::applySetup()
     else
         chipType = m_setup.chipType;
 
+    /* The number comes from outside: opn2_setChipType() takes any int, and a bank
+       file names the chip it was made for in a byte of its own. A number that is
+       no family would be cast to one and read back as one, which is undefined, so
+       the chip the library is named for stands in for it. */
+    if(chipType < 0 || chipType >= OPNChip_Count)
+        chipType = OPNChip_OPN2;
+
     synth.reset(m_setup.emulator, m_setup.PCM_RATE, static_cast<OPNFamily>(chipType), this);
     m_chipChannels.clear();
     m_chipChannels.resize(synth.m_numChannels, OpnChannel());
