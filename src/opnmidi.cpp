@@ -492,12 +492,15 @@ OPNMIDI_EXPORT void opn2_setVolumeRangeModel(struct OPN2_MIDIPlayer *device, int
 {
     if(!device)
         return;
+
     if(volumeModel < 0 || volumeModel >= OPNMIDI_VolumeModel_Count)
         volumeModel = OPNMIDI_VolumeModel_AUTO;
+
     MidiPlayer *play = GET_MIDI_PLAYER(device);
     assert(play);
     Synth &synth = *play->m_synth;
     play->m_setup.VolumeModel = volumeModel;
+
     if(!synth.setupLocked())
     {
         if(play->m_setup.VolumeModel == OPNMIDI_VolumeModel_AUTO)//Use bank default volume model

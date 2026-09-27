@@ -135,6 +135,7 @@ bool opn2_isEmulatorAvailable(int emulator)
 {
     if(emulator < 0 || (unsigned)emulator >= sizeof(opn2_emulatorSupport) * 8)
         return false;
+
     return (opn2_emulatorSupport & (1u << (unsigned)emulator)) != 0;
 }
 
@@ -142,8 +143,10 @@ bool opn2_isEmulatorAvailable(int emulator)
 int opn2_getHighestEmulator()
 {
     int emu = -1;
+
     for(unsigned m = opn2_emulatorSupport; m > 0; m >>= 1)
         ++emu;
+
     return emu;
 }
 
@@ -152,11 +155,13 @@ int opn2_getLowestEmulator()
 {
     int emu = -1;
     unsigned m = opn2_emulatorSupport;
+
     if(m > 0)
     {
         for(emu = 0; (m & 1) == 0; m >>= 1)
             ++emu;
     }
+
     return emu;
 }
 
