@@ -1,0 +1,41 @@
+A General MIDI bank that attempts to replicate sounding of the NEC OPNA driver
+for the Windows 95/98 for Japanese computers of the NEC PC98 family.
+
+This bank is a collaborative effort of Vitaliy Novichkov (https://github.com/Wohlstand)
+and  馬頭猫 (https://github.com/EriczjrWinter) who made a reverse-engineering
+work of the original NECOPN.DRV driver to extract the melodic set.
+
+The complete percussion set was built using different banks (xg.wopn and
+fmmidi.wopn) as a base.
+
+License for this bank - MIT
+
+To edit this bank and other banks in WOPN format, you can use this editor
+which I created for that: https://github.com/Wohlstand/OPN2BankEditor
+
+==============================================================================
+馬頭猫 "EriczjrWinter", 2026
+Vitaliy Novichkov "Wohlstand", 2026
+
+==============================================================================
+MIT License
+
+Copyright (c) 2026 Vitaliy Novichkov, 馬頭猫
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
